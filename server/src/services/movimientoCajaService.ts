@@ -10,7 +10,7 @@ export class MovimientoCajaService {
         predioId: data.predioId,
         concepto: data.concepto,
         descripcion: data.descripcion,
-        monto: data.monto,
+        monto: data.monto.toString(),
         tipo: data.tipo,
         metodoPago: data.metodoPago,
       }).returning();
@@ -48,7 +48,10 @@ export class MovimientoCajaService {
   async updateMovimiento(id: string, data: UpdateMovimientoCajaDTO) {
     try {
       const movimientoActualizado = await db.update(movimientosCaja)
-        .set(data)
+        .set({
+          ...data,
+          monto: String(data.monto),
+        })
         .where(eq(movimientosCaja.id, id))
         .returning();
 
