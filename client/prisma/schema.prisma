@@ -1,0 +1,181 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+        
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  USER
+  ADMIN
+  OWNER
+}
+
+model User {
+  id                    String    @id @default(cuid())
+  name                  String?
+  email                 String?   @unique
+  emailVerified         DateTime?
+  image                 String?
+  password              String?
+  passwordResetToken    String?   @unique
+  passwordResetTokenExp DateTime?
+  role                  Role      @default(USER)
+  accounts              Account[]
+  sessions              Session[]
+  reservas              Reserva[]
+  pagos                 Pago[]
+  predioTrabajo         String?   // ID del predio donde trabaja el usuario
+  predioEmpleador       Predio?   @relation("EmpleadosPredio", fields: [predioTrabajo], references: [id])
+  predios               Predio[]  @relation("PropietarioPredio") // Renombramos esta relación
+}
+
+model VerificationToken {
+  id         String   @id @default(cuid())
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Predio {
+  id                        String   @id @default(cuid())
+  usuarioId                 String   // Cambiamos organizacionId por usuarioId
+  nombre                    String
+  direccion                 String
+  ciudad                    String
+  provincia                 String
+  codigoPostal              String?
+  telefono                  String?
+  email                     String?
+  latitud                   Float?
+  longitud                  Float?
+  capacidadEstacionamiento  Int?
+  tieneVestuarios           Boolean?
+  tieneCafeteria            Boolean?
+  horarioApertura           String?  // Cambiado a String para almacenar hora en formato "HH:mm"
+  horarioCierre             String?  // Cambiado a String para almacenar hora en formato "HH:mm"
+  diasOperacion             String?
+  imagenUrl                 String?
+  fechaRegistro             DateTime @default(now())
+  usuario                   User     @relation("PropietarioPredio", fields: [usuarioId], references: [id])
+  canchas                   Cancha[]
+  imagenes                  ImagenPredio[]
+  empleados                 User[]   @relation("EmpleadosPredio")
+  movimientosCaja          MovimientoCaja[]
+}
+
+model ImagenPredio {
+  id          String @id @default(cuid())
+  predioId    String
+  imagenUrl   String
+  descripcion String?
+  predio      Predio @relation(fields: [predioId], references: [id])
+}
+
+model Cancha {
+  id                    String   @id @default(cuid())
+  predioId              String
+  nombre                String
+  tipo                  String?
+  capacidadJugadores    Int?
+  longitud              Float?
+  ancho                 Float?
+  tipoSuperficie        String?
+  tieneIluminacion      Boolean?
+  esTechada             Boolean?
+  precioPorHora         Decimal? @db.Decimal(10,2)
+  estado                String?
+  ultimoMantenimiento   DateTime?
+  equipamientoIncluido  String?
+  imagenUrl             String?
+  predio                Predio @relation(fields: [predioId], references: [id])
+  reservas              Reserva[]
+  imagenes              ImagenCancha[]
+}
+
+model ImagenCancha {
+  id          String @id @default(cuid())
+  canchaId    String
+  imagenUrl   String
+  descripcion String?
+  cancha      Cancha @relation(fields: [canchaId], references: [id])
+}
+
+model Reserva {
+  id              String   @id @default(cuid())
+  canchaId        String
+  userId          String
+  fechaHora       DateTime
+  duracion        Int
+  precioTotal     Decimal? @db.Decimal(10,2)
+  estadoPago      String?
+  metodoPago      String?
+  fechaReserva    DateTime @default(now())
+  notasAdicionales String?
+  pagoId          String?  @unique // Hacemos esta relación única
+  cancha          Cancha @relation(fields: [canchaId], references: [id])
+  user            User @relation(fields: [userId], references: [id])
+  pago            Pago?
+}
+
+model Pago {
+  id                  String   @id @default(cuid())
+  reservaId           String   @unique // Hacemos esta relación única
+  userId              String
+  monto               Decimal @db.Decimal(10,2)
+  fechaPago           DateTime @default(now())
+  metodoPago          String
+  estadoPago          String
+  numeroTransaccion   String?
+  detallesAdicionales String?
+  reserva             Reserva @relation(fields: [reservaId], references: [id])
+  user                User @relation(fields: [userId], references: [id])
+}
+
+model MovimientoCaja {
+  id              String   @id @default(cuid())
+  predioId        String
+  concepto        String
+  descripcion     String?
+  monto           Decimal @db.Decimal(10,2)
+  tipo            String   // INGRESO o EGRESO
+  metodoPago      String
+  fechaMovimiento DateTime @default(now())
+  predio          Predio   @relation(fields: [predioId], references: [id])
+}
