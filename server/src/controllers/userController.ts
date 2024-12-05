@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import * as userService from '../services/userService';
-import { UserCreationData, UserUpdateData } from '../types/user';
+import type { UserCreationData, UserUpdateData } from '../types/user';
 
 export const createUser = async (
   req: Request,

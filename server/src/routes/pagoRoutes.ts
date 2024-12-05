@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { PagoController } from '../controllers/pagoController';
 import { authenticateToken } from '../middleware/auth';
+import { PagoController } from '../controllers/pagoController';
 
 const router = Router();
 const pagoController = new PagoController();

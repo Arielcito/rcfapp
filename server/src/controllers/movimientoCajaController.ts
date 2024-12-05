@@ -1,6 +1,6 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { MovimientoCajaService } from '../services/movimientoCajaService';
-import { CreateMovimientoCajaDTO, UpdateMovimientoCajaDTO } from '../types/movimientoCaja';
+import type { CreateMovimientoCajaDTO, UpdateMovimientoCajaDTO } from '../types/movimientoCaja';
 
 const movimientoCajaService = new MovimientoCajaService();
 
