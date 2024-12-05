@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, varchar, boolean, integer, decimal } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, varchar, boolean, integer, decimal, uniqueIndex } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { createId } from '../utils/ids';
 import { Role } from '../types/user';
@@ -64,6 +64,43 @@ export const canchas = pgTable('canchas', {
   equipamientoIncluido: text('equipamiento_incluido'),
   imagenUrl: text('imagen_url'),
   createdAt: timestamp('created_at').defaultNow()
+});
+
+export const reservas = pgTable('Reserva', {
+  id: varchar('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  canchaId: varchar('canchaId').notNull().references(() => canchas.id),
+  userId: varchar('userId').notNull().references(() => users.id),
+  fechaHora: timestamp('fechaHora').notNull(),
+  duracion: integer('duracion').notNull(),
+  precioTotal: decimal('precioTotal', { precision: 10, scale: 2 }),
+  estadoPago: varchar('estadoPago'),
+  metodoPago: varchar('metodoPago'),
+  fechaReserva: timestamp('fechaReserva').defaultNow(),
+  notasAdicionales: text('notasAdicionales'),
+  pagoId: varchar('pagoId').unique(),
+});
+
+export const pagos = pgTable('Pago', {
+  id: varchar('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  reservaId: varchar('reservaId').unique().references(() => reservas.id),
+  userId: varchar('userId').notNull().references(() => users.id),
+  monto: decimal('monto', { precision: 10, scale: 2 }).notNull(),
+  fechaPago: timestamp('fechaPago').defaultNow(),
+  metodoPago: varchar('metodoPago').notNull(),
+  estadoPago: varchar('estadoPago').notNull(),
+  numeroTransaccion: varchar('numeroTransaccion'),
+  detallesAdicionales: text('detallesAdicionales'),
+});
+
+export const movimientosCaja = pgTable('MovimientoCaja', {
+  id: varchar('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  predioId: varchar('predioId').notNull().references(() => predios.id),
+  concepto: varchar('concepto').notNull(),
+  descripcion: text('descripcion'),
+  monto: decimal('monto', { precision: 10, scale: 2 }).notNull(),
+  tipo: varchar('tipo').notNull(), // INGRESO o EGRESO
+  metodoPago: varchar('metodoPago').notNull(),
+  fechaMovimiento: timestamp('fechaMovimiento').defaultNow(),
 });
 
 // Configurar las relaciones
