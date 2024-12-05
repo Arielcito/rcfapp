@@ -4,6 +4,9 @@ import dotenv from 'dotenv';
 import userRoutes from './routes/userRoutes';
 import predioRoutes from './routes/predioRoutes';
 import canchaRoutes from './routes/canchaRoutes';
+import reservaRoutes from './routes/reservaRoutes';
+import pagoRoutes from './routes/pagoRoutes';
+import movimientoCajaRoutes from './routes/movimientoCajaRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
@@ -18,6 +21,9 @@ app.use(express.json());
 app.use('/api/users', userRoutes);
 app.use('/api/predios', predioRoutes);
 app.use('/api/canchas', canchaRoutes);
+app.use('/api/reservas', reservaRoutes);
+app.use('/api/pagos', pagoRoutes);
+app.use('/api/movimientos-caja', movimientoCajaRoutes);
 
 // Error handling
 app.use(errorHandler);
