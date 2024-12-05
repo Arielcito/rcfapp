@@ -1,6 +1,7 @@
 import { db } from '../db';
 import { pagos, reservas } from '../db/schema';
 import { eq } from 'drizzle-orm';
+import type { CreatePagoDTO, UpdatePagoDTO } from '../types/pago';
 
 export class PagoService {
   async createPago(data: CreatePagoDTO) {

@@ -3,7 +3,6 @@ import { reservas, pagos } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import type { CreateReservaDTO, UpdateReservaDTO } from '../types/reserva';
 
-
 export class ReservaService {
   async createReserva(data: CreateReservaDTO) {
     try {
@@ -12,7 +11,7 @@ export class ReservaService {
         userId: data.userId,
         fechaHora: new Date(data.fechaHora),
         duracion: data.duracion,
-        precioTotal: data.precioTotal,
+        precioTotal: data.precioTotal?.toString(),
         estadoPago: 'PENDIENTE',
         metodoPago: data.metodoPago,
         notasAdicionales: data.notasAdicionales,
@@ -39,8 +38,13 @@ export class ReservaService {
 
   async updateReserva(id: string, data: UpdateReservaDTO) {
     try {
+      const updateData = {
+        ...data,
+        precioTotal: data.precioTotal?.toString(),
+      };
+
       const reservaActualizada = await db.update(reservas)
-        .set(data)
+        .set(updateData)
         .where(eq(reservas.id, id))
         .returning();
 
