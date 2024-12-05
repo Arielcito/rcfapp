@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import fs from 'fs';
+import fs from 'node:fs';
 
 const getSecret = (secretName: string): string => {
     try {

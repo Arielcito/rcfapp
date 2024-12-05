@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import * as canchaService from '../services/canchaService';
-import { CanchaCreationData, CanchaUpdateData } from '../types/cancha';
+import type { CanchaCreationData, CanchaUpdateData } from '../types/cancha';
 
 export const createCancha = async (
   req: Request,

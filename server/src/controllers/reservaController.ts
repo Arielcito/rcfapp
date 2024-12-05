@@ -1,6 +1,7 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { ReservaService } from '../services/reservaService';
-import { CreateReservaDTO, UpdateReservaDTO } from '../types/reserva';
+import type { CreateReservaDTO, UpdateReservaDTO } from '../types/reserva';
+    
 
 const reservaService = new ReservaService();
 

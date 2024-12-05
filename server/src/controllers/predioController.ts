@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import * as predioService from '../services/predioService';
-import { PredioCreationData, PredioUpdateData } from '../types/predio';
+import type { PredioCreationData, PredioUpdateData } from '../types/predio';
 
 export const createPredio = async (
   req: Request,
