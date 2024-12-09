@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import * as userService from '../services/userService';
 import type { UserCreationData, UserUpdateData } from '../types/user';
+import { logger } from '../utils/logger';
 
 export const createUser = async (
   req: Request,
@@ -71,6 +72,111 @@ export const deleteUser = async (
     await userService.deleteUser(req.params.id);
     res.status(204).send();
   } catch (error) {
+    next(error);
+  }
+};
+
+export const login = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { email, password } = req.body;
+    logger.info(`Intento de login para email: ${email}`);
+
+    if (!email || !password) {
+      logger.warn('Intento de login sin email o password');
+      res.status(400).json({ message: 'Email y contraseña son requeridos' });
+      return;
+    }
+
+    const { user, token } = await userService.loginUser(email, password);
+    logger.info(`Login exitoso para usuario: ${user.id}`);
+
+    // Establecer cookie con el token
+    res.cookie('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000 // 24 horas
+    });
+
+    logger.info('Cookie establecida correctamente');
+    res.json({ user });
+  } catch (error) {
+    logger.error('Error en login:', error);
+    next(error);
+  }
+};
+
+export const register = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userData: UserCreationData = req.body;
+    logger.info('Intento de registro con datos:', { ...userData, password: '***' });
+
+    if (!userData.email || !userData.password || !userData.name) {
+      logger.warn('Intento de registro con campos faltantes');
+      res.status(400).json({ message: 'Todos los campos son requeridos' });
+      return;
+    }
+
+    const { user, token } = await userService.registerUser(userData);
+    logger.info(`Registro exitoso para usuario: ${user.id}`);
+
+    // Establecer cookie con el token
+    res.cookie('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000
+    });
+
+    logger.info('Cookie establecida correctamente para nuevo usuario');
+    res.status(201).json({ user });
+  } catch (error) {
+    logger.error('Error en registro:', error);
+    next(error);
+  }
+};
+
+export const logout = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    res.clearCookie('auth_token');
+    res.json({ message: 'Sesión cerrada exitosamente' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getCurrentUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.body.user?.id;
+    logger.info(`Intento de obtener usuario actual. ID: ${userId}`);
+
+    if (!userId) {
+      logger.warn('Intento de obtener usuario actual sin ID');
+      res.status(401).json({ message: 'No autorizado' });
+      return;
+    }
+
+    const user = await userService.getCurrentUserById(userId);
+    logger.info(`Usuario actual obtenido correctamente: ${user.id}`);
+    res.json(user);
+  } catch (error) {
+    logger.error('Error al obtener usuario actual:', error);
     next(error);
   }
 };

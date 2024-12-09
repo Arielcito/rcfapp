@@ -1,45 +1,62 @@
-import type { Request as ExpressRequest, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import type { Role, User } from '../types/user';
+import { Role } from '../types/user';
+import { logger } from '../utils/logger';
 
-// Extender la interfaz Request
-interface Request extends ExpressRequest {
-  user?: User;
+interface JWTPayload {
+  id: string;
+  email: string;
+  role: Role;
 }
 
 export const authenticateToken = (
   req: Request,
   res: Response,
   next: NextFunction
-): Response | undefined => {
-  const authHeader = req.headers.authorization;
-  const token = authHeader?.split(' ')[1];
+) => {
+  const token = req.cookies.auth_token;
+  logger.info('Verificando token de autenticación');
 
   if (!token) {
-    return res.status(401).json({ message: 'No token provided' });
+    logger.warn('No se encontró token en las cookies');
+    return res.status(401).json({ message: 'No autorizado' });
   }
 
   try {
-    if (!process.env.JWT_SECRET) {
-      throw new Error('JWT_SECRET is not defined');
-    }
-    const user = jwt.verify(token, process.env.JWT_SECRET) as User;
-    req.user = user;
+    const decoded = jwt.verify(
+      token, 
+      process.env.JWT_SECRET || 'your-secret-key'
+    ) as JWTPayload;
+    
+    logger.info('Token verificado exitosamente');
+    req.body.user = {
+      id: decoded.id,
+      email: decoded.email,
+      role: decoded.role,
+      name: null // Podríamos obtener el nombre de la base de datos si es necesario
+    };
     next();
   } catch (error) {
-    return res.status(403).json({ message: 'Invalid token' });
+    logger.error('Error al verificar token:', error);
+    res.status(401).json({ message: 'Token inválido' });
   }
 };
 
 export const authorizeRole = (roles: Role[]) => {
-  return (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Response | undefined => {
-    if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ message: 'Insufficient permissions' });
+  return (req: Request, res: Response, next: NextFunction) => {
+    logger.info(`Verificando rol de usuario. Roles permitidos: ${roles.join(', ')}`);
+    
+    if (!req.body.user) {
+      logger.warn('No hay usuario en el request');
+      return res.status(401).json({ message: 'No autorizado' });
     }
+
+    if (!roles.includes(req.body.user.role)) {
+      logger.warn(`Usuario con rol ${req.body.user.role} intentó acceder a ruta protegida`);
+      return res.status(403).json({ message: 'No tienes permiso para realizar esta acción' });
+    }
+
+    logger.info('Autorización de rol exitosa');
     next();
   };
 };
