@@ -1,0 +1,667 @@
+{
+  "id": "7c64720a-8813-4a36-b872-69540d54c9c0",
+  "prevId": "e6bc9816-e3ff-4a3b-b393-0d39d4fd8976",
+  "version": "5",
+  "dialect": "pg",
+  "tables": {
+    "canchas": {
+      "name": "canchas",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "predio_id": {
+          "name": "predio_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "capacidad_jugadores": {
+          "name": "capacidad_jugadores",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "longitud": {
+          "name": "longitud",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ancho": {
+          "name": "ancho",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tipo_superficie": {
+          "name": "tipo_superficie",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tiene_iluminacion": {
+          "name": "tiene_iluminacion",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "es_techada": {
+          "name": "es_techada",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "precio_por_hora": {
+          "name": "precio_por_hora",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "estado": {
+          "name": "estado",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ultimo_mantenimiento": {
+          "name": "ultimo_mantenimiento",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "equipamiento_incluido": {
+          "name": "equipamiento_incluido",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "imagen_url": {
+          "name": "imagen_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "canchas_predio_id_predios_id_fk": {
+          "name": "canchas_predio_id_predios_id_fk",
+          "tableFrom": "canchas",
+          "tableTo": "predios",
+          "columnsFrom": [
+            "predio_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "MovimientoCaja": {
+      "name": "MovimientoCaja",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "predioId": {
+          "name": "predioId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "concepto": {
+          "name": "concepto",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "monto": {
+          "name": "monto",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metodoPago": {
+          "name": "metodoPago",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fechaMovimiento": {
+          "name": "fechaMovimiento",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "MovimientoCaja_predioId_predios_id_fk": {
+          "name": "MovimientoCaja_predioId_predios_id_fk",
+          "tableFrom": "MovimientoCaja",
+          "tableTo": "predios",
+          "columnsFrom": [
+            "predioId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "Pago": {
+      "name": "Pago",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "reservaId": {
+          "name": "reservaId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "userId": {
+          "name": "userId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "monto": {
+          "name": "monto",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fechaPago": {
+          "name": "fechaPago",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "metodoPago": {
+          "name": "metodoPago",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estadoPago": {
+          "name": "estadoPago",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "numeroTransaccion": {
+          "name": "numeroTransaccion",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "detallesAdicionales": {
+          "name": "detallesAdicionales",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "Pago_reservaId_Reserva_id_fk": {
+          "name": "Pago_reservaId_Reserva_id_fk",
+          "tableFrom": "Pago",
+          "tableTo": "Reserva",
+          "columnsFrom": [
+            "reservaId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "Pago_userId_users_id_fk": {
+          "name": "Pago_userId_users_id_fk",
+          "tableFrom": "Pago",
+          "tableTo": "users",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "Pago_reservaId_unique": {
+          "name": "Pago_reservaId_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "reservaId"
+          ]
+        }
+      }
+    },
+    "predios": {
+      "name": "predios",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "usuario_id": {
+          "name": "usuario_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "direccion": {
+          "name": "direccion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ciudad": {
+          "name": "ciudad",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provincia": {
+          "name": "provincia",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "codigo_postal": {
+          "name": "codigo_postal",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "telefono": {
+          "name": "telefono",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "latitud": {
+          "name": "latitud",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "longitud": {
+          "name": "longitud",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "capacidad_estacionamiento": {
+          "name": "capacidad_estacionamiento",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tiene_vestuarios": {
+          "name": "tiene_vestuarios",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tiene_cafeteria": {
+          "name": "tiene_cafeteria",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "horario_apertura": {
+          "name": "horario_apertura",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "horario_cierre": {
+          "name": "horario_cierre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dias_operacion": {
+          "name": "dias_operacion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "imagen_url": {
+          "name": "imagen_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_registro": {
+          "name": "fecha_registro",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "predios_usuario_id_users_id_fk": {
+          "name": "predios_usuario_id_users_id_fk",
+          "tableFrom": "predios",
+          "tableTo": "users",
+          "columnsFrom": [
+            "usuario_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "Reserva": {
+      "name": "Reserva",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "canchaId": {
+          "name": "canchaId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "userId": {
+          "name": "userId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fechaHora": {
+          "name": "fechaHora",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "duracion": {
+          "name": "duracion",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "precioTotal": {
+          "name": "precioTotal",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "estadoPago": {
+          "name": "estadoPago",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "metodoPago": {
+          "name": "metodoPago",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fechaReserva": {
+          "name": "fechaReserva",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "notasAdicionales": {
+          "name": "notasAdicionales",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pagoId": {
+          "name": "pagoId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "Reserva_canchaId_canchas_id_fk": {
+          "name": "Reserva_canchaId_canchas_id_fk",
+          "tableFrom": "Reserva",
+          "tableTo": "canchas",
+          "columnsFrom": [
+            "canchaId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "Reserva_userId_users_id_fk": {
+          "name": "Reserva_userId_users_id_fk",
+          "tableFrom": "Reserva",
+          "tableTo": "users",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "Reserva_pagoId_unique": {
+          "name": "Reserva_pagoId_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "pagoId"
+          ]
+        }
+      }
+    },
+    "users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email_verified": {
+          "name": "email_verified",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "image": {
+          "name": "image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "password": {
+          "name": "password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "password_reset_token": {
+          "name": "password_reset_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "password_reset_token_exp": {
+          "name": "password_reset_token_exp",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'USER'"
+        },
+        "predio_trabajo": {
+          "name": "predio_trabajo",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "users_predio_trabajo_predios_id_fk": {
+          "name": "users_predio_trabajo_predios_id_fk",
+          "tableFrom": "users",
+          "tableTo": "predios",
+          "columnsFrom": [
+            "predio_trabajo"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "users_email_unique": {
+          "name": "users_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        },
+        "users_password_reset_token_unique": {
+          "name": "users_password_reset_token_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "password_reset_token"
+          ]
+        }
+      }
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

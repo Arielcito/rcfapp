@@ -1,4 +1,4 @@
-import { formatDate } from "@/lib/utils";
+import { formatDate } from "date-fns";
 
 interface Reserva {
   id: string;

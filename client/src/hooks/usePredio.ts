@@ -1,4 +1,4 @@
-import { useSession } from 'next-auth/react'
+import { useAuth } from '@/app/context/AuthContext'
 import { useState, useEffect, useCallback } from 'react'
 import type { Predio } from '@prisma/client'
 
@@ -11,20 +11,20 @@ interface UsePredioReturn {
 }
 
 export function usePredio(): UsePredioReturn {
-  const { data: session, status } = useSession()
+  const { user, status } = useAuth()
   const [predio, setPredio] = useState<Predio | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
   const fetchPredio = useCallback(async () => {
-    if (!session?.user?.id) {
+    if (!user?.id) {
       setIsLoading(false)
       return
     }
 
     try {
       setIsLoading(true)
-      const response = await fetch(`/api/users/${session.user.id}/predio`)
+      const response = await fetch(`/api/users/${user.id}/predio`)
       if (!response.ok) {
         throw new Error('Error al obtener el predio')
       }
@@ -36,7 +36,7 @@ export function usePredio(): UsePredioReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [session?.user?.id])
+  }, [user?.id])
 
   useEffect(() => {
     if (status === 'authenticated') {

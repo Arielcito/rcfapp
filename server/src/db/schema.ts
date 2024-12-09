@@ -67,9 +67,9 @@ export const canchas = pgTable('canchas', {
 });
 
 export const reservas = pgTable('Reserva', {
-  id: varchar('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  canchaId: varchar('canchaId').notNull().references(() => canchas.id),
-  userId: varchar('userId').notNull().references(() => users.id),
+  id: uuid('id').primaryKey().$defaultFn(createId),
+  canchaId: uuid('canchaId').notNull().references(() => canchas.id),
+  userId: uuid('userId').notNull().references(() => users.id),
   fechaHora: timestamp('fechaHora').notNull(),
   duracion: integer('duracion').notNull(),
   precioTotal: decimal('precioTotal', { precision: 10, scale: 2 }),
@@ -77,13 +77,13 @@ export const reservas = pgTable('Reserva', {
   metodoPago: varchar('metodoPago'),
   fechaReserva: timestamp('fechaReserva').defaultNow(),
   notasAdicionales: text('notasAdicionales'),
-  pagoId: varchar('pagoId').unique(),
+  pagoId: uuid('pagoId').unique(),
 });
 
 export const pagos = pgTable('Pago', {
-  id: varchar('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  reservaId: varchar('reservaId').unique().references(() => reservas.id),
-  userId: varchar('userId').notNull().references(() => users.id),
+  id: uuid('id').primaryKey().$defaultFn(createId),
+  reservaId: uuid('reservaId').unique().references(() => reservas.id),
+  userId: uuid('userId').notNull().references(() => users.id),
   monto: decimal('monto', { precision: 10, scale: 2 }).notNull(),
   fechaPago: timestamp('fechaPago').defaultNow(),
   metodoPago: varchar('metodoPago').notNull(),
@@ -93,8 +93,8 @@ export const pagos = pgTable('Pago', {
 });
 
 export const movimientosCaja = pgTable('MovimientoCaja', {
-  id: varchar('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  predioId: varchar('predioId').notNull().references(() => predios.id),
+  id: uuid('id').primaryKey().$defaultFn(createId),
+  predioId: uuid('predioId').notNull().references(() => predios.id),
   concepto: varchar('concepto').notNull(),
   descripcion: text('descripcion'),
   monto: decimal('monto', { precision: 10, scale: 2 }).notNull(),

@@ -2,8 +2,7 @@
 import React, { useState, ReactNode } from "react";
 import Sidebar from "@/components/Sidebar";
 import HeaderAdmin from "../HeaderAdmin";
-import { SessionProvider } from "next-auth/react";
-import AuthProvider from "@/app/context/AuthContext";
+import { AuthProvider } from "@/app/context/AuthContext";
 import { Toaster } from "react-hot-toast";
 
 export default function DefaultLayout({
@@ -14,8 +13,7 @@ export default function DefaultLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   return (
     <>
-      <SessionProvider>
-        <AuthProvider>
+      <AuthProvider>
       {/* <!-- ===== Page Wrapper Star ===== --> */}
       <div className="flex h-screen overflow-hidden">
         {/* <!-- ===== Sidebar Star ===== --> */}
@@ -41,7 +39,6 @@ export default function DefaultLayout({
           {/* <!-- ===== Page Wrapper End ===== --> */}
           <Toaster />
         </AuthProvider>
-      </SessionProvider>
     </>
   );
 }

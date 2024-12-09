@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import ChartTwo from "../Charts/ChartTwo";
-import ChatCard from "../Chat/ChatCard";
 import TableOne from "../Tables/TableOne";
 import DataStatsOne from "@/components/DataStats/DataStatsOne";
 import ChartOne from "@/components/Charts/ChartOne";

@@ -1,12 +1,11 @@
+"use client";
 import React, { useEffect, useState } from "react";
-import { signOut, useSession } from "next-auth/react";
 import { Menu } from "@/types/menu";
 import { onScroll } from "@/utils/scrollActive";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import DarkModeSwitcher from "@/components/Header/DarkModeSwitcher";
-import GlobalSearchModal from "@/components/GlobalSearch";
+import { useAuth } from '@/app/context/AuthContext';
 
 const menuData: Menu[] = [
   {
@@ -26,7 +25,7 @@ const Header = () => {
     };
   }, []);
 
-  const { data: session } = useSession();
+  const { user, logout } = useAuth();
   const router = useRouter();
   const pathUrl = usePathname();
   // Navbar toggle
@@ -62,6 +61,16 @@ const Header = () => {
 
   const closeMenu = () => {
     setNavbarOpen(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Redirigir al home o login después del logout
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
   };
 
   return (
@@ -182,46 +191,23 @@ const Header = () => {
 
             <div className="mr-[60px] flex items-center justify-end lg:mr-0">
 
-              {session ? (
-                <div className="hidden items-center sm:flex">
-                  <p className="mx-3 text-black dark:text-white">
-                    {session?.user?.name}
-                  </p>
-                  {/* biome-ignore lint/a11y/useButtonType: <explanation> */}
+              {user ? (
+                <div className="flex items-center gap-3">
+                  <span>{user.name}</span>
                   <button
-                    type="button"
-                    aria-label="SignOut"
-                    onClick={() => signOut()}
-                      className="rounded-md  px-[30px] py-[10px] text-base font-medium text-black hover:bg-opacity-90"
-                    >
-                      Cerrar sesión
-                    </button>
-                  {/* biome-ignore lint/a11y/useButtonType: <explanation> */}
-                  <button
-                    type="button"
-                    aria-label="Dashboard"
-                    onClick={() => router.push("/dashboard")}
-                    className="rounded-md bg-primary px-[30px] py-[10px] text-base font-medium text-white hover:bg-opacity-90"
-                    >
-                      Dashboard
-                    </button>
+                    onClick={handleLogout}
+                    className="hover:text-primary"
+                  >
+                    Cerrar Sesión
+                  </button>
                 </div>
               ) : (
-                <>
-                  <Link
-                    href="/auth/signin"
-                    className="hidden px-6 py-[10px] text-base font-medium text-black hover:text-primary dark:text-white dark:hover:text-primary sm:inline-block"
-                  >
-                    Iniciar sesión
-                  </Link>
-
-                  <Link
-                    href="/auth/signup"
-                    className="hidden rounded-md bg-primary px-[30px] py-[10px] text-base font-medium text-white hover:bg-opacity-90 sm:inline-block"
-                  >
-                    Registrarse
-                  </Link>
-                </>
+                <Link
+                  href="/auth/signin"
+                  className="hover:text-primary"
+                >
+                  Iniciar Sesión
+                </Link>
               )}
             </div>
           </div>
