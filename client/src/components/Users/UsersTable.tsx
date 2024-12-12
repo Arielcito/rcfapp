@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { User } from '@prisma/client';
 import AddUserModal from './AddUserModal';
 import { useParams } from 'next/navigation';
@@ -14,46 +14,69 @@ interface UserTableProps {
   createdAt?: Date;
 }
 
+const DEMO_USERS: UserTableProps[] = [
+  {
+    id: '1',
+    name: 'Juan Pérez',
+    email: 'juan.perez@ejemplo.com',
+    role: 'ADMIN',
+    predioTrabajo: 'Complejo Deportivo Norte',
+    createdAt: new Date('2024-01-15')
+  },
+  {
+    id: '2',
+    name: 'María González',
+    email: 'maria.g@ejemplo.com',
+    role: 'STAFF',
+    predioTrabajo: 'Complejo Deportivo Norte',
+    createdAt: new Date('2024-02-01')
+  },
+  {
+    id: '3',
+    name: 'Carlos Rodríguez',
+    email: 'carlos.rod@ejemplo.com',
+    role: 'STAFF',
+    predioTrabajo: 'Complejo Deportivo Norte',
+    createdAt: new Date('2024-02-15')
+  },
+  {
+    id: '4',
+    name: 'Ana Silva',
+    email: 'ana.silva@ejemplo.com',
+    role: 'ADMIN',
+    predioTrabajo: 'Complejo Deportivo Norte',
+    createdAt: new Date('2024-03-01')
+  },
+  {
+    id: '5',
+    name: 'Roberto Méndez',
+    email: 'roberto.m@ejemplo.com',
+    role: 'STAFF',
+    predioTrabajo: 'Complejo Deportivo Norte',
+    createdAt: new Date('2024-03-10')
+  }
+];
+
 const UsersTable = () => {
-  const [users, setUsers] = useState<UserTableProps[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [users, setUsers] = useState<UserTableProps[]>(DEMO_USERS);
+  const [isLoading, setIsLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const params = useParams();
   const predioId = params.predioId as string;
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
-    try {
-      const response = await fetch(`/api/users?predioId=${predioId}`);
-      const data = await response.json();
-      setUsers(Array.isArray(data) ? data : []);
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      setUsers([]);
-      setIsLoading(false);
-    }
-  };
-
   const handleAddUser = async (userData: any) => {
     try {
-      const response = await fetch('/api/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-
-      if (response.ok) {
-        fetchUsers();
-        setShowAddModal(false);
-      } else {
-        console.error('Error al crear usuario');
-      }
+      const newUser = {
+        id: (users.length + 1).toString(),
+        name: userData.name,
+        email: userData.email,
+        role: userData.role,
+        predioTrabajo: 'Complejo Deportivo Norte',
+        createdAt: new Date()
+      };
+      
+      setUsers([...users, newUser]);
+      setShowAddModal(false);
     } catch (error) {
       console.error('Error:', error);
     }
@@ -63,13 +86,18 @@ const UsersTable = () => {
     <>
       <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
         <div className="flex justify-between mb-4">
-          <h3 className="text-xl font-semibold text-black dark:text-white">
-            Usuarios del Sistema
-          </h3>
+          <div>
+            <h3 className="text-xl font-semibold text-black dark:text-white">
+              Usuarios del Sistema
+            </h3>
+            <p className="text-sm text-gray-500">
+              Total: {users.length} usuarios registrados
+            </p>
+          </div>
           <button
             type="button"
             onClick={() => setShowAddModal(true)}
-            className="bg-primary text-white px-4 py-2 rounded-sm"
+            className="bg-primary text-white px-4 py-2 rounded-sm hover:bg-opacity-90"
           >
             Agregar Usuario
           </button>

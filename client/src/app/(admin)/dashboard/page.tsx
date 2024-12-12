@@ -6,24 +6,24 @@ import { useAuth } from '@/app/context/AuthContext'
 import DashboardAdmin from '@/components/Dashboard/DashboardAdmin'
 
 export default function DashboardPage() {
-  const { user, loading } = useAuth()
+  const { user, isLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
     console.log('🔄 Dashboard: Estado actual:', {
-      loading,
+      isLoading,
       user
     });
 
-    if (!loading && !user) {
+    if (!isLoading && !user) {
       console.log('❌ No hay usuario, redirigiendo...');
       router.push('/')
-    } else if (!loading && user) {
+    } else if (!isLoading && user) {
       console.log('✅ Usuario verificado');
     }
-  }, [user, loading, router])
+  }, [user, isLoading, router])
 
-  if (loading) {
+  if (isLoading) {
     console.log('⏳ Dashboard: Cargando...');
     return <div>Cargando...</div>
   }

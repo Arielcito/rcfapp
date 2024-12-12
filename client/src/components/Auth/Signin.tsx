@@ -30,7 +30,7 @@ const Signin = () => {
       toast.success("Sesión iniciada exitosamente", { id: "login" });
       setData({ email: "", password: "", remember: false });
       
-      router.push("/dashboard");
+      router.push("/onboarding");
     } catch (error) {
       console.error("Error en inicio de sesión:", error);
       toast.error(error instanceof Error ? error.message : "Error al iniciar sesión", { id: "login" });

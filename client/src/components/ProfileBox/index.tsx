@@ -345,7 +345,7 @@ const ProfileBox = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {profileData.canchas.map((cancha) => (
+            {profileData.canchas?.map((cancha) => (
               <div
                 key={cancha.id}
                 className="border border-stroke rounded-sm p-4"

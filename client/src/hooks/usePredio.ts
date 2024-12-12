@@ -11,7 +11,7 @@ interface UsePredioReturn {
 }
 
 export function usePredio(): UsePredioReturn {
-  const { user, status } = useAuth()
+  const { user } = useAuth()
   const [predio, setPredio] = useState<Predio | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
@@ -39,15 +39,15 @@ export function usePredio(): UsePredioReturn {
   }, [user?.id])
 
   useEffect(() => {
-    if (status === 'authenticated') {
+    if (user) {
       fetchPredio()
     }
-  }, [status, fetchPredio])
+  }, [user, fetchPredio])
 
   return {
     predio,
     predioId: predio?.id ?? null,
-    isLoading: status === 'loading' || isLoading,
+    isLoading,
     error,
     refetch: fetchPredio
   }
