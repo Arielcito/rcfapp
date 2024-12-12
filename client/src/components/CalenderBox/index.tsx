@@ -39,6 +39,55 @@ interface CalendarData {
   reservas: Reserva[];
 }
 
+const DEMO_CALENDAR_DATA: CalendarData = {
+  predio: {
+    id: '1',
+    nombre: 'Complejo Deportivo Norte',
+    horarioApertura: '08:00:00',
+    horarioCierre: '23:00:00'
+  },
+  canchas: [
+    { id: '1', nombre: 'Cancha F5 - A', tipo: 'Fútbol 5', predioId: '1' },
+    { id: '2', nombre: 'Cancha F5 - B', tipo: 'Fútbol 5', predioId: '1' },
+    { id: '3', nombre: 'Cancha F7', tipo: 'Fútbol 7', predioId: '1' },
+    { id: '4', nombre: 'Cancha F11', tipo: 'Fútbol 11', predioId: '1' }
+  ],
+  reservas: [
+    {
+      id: '1',
+      fechaHora: new Date('2024-03-20T10:00:00').toISOString(),
+      duracion: 2,
+      estadoPago: 'PAGADO',
+      user: { name: 'Juan Pérez', email: 'juan@ejemplo.com' },
+      cancha: { id: '1', nombre: 'Cancha F5 - A' }
+    },
+    {
+      id: '2',
+      fechaHora: new Date('2024-03-20T15:00:00').toISOString(),
+      duracion: 1,
+      estadoPago: 'PENDIENTE',
+      user: { name: 'María González', email: 'maria@ejemplo.com' },
+      cancha: { id: '2', nombre: 'Cancha F5 - B' }
+    },
+    {
+      id: '3',
+      fechaHora: new Date('2024-03-20T18:00:00').toISOString(),
+      duracion: 2,
+      estadoPago: 'PAGADO',
+      user: { name: 'Carlos Rodríguez', email: 'carlos@ejemplo.com' },
+      cancha: { id: '3', nombre: 'Cancha F7' }
+    },
+    {
+      id: '4',
+      fechaHora: new Date('2024-03-20T20:00:00').toISOString(),
+      duracion: 2,
+      estadoPago: 'PAGADO',
+      user: { name: 'Ana Silva', email: 'ana@ejemplo.com' },
+      cancha: { id: '4', nombre: 'Cancha F11' }
+    }
+  ]
+};
+
 const CalendarBox = () => {
   const [selectedBooking, setSelectedBooking] = useState<Reserva | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -48,7 +97,8 @@ const CalendarBox = () => {
   const [horarioCierre, setHorarioCierre] = useState(23);
 
   useEffect(() => {
-    fetchCalendarData();
+    setCalendarData(DEMO_CALENDAR_DATA);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -77,24 +127,6 @@ const CalendarBox = () => {
     { length: horarioCierre - horarioApertura + 1 }, 
     (_, i) => i + horarioApertura
   );
-
-  const fetchCalendarData = async () => {
-    try {
-      const response = await fetch('/api/calendar');
-      const data = await response.json();
-      console.log('Datos del calendario recibidos:', {
-        predio: data.predio,
-        cantidadCanchas: data.canchas.length,
-        canchas: data.canchas,
-        cantidadReservas: data.reservas.length
-      });
-      setCalendarData(data);
-    } catch (error) {
-      console.error('Error fetching calendar data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getBookingStyle = (estadoPago: string | null) => {
     switch (estadoPago?.toLowerCase()) {

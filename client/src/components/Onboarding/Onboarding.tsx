@@ -10,10 +10,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Clock, MapPin, Phone, Image as ImageIcon, PlusCircle } from 'lucide-react'
 import { useRouter } from "next/navigation";
 import { LocationSelector } from '@/components/Maps/LocationSelector'
-import { useSession } from 'next-auth/react'
 import { useDropzone } from 'react-dropzone'
+import axios from 'axios'
+import { api } from '@/app/libs/axios'
 
 interface Cancha {
+  id: string;
   nombre: string;
   descripcion: string;
   tipo: string;
@@ -58,7 +60,6 @@ export function OnboardingPageComponent() {
   })
   const [canchas, setCanchas] = useState<Cancha[]>([])
   const router = useRouter();
-  const { data: session } = useSession()
   const [errors, setErrors] = useState<{[key: string]: string}>({})
 
   const handleEstablecimientoChange = (
@@ -70,6 +71,7 @@ export function OnboardingPageComponent() {
 
   const handleCanchaAdd = () => {
     setCanchas(prev => [...prev, { 
+      id: crypto.randomUUID(),
       nombre: '', 
       descripcion: '', 
       tipo: '', 
@@ -79,11 +81,15 @@ export function OnboardingPageComponent() {
     }])
   }
 
-  const handleCanchaChange = (index: number, field: keyof Cancha, value: any) => {
+  const handleCanchaChange = (
+    index: number, 
+    field: keyof Cancha, 
+    value: string | number | ImageFile
+  ) => {
     setCanchas(prev => {
       const newCanchas = [...prev]
       if (!newCanchas[index]) {
-        newCanchas[index] = { nombre: '', descripcion: '', tipo: '', imagen: '', precio: 0, precioSena: 0 }
+        newCanchas[index] = { id: '', nombre: '', descripcion: '', tipo: '', imagen: '', precio: 0, precioSena: 0 }
       }
       newCanchas[index] = { ...newCanchas[index], [field]: value }
       return newCanchas
@@ -230,21 +236,15 @@ export function OnboardingPageComponent() {
           }))
         }
 
-        const response = await fetch('/api/predios', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(predioData),
-        })
+        const response = await api.post('/api/predios', predioData)
 
-        if (!response.ok) {
+        if (response.status !== 200) {
           throw new Error('Error al crear el predio')
         }
 
         router.push("/dashboard")
       } catch (error) {
-        // Aquí podrías mostrar un toast o mensaje de error
+        console.error('Error al crear el predio:', error)
       }
     }
   }
@@ -438,40 +438,40 @@ export function OnboardingPageComponent() {
                 {errors.canchas && (
                   <p className="text-red-500 text-sm">Por favor, complete todos los campos de las canchas</p>
                 )}
-                {canchas.map((cancha: Cancha, index: number) => (
-                  <Card key={index}>
+                {canchas.map((cancha: Cancha) => (
+                  <Card key={cancha.id}>
                     <CardHeader>
-                      <CardTitle className="text-lg">Cancha {index + 1}</CardTitle>
+                      <CardTitle className="text-lg">Cancha {canchas.indexOf(cancha) + 1}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
                         <div>
-                          <Label htmlFor={`cancha-nombre-${index}`}>Nombre de la Cancha</Label>
+                          <Label htmlFor={`cancha-nombre-${canchas.indexOf(cancha)}`}>Nombre de la Cancha</Label>
                           <Input
-                            id={`cancha-nombre-${index}`}
+                            id={`cancha-nombre-${canchas.indexOf(cancha)}`}
                             value={cancha.nombre}
-                            onChange={(e) => handleCanchaChange(index, 'nombre', e.target.value)}
+                            onChange={(e) => handleCanchaChange(canchas.indexOf(cancha), 'nombre', e.target.value)}
                             required
-                            className={errors.canchas && JSON.parse(errors.canchas)[index]?.nombre ? "border-red-500" : ""}
+                            className={errors.canchas && JSON.parse(errors.canchas)[canchas.indexOf(cancha)]?.nombre ? "border-red-500" : ""}
                           />
-                          {errors.canchas && JSON.parse(errors.canchas)[index]?.nombre && (
-                            <p className="text-red-500 text-sm mt-1">{JSON.parse(errors.canchas)[index].nombre}</p>
+                          {errors.canchas && JSON.parse(errors.canchas)[canchas.indexOf(cancha)]?.nombre && (
+                            <p className="text-red-500 text-sm mt-1">{JSON.parse(errors.canchas)[canchas.indexOf(cancha)].nombre}</p>
                           )}
                         </div>
                         <div>
-                          <Label htmlFor={`cancha-descripcion-${index}`}>Descripción</Label>
+                          <Label htmlFor={`cancha-descripcion-${canchas.indexOf(cancha)}`}>Descripción</Label>
                           <Textarea
-                            id={`cancha-descripcion-${index}`}
+                            id={`cancha-descripcion-${canchas.indexOf(cancha)}`}
                             value={cancha.descripcion}
-                            onChange={(e) => handleCanchaChange(index, 'descripcion', e.target.value)}
+                            onChange={(e) => handleCanchaChange(canchas.indexOf(cancha), 'descripcion', e.target.value)}
                             rows={2}
                           />
                         </div>
                         <div>
-                          <Label htmlFor={`cancha-tipo-${index}`}>Tipo de Cancha</Label>
+                          <Label htmlFor={`cancha-tipo-${canchas.indexOf(cancha)}`}>Tipo de Cancha</Label>
                           <Select
                             value={cancha.tipo}
-                            onValueChange={(value) => handleCanchaChange(index, 'tipo', value)}
+                            onValueChange={(value) => handleCanchaChange(canchas.indexOf(cancha), 'tipo', value)}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Selecciona el tipo de cancha" />
@@ -485,48 +485,48 @@ export function OnboardingPageComponent() {
                           </Select>
                         </div>
                         <div>
-                          <Label htmlFor={`cancha-imagen-${index}`}>Imagen de la Cancha</Label>
+                          <Label htmlFor={`cancha-imagen-${canchas.indexOf(cancha)}`}>Imagen de la Cancha</Label>
                           <ImageDropzone
                             value={cancha.imagen}
-                            onChange={(file) => handleCanchaChange(index, 'imagen', file)}
-                            error={errors.canchas && JSON.parse(errors.canchas)[index]?.imagen}
+                            onChange={(file) => handleCanchaChange(canchas.indexOf(cancha), 'imagen', file)}
+                            error={errors.canchas && JSON.parse(errors.canchas)[canchas.indexOf(cancha)]?.imagen}
                           />
                         </div>
                         <div className="flex space-x-4">
                           <div className="flex-1">
-                            <Label htmlFor={`cancha-precio-${index}`}>Precio Total</Label>
+                            <Label htmlFor={`cancha-precio-${canchas.indexOf(cancha)}`}>Precio Total</Label>
                             <div className="flex items-center">
                               <span className="mr-2">$</span>
                               <Input
-                                id={`cancha-precio-${index}`}
+                                id={`cancha-precio-${canchas.indexOf(cancha)}`}
                                 type="number"
                                 min="0"
                                 value={cancha.precio}
-                                onChange={(e) => handleCanchaChange(index, 'precio', e.target.value)}
+                                onChange={(e) => handleCanchaChange(canchas.indexOf(cancha), 'precio', e.target.value)}
                                 required
-                                className={errors.canchas && JSON.parse(errors.canchas)[index]?.precio ? "border-red-500" : ""}
+                                className={errors.canchas && JSON.parse(errors.canchas)[canchas.indexOf(cancha)]?.precio ? "border-red-500" : ""}
                               />
                             </div>
-                            {errors.canchas && JSON.parse(errors.canchas)[index]?.precio && (
-                              <p className="text-red-500 text-sm mt-1">{JSON.parse(errors.canchas)[index].precio}</p>
+                            {errors.canchas && JSON.parse(errors.canchas)[canchas.indexOf(cancha)]?.precio && (
+                              <p className="text-red-500 text-sm mt-1">{JSON.parse(errors.canchas)[canchas.indexOf(cancha)].precio}</p>
                             )}
                           </div>
                           
                           <div className="flex-1">
-                            <Label htmlFor={`cancha-sena-${index}`}>Precio de Seña</Label>
+                            <Label htmlFor={`cancha-sena-${canchas.indexOf(cancha)}`}>Precio de Seña</Label>
                             <div className="flex items-center">
                               <span className="mr-2">$</span>
                               <Input
-                                id={`cancha-sena-${index}`}
+                                id={`cancha-sena-${canchas.indexOf(cancha)}`}
                                 type="number"
                                 min="0"
                                 value={cancha.precioSena}
-                                onChange={(e) => handleCanchaChange(index, 'precioSena', e.target.value)}
-                                className={errors.canchas && JSON.parse(errors.canchas)[index]?.precioSena ? "border-red-500" : ""}
+                                onChange={(e) => handleCanchaChange(canchas.indexOf(cancha), 'precioSena', e.target.value)}
+                                className={errors.canchas && JSON.parse(errors.canchas)[canchas.indexOf(cancha)]?.precioSena ? "border-red-500" : ""}
                               />
                             </div>
-                            {errors.canchas && JSON.parse(errors.canchas)[index]?.precioSena && (
-                              <p className="text-red-500 text-sm mt-1">{JSON.parse(errors.canchas)[index].precioSena}</p>
+                            {errors.canchas && JSON.parse(errors.canchas)[canchas.indexOf(cancha)]?.precioSena && (
+                              <p className="text-red-500 text-sm mt-1">{JSON.parse(errors.canchas)[canchas.indexOf(cancha)].precioSena}</p>
                             )}
                           </div>
                         </div>

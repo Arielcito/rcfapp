@@ -7,6 +7,7 @@ import "../../css/style.css";
 import "@/css/satoshi.css";
 import { SessionProvider } from "next-auth/react";
 import { AuthProvider } from "../context/AuthContext";
+import DefaultLayout from '@/components/Layouts/DefaultLayout';
 
 
 export default function AdminLayout({
@@ -14,9 +15,9 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useRequireAuth();
+  const { isLoading } = useRequireAuth();
 
-  if (loading) {
+  if (isLoading) {
     return <div>Cargando...</div>;
   }
 
@@ -24,7 +25,11 @@ export default function AdminLayout({
   return (
       <AuthProvider>
         <html lang="en">
-          <body>{children}</body>
+          <body>
+            <DefaultLayout>
+              {children}
+            </DefaultLayout>
+          </body>
         </html>
       </AuthProvider>
   )
