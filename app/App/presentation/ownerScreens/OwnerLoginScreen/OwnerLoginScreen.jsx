@@ -35,10 +35,12 @@ export default function OwnerLoginScreen() {
   }
   async function Login() {
     const { email, pwd } = values;
+    console.log(listOfOwners);
     if (listOfOwners.includes(email)) {
       try {
-        await signInWithEmailAndPassword(auth, email, pwd);
-        //navigation.navigate("owner-appointments");
+        const response = await signInWithEmailAndPassword(auth, email, pwd);
+        console.log(response);
+        navigation.navigate("owner-appointments");
       } catch (error) {
         console.log(error);
         alert("Login Failed");
