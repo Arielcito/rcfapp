@@ -40,6 +40,11 @@
       ]
     ],
     "android": {
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDiNmgWgB0CGoM1EG6CT846M83bpRdso-Q"
+        }
+      },
       "intentFilters": [
         {
           "action": "VIEW",
@@ -66,6 +71,9 @@
       ]
     },
     "ios": {
+      "config": {
+        "googleMapsApiKey": "AIzaSyDiNmgWgB0CGoM1EG6CT846M83bpRdso-Q"
+      },
       "bundleIdentifier": "com.arielcito.RFCApp",
       "buildNumber": "6.0.0",
       "googleServicesFile": "./GoogleService-Info.plist",
@@ -78,6 +86,7 @@
       "eas": {
         "projectId": "3f2c002c-cc79-46b0-8b8d-d24f2126b8ca"
       }
-    }
+    },
+    "newArchEnabled": true
   }
 }
