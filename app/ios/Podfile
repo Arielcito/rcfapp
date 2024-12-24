@@ -18,6 +18,10 @@ $FirebaseSDKVersion = '10.29.0'
 
 target 'RFCApp' do
   use_expo_modules!
+  
+  # Agregar estas líneas para forzar el uso de frameworks estáticos
+  use_frameworks! :linkage => :static
+  $RNFirebaseAsStaticFramework = true
 
   if ENV['EXPO_USE_COMMUNITY_AUTOLINKING'] == '1'
     config_command = ['node', '-e', "process.argv=['', '', 'config'];require('@react-native-community/cli').run()"];
