@@ -1,6 +1,6 @@
 import { db } from '../db';
 import { reservas, pagos } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql, and, lt, gt } from 'drizzle-orm';
 import type { CreateReservaDTO, UpdateReservaDTO } from '../types/reserva';
 
 export class ReservaService {
@@ -51,6 +51,29 @@ export class ReservaService {
       return reservaActualizada[0];
     } catch (error) {
       throw new Error('Error al actualizar la reserva');
+    }
+  }
+
+  async checkReservaAvailability(canchaId: string, fechaHora: Date, duracion: number) {
+    try {
+      const fechaInicio = new Date(fechaHora);
+      const fechaFin = new Date(fechaHora);
+      fechaFin.setMinutes(fechaFin.getMinutes() + duracion);
+
+      const reservasExistentes = await db
+        .select()
+        .from(reservas)
+        .where(
+          and(
+            eq(reservas.canchaId, canchaId),
+            lt(reservas.fechaHora, fechaFin),
+            gt(sql`DATE_ADD(${reservas.fechaHora}, INTERVAL ${reservas.duracion} MINUTE)`, fechaInicio)
+          )
+        );
+
+      return reservasExistentes.length === 0;
+    } catch (error) {
+      throw new Error('Error al verificar la disponibilidad de la reserva');
     }
   }
 } 

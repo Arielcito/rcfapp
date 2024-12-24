@@ -9,63 +9,59 @@ import {
   Image,
   ToastAndroid,
 } from "react-native";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import { updateDoc, doc, setDoc, getDoc } from "firebase/firestore";
 import { useNavigation } from "@react-navigation/native";
 import { useContext } from "react";
 import Colors from "../../../infraestructure/utils/Colors";
 import { CurrentUserContext } from "../../../application/context/CurrentUserContext";
-import { FIREBASE_DB } from "../../../infraestructure/config/FirebaseConfig";
 import { getProfileInfo } from "../../../infraestructure/api/user.api";
 import defaultAvatar from "../../assets/images/avatar.png";
+import { api } from "../../../infraestructure/api/api";
 
 const EditProfileScreen = () => {
   const { user, setUser } = useContext(CurrentUserContext);
   const [name, setName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState(user.email);
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
-  const db = FIREBASE_DB;
 
   useEffect(() => {
     const fetchData = async () => {
       const userData = await getProfileInfo(user);
-      console.log(userData)
-      setName(userData.name);
-      setPhone(userData.phone.toString());
+      setName(userData.nombre);
+      setLastName(userData.apellido);
+      setPhone(userData.telefono.toString());
     };
     fetchData();
-  }, []);
+  }, [user]);
 
   const handleSave = async () => {
     try {
-      const userRef = doc(db, "users", user.email);
-      
-      const docSnap = await getDoc(userRef);
-      
+      setLoading(true);
       const userData = {
-        name: name,
-        phone: phone,
+        nombre: name,
+        apellido: lastName,
+        telefono: Number.parseInt(phone, 10),
         email: user.email,
       };
 
-      if (docSnap.exists()) {
-        await updateDoc(userRef, userData);
-      } else {
-        await setDoc(userRef, userData);
+      const response = await api.put(`/users/${user.uid}`, userData);
+
+      if (response.status === 200) {
+        setUser({
+          ...user,
+          ...response.data
+        });
+
+        ToastAndroid.show("Tus cambios han sido guardados!", ToastAndroid.LONG);
+        navigation.goBack();
       }
-
-      setUser({
-        ...user,
-        ...userData
-      });
-
-      ToastAndroid.show("Tus cambios han sido guardados!", ToastAndroid.LONG);
-      navigation.goBack();
     } catch (error) {
       console.error("Error saving profile info: ", error);
       ToastAndroid.show("Error al guardar los cambios.", ToastAndroid.LONG);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -82,12 +78,21 @@ const EditProfileScreen = () => {
       <View style={styles.body}>
         <Text style={styles.sectionTitle}>Datos proporcionados</Text>
 
-        <Text style={styles.label}>Nombre y Apellido</Text>
+        <Text style={styles.label}>Nombre</Text>
         <TextInput
           style={styles.input}
           value={name}
           onChangeText={setName}
-          placeholder="-"
+          placeholder="Nombre"
+          placeholderTextColor="#999999"
+        />
+
+        <Text style={styles.label}>Apellido</Text>
+        <TextInput
+          style={styles.input}
+          value={lastName}
+          onChangeText={setLastName}
+          placeholder="Apellido"
           placeholderTextColor="#999999"
         />
 

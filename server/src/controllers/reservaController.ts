@@ -65,4 +65,21 @@ export class ReservaController {
       });
     }
   }
+
+  async checkReservaAvailability(req: Request, res: Response) {
+    try {
+      const { canchaId, fechaHora, duracion } = req.body;
+      const disponible = await reservaService.checkReservaAvailability(canchaId, fechaHora, duracion);
+
+      res.json({
+        success: true,
+        data: { disponible }
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Error al verificar la disponibilidad de la reserva'
+      });
+    }
+  }
 } 

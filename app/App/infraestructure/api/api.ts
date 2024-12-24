@@ -1,9 +1,20 @@
 import axios from "axios";
+import env from '../config/env';
 
 export const api = axios.create({
-    baseURL: 'http://192.168.1.48:8080/api',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    withCredentials: true
-  });
+  baseURL: env.apiUrl,
+  headers: {
+    'Content-Type': 'application/json'
+  },
+});
+
+// Interceptor para manejar tokens si es necesario
+api.interceptors.request.use(
+  async (config) => {
+    // Aquí podrías agregar el token desde AsyncStorage si lo necesitas
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
