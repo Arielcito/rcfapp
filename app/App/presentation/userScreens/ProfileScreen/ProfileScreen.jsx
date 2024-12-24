@@ -2,38 +2,36 @@ import React from "react";
 import { StyleSheet, Text, View, Image, TouchableOpacity } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
-import { FIREBASE_AUTH } from "../../../infraestructure/config/FirebaseConfig";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { getProfileInfo } from "../../../infraestructure/api/user.api";
 import { CurrentUserContext } from "../../../application/context/CurrentUserContext";
-import { useContext } from "react";
 import defaultAvatar from "../../assets/images/avatar.png";
+import { api } from "../../../infraestructure/api/api";
 
 const ProfileScreen = () => {
   const navigator = useNavigation();
-  const auth = FIREBASE_AUTH;
   const { user, setUser } = useContext(CurrentUserContext);
   const [userData, setUserData] = useState(null);
 
-  useEffect( () => {
+  useEffect(() => {
     const fetchData = async () => {
-      const userData = await getProfileInfo(user);
-      setUserData(userData);
+      if (user) {
+        const userData = await getProfileInfo(user);
+        setUserData(userData);
+      }
     };
     fetchData();
-  
-  }, []);
+  }, [user]);
 
-  const signOut = () => {
-    console.log(auth)
-    auth
-      .signOut()
-      .then(() => {
-        console.log("Sign Out");
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+  const signOut = async () => {
+    try {
+      await api.post('/auth/logout');
+      setUser(null);
+      setUserData(null);
+      navigator.navigate('userLoginStack');
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
   };
 
   const getImageSource = () => {

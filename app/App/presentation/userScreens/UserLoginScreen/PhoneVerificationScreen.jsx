@@ -32,7 +32,7 @@ export default function PhoneVerificationScreen({ route, navigation }) {
       );
       await signInWithCredential(FIREBASE_AUTH, credential);
       
-      // Si la verificación es exitosa, procedemos con el registro
+      console.log(userData);
       navigation.replace('CompleteRegistration', { userData });
     } catch (err) {
       console.error(err);

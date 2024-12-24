@@ -47,15 +47,15 @@ export default function UserLoginScreen() {
 
     try {
       const response = await api.post('/users/login', {
-        email: email,
+        email: email.toLowerCase(),
         password: pwd
       });
-
+      console.log(response);
       const { user, token } = response.data;
 
       if (user.role === 'USER') {
         // Aquí podrías guardar el token en AsyncStorage si lo necesitas
-        navigation.navigate("Tabs");
+        navigation.navigate("MainApp");
       } else {
         setError("Esta cuenta no tiene permisos de usuario. Por favor, use la opción de inicio de sesión correcta.");
       }

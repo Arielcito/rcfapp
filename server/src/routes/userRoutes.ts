@@ -30,4 +30,13 @@ router.get('/:id', authenticateToken, getUserById);
 router.put('/:id', authenticateToken, updateUser);
 router.delete('/:id', authenticateToken, authorizeRole([Role.ADMIN, Role.OWNER]), deleteUser);
 
+router.post('/auth/logout', async (req, res) => {
+  try {
+    res.clearCookie('token');
+    return res.status(200).json({ message: 'Sesión cerrada exitosamente' });
+  } catch (error) {
+    return res.status(500).json({ error: 'Error al cerrar sesión' });
+  }
+});
+
 export default router;

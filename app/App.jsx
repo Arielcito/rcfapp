@@ -19,6 +19,7 @@ import Colors from "./App/infraestructure/utils/Colors";
 import { FIREBASE_AUTH } from "./App/infraestructure/config/FirebaseConfig";
 import { getProfileInfo } from "./App/infraestructure/api/user.api";
 import { fetchOwnerPlace } from "./App/infraestructure/api/places.api";
+import { api } from "./App/infraestructure/api/api";
 
 // Prevenir que la pantalla de splash se oculte automáticamente
 SplashScreen.preventAutoHideAsync();
@@ -77,10 +78,11 @@ export default function App() {
     onAuthStateChanged(FIREBASE_AUTH, async (user) => {
       if (user) {
         try {
-          const userDoc = await getProfileInfo(user);
+          const response = await api.get('/users/me');
+          const userDoc = response.data;
           setUser(userDoc);
 
-          if (userDoc.userType === "owner") {
+          if (userDoc.role === "OWNER") {
             const place = await fetchOwnerPlace(user.uid);
             setCurrentPlace(place);
           }
@@ -127,10 +129,15 @@ export default function App() {
       );
     }
 
+    if (!TabNavigation || !TabNavigationOwner || !LoginStack) {
+      console.error('Componentes de navegación no encontrados');
+      return null;
+    }
+
     return (
       <NavigationContainer>
         {user ? (
-          user.userType === "owner" ? (
+          user.role === "OWNER" ? (
             <TabNavigationOwner user={user} />
           ) : (
             <TabNavigation user={user} />
