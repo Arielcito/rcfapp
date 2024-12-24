@@ -12,7 +12,7 @@ export default function ApointmentFieldInfo({ place }) {
         }}
       >
         <Image
-          source={{ uri: place.imageUrl }}
+          source={{ uri: place.imagenUrl }}
           style={{ width: "100%", height: 200 }}
         />
         <View>

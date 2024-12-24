@@ -25,11 +25,11 @@ const PlaceItem = ({ place, selectedDate = "", selectedTime = "" }) => {
         })
       }
     >
-      <Image source={{ uri: place.imageUrl }} style={styles.image} />
+      <Image source={{ uri: place.imagenUrl }} style={styles.image} />
       <View style={styles.textContainer}>
         <View style={styles.infoContainer}>
           <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
-            {place.name}
+            {place.nombre}
           </Text>
           <Text style={styles.description} numberOfLines={2} ellipsizeMode="tail">
             {place.description}

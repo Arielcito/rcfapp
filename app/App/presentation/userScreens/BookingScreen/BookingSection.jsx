@@ -72,7 +72,7 @@ export default function BookingSection({
         </View>
         <View style={styles.detailItem}>
           <Ionicons name="location-outline" size={24} color={Colors.PRIMARY} />
-          <Text style={styles.detailText}>{place.name}</Text>
+          <Text style={styles.detailText}>{place.direccion}</Text>
         </View>
         <View style={styles.detailItem}>
           <Ionicons name="cash-outline" size={24} color={Colors.PRIMARY} />

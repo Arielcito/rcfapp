@@ -1,20 +1,20 @@
 import { collection, query, getDocs, where, DocumentData } from "firebase/firestore";
 import { FIREBASE_DB } from "../config/FirebaseConfig";
 import { Place } from "../../domain/entities/place.entity";
-
+import { api } from "./api";
 const db = FIREBASE_DB;
 
 export const getPredios = async (): Promise<Place[]> => {
   try {
-    const q = query(collection(db, "rcf-places"));
-    const querySnapshot = await getDocs(q);
-    const predios = querySnapshot.docs.map((doc) => doc.data() as Place);
-    return predios; // Asegúrate de devolver el resultado aquí
+    const response = await api.get('/predios');
+    console.log(response.data);
+    return response.data;
   } catch (error) {
     console.error("Error al obtener predios:", error);
-    return []; // Devuelve un array vacío en caso de error
+    return [];
   }
 };
+
 
 export const fetchOwnerPlace = async (ownerId: string) => {
   try {
