@@ -12,12 +12,7 @@ import {
   StatusBar,
 } from "react-native";
 import { TabView, TabBar } from "react-native-tab-view";
-import { query, collection, orderBy, where, getDocs } from "firebase/firestore";
 import Colors from "../../../infraestructure/utils/Colors";
-import {
-  FIREBASE_AUTH,
-  FIREBASE_DB,
-} from "../../../infraestructure/config/FirebaseConfig";
 import BookingItem from "./BookingItem";
 import moment from "moment";
 import { getAppointmentsByUser } from "../../../infraestructure/api/appointments.api";
@@ -38,17 +33,16 @@ const filterActiveAppointments = (appointments) => {
 
 const filterPastAppointments = (appointments) => {
   const now = moment().format("YYYY-MM-DD");
-  const currentHour = moment().format("HH");
- 
   return appointments.filter(
     (appointment) =>
-    (appointment.estado === "pendiente" || appointment.estado === "reservado") && appointment.appointmentDate >= now
+      (appointment.estado === "pendiente" || appointment.estado === "reservado") && 
+      appointment.appointmentDate >= now
   );
 };
 
 const filterCancelledAppointments = (appointments) => {
   return appointments.filter(
-    (appointment) => appointment.Estado === "Cancelado"
+    (appointment) => appointment.estado === "cancelado"
   );
 };
 
@@ -175,9 +169,6 @@ export default function MyBookingsScreen() {
 
   const [loading, setLoading] = useState(false);
   const [appList, setAppList] = useState([]);
-  const auth = FIREBASE_AUTH;
-  const user = auth.currentUser;
-
   const [appListActive, setAppListActive] = useState([]);
   const [appListPast, setAppListPast] = useState([]);
   const [appListCancelled, setAppListCancelled] = useState([]);
@@ -186,12 +177,8 @@ export default function MyBookingsScreen() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        if (!user) {
-          return;
-        }
-        let appointments = [];
-        appointments = await getAppointmentsByUser(user.email);
-
+        const appointments = await getAppointmentsByUser();
+        
         if (appointments.length === 0) {
           setLoading(false);
           return;
@@ -200,14 +187,15 @@ export default function MyBookingsScreen() {
         setAppList(appointments);
         setAppListActive(filterActiveAppointments(appointments));
         setAppListPast(filterPastAppointments(appointments));
-        setAppListCancelled(appointments);
-        setLoading(false);
+        setAppListCancelled(filterCancelledAppointments(appointments));
       } catch (error) {
         console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
-  }, [user]);
+  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea}>

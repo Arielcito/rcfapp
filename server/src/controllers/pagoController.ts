@@ -48,7 +48,7 @@ export class PagoController {
       });
     }
   }
-
+  
   async updatePago(req: Request, res: Response) {
     try {
       const { id } = req.params;

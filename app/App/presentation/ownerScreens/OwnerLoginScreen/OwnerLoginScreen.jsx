@@ -1,28 +1,20 @@
 import { View, Text, StyleSheet, TextInput, ImageBackground } from "react-native";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { TouchableOpacity } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import Colors from "../../../infraestructure/utils/Colors";
 import { useNavigation } from "@react-navigation/native";
-import { FIREBASE_AUTH, FIREBASE_DB } from "../../../infraestructure/config/FirebaseConfig";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import getListOfOwners from "../../../infraestructure/api/listOfOwners.api";
+import { api } from "../../../infraestructure/api/api";
+
 WebBrowser.maybeCompleteAuthSession();
+
 export default function OwnerLoginScreen() {
   const [values, setValues] = useState({
     email: "",
     pwd: "",
   });
-  const auth = FIREBASE_AUTH;
-  const [listOfOwners, setListOfOwners] = useState([]);
   
-  useEffect(() => {
-    const fetchListOfOwners = async () => {
-      const list = await getListOfOwners();
-      setListOfOwners(list.map(owner => owner.email));
-    };
-    fetchListOfOwners();
-  }, []);
+  const navigation = useNavigation();
   const image = require("../../assets/images/geometrias-circulares.png");
 
   function handleChange(text, eventName) {
@@ -33,20 +25,35 @@ export default function OwnerLoginScreen() {
       };
     });
   }
+
   async function Login() {
     const { email, pwd } = values;
-    console.log(listOfOwners);
-    if (listOfOwners.includes(email)) {
-      try {
-        const response = await signInWithEmailAndPassword(auth, email, pwd);
-        console.log(response);
-        navigation.navigate("owner-appointments");
-      } catch (error) {
-        console.log(error);
-        alert("Login Failed");
+    
+    try {
+      const response = await api.post('/users/login', {
+        email: email.toLocaleLowerCase(),
+        password: pwd
+      });
+
+      const userData = response.data.user;
+      console.log(userData)
+      
+      if (userData.role !== 'OWNER') {
+        alert('No tienes permisos de propietario');
+        return;
       }
-    } else {
-      alert("You are not an owner");
+
+      navigation.navigate("TabOwnerNavigation");
+      
+    } catch (error) {
+      console.error('Error de login:', error);
+      if (error.response?.status === 401) {
+        alert('Credenciales incorrectas');
+      } else if (error.response?.status === 403) {
+        alert('No tienes permisos de propietario');
+      } else {
+        alert('Error al iniciar sesión');
+      }
     }
   }
 
@@ -60,12 +67,10 @@ export default function OwnerLoginScreen() {
       <View
         style={styles.containter}
       >
-        <Text style={styles.heading}>Gestiona tus  
-          <Text style={{color:Colors.PRIMARY}}>
-
-           alquileres  
-          </Text>
-          
+      <Text style={styles.heading}>Gestiona tus{' '}
+        <Text style={{color:Colors.PRIMARY}}>
+          {' '}alquileres{' '}
+        </Text>
           y crece tu negocio!</Text>
         <View
           style={{
@@ -113,7 +118,7 @@ const styles = StyleSheet.create({
   image: {
     position: "relative",
     top: 0,
-    right: -100,
+    right: -150,
     height: 200,
   },
   bgImage: {
@@ -147,7 +152,6 @@ const styles = StyleSheet.create({
     fontFamily: "montserrat",
     marginTop: 15,
     textAlign: "center",
-    color: "#000",
     color: Colors.GRAY,
   },
   button: {

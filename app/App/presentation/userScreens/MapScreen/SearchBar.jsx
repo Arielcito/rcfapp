@@ -1,9 +1,10 @@
-import { View, Text } from 'react-native'
+import { View } from 'react-native'
 import React from 'react'
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../../infraestructure/utils/Colors';
-
+import 'react-native-get-random-values';
+import { useEffect } from 'react';
 export default function SearchBar({searchedLocation}) {
     
   return (
@@ -20,14 +21,14 @@ export default function SearchBar({searchedLocation}) {
        <GooglePlacesAutocomplete
         placeholder='Donde queres jugar?'
         fetchDetails={true}
+        enablePoweredByContainer={false}
         onPress={(data, details = null) => {
-
             searchedLocation(details?.geometry?.location)
         }}
-      query={{
-        key: 'AIzaSyDiNmgWgB0CGoM1EG6CT846M83bpRdso-Q',
-        language: 'es',
-      }}
+        query={{
+          key: 'AIzaSyDiNmgWgB0CGoM1EG6CT846M83bpRdso-Q',
+          language: 'es',
+        }}
     />
     </View>
   )

@@ -17,6 +17,7 @@ const ProfileScreen = () => {
     const fetchData = async () => {
       if (user) {
         const userData = await getProfileInfo(user);
+        console.log(userData)
         setUserData(userData);
       }
     };
@@ -26,6 +27,7 @@ const ProfileScreen = () => {
   const signOut = async () => {
     try {
       await api.post('/auth/logout');
+      await AsyncStorage.removeItem('userToken');
       setUser(null);
       setUserData(null);
       navigator.navigate('userLoginStack');

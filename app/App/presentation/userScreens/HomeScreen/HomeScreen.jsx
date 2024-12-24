@@ -16,7 +16,7 @@ import Colors from "../../../infraestructure/utils/Colors";
 import PlaceItem from "../../components/PlaceItem";
 import { getDays, getTime } from "../../../infraestructure/utils/TimeDate";
 import { getPredios } from "../../../infraestructure/api/places.api";
-import { getAppointmentsByDate } from "../../../infraestructure/api/appointments.api";
+import { getAvailableTimes } from "../../../infraestructure/api/appointments.api";
 import { useFocusEffect } from '@react-navigation/native';
 import { Dimensions } from 'react-native';
 
@@ -75,16 +75,24 @@ export default function HomeScreen() {
     setLoading(true);
     try {
       const predios = await getPredios();
-      let bookedPlaces = await getAppointmentsByDate(selectedDate, selectedTime);
-
-      bookedPlaces = bookedPlaces.map((place) => place.cancha);
-      const filteredPlaceList = bookedPlaces.length > 0
-        ? predios.filter((place) => !bookedPlaces.includes(place.id))
-        : predios;
       
-      setPlaceList(filteredPlaceList);
+      const fecha = next7Days.find(day => day.date === selectedDate);
+      if (!fecha) return;
+      
+      const fechaFormateada = `${fecha.year}-${String(fecha.month).padStart(2, '0')}-${String(fecha.date).padStart(2, '0')}`;
+      const horariosDisponibles = await getAvailableTimes(fechaFormateada);
+      const horaSeleccionada = `${String(selectedTime).padStart(2, '0')}`;
+      const horaEstaDisponible = horariosDisponibles.includes(horaSeleccionada);
+      console.log(horaEstaDisponible)
+      if (!horaEstaDisponible) {
+        setPlaceList([]);
+        return;
+      }
+      
+      setPlaceList(predios);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("Error al obtener datos:", error);
+      setPlaceList([]);
     } finally {
       setLoading(false);
     }
