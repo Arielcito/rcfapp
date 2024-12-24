@@ -3,9 +3,9 @@ import { View, StyleSheet, ActivityIndicator } from "react-native";
 import * as Font from "expo-font";
 import { NavigationContainer } from "@react-navigation/native";
 import * as Location from "expo-location";
-import { onAuthStateChanged } from "firebase/auth";
 import Toast from "react-native-toast-message";
 import * as SplashScreen from 'expo-splash-screen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import TabNavigation from "./App/presentation/navigations/TabUserNavigation";
 import TabNavigationOwner from "./App/presentation/navigations/TabOwnerNavigation";
@@ -16,8 +16,6 @@ import { CurrentUserContext } from "./App/application/context/CurrentUserContext
 import { CurrentPlaceContext } from "./App/application/context/CurrentPlaceContext";
 
 import Colors from "./App/infraestructure/utils/Colors";
-import { FIREBASE_AUTH } from "./App/infraestructure/config/FirebaseConfig";
-import { getProfileInfo } from "./App/infraestructure/api/user.api";
 import { fetchOwnerPlace } from "./App/infraestructure/api/places.api";
 import { api } from "./App/infraestructure/api/api";
 
@@ -41,7 +39,7 @@ export default function App() {
         await Promise.all([
           loadFonts(),
           loadLocation(),
-          loadUser(),
+          checkAuthStatus(),
         ]);
       } catch (e) {
         console.warn(e);
@@ -73,28 +71,50 @@ export default function App() {
     setLocation(location.coords);
   };
 
-  const loadUser = async () => {
+  const checkAuthStatus = async () => {
     setIsLoadingUser(true);
-    onAuthStateChanged(FIREBASE_AUTH, async (user) => {
-      if (user) {
-        try {
-          const response = await api.get('/users/me');
-          const userDoc = response.data;
-          setUser(userDoc);
-
-          if (userDoc.role === "OWNER") {
-            const place = await fetchOwnerPlace(user.uid);
-            setCurrentPlace(place);
-          }
-        } catch (error) {
-          console.error("Error al obtener información del perfil: ", error);
-        }
-      } else {
-        console.log("No se encontró información del usuario");
+    try {
+      // Verificar si existe un token almacenado
+      const token = await AsyncStorage.getItem('userToken');
+      
+      if (!token) {
         setUser(null);
+        setIsLoadingUser(false);
+        return;
       }
+
+      // Verificar si el token es válido y obtener información del usuario
+      const response = await api.get('/users/me');
+      const userData = response.data;
+      
+      if (userData) {
+        setUser(userData);
+        
+        // Si es un propietario, cargar información de su lugar
+        if (userData.role === "OWNER") {
+          const place = await fetchOwnerPlace(userData.id);
+          setCurrentPlace(place);
+        }
+      }
+    } catch (error) {
+      console.error("Error al verificar el estado de autenticación:", error);
+      // Si hay un error (token inválido o expirado), limpiar el almacenamiento
+      await AsyncStorage.removeItem('userToken');
+      setUser(null);
+    } finally {
       setIsLoadingUser(false);
-    });
+    }
+  };
+
+  // Función para manejar el logout globalmente
+  const handleLogout = async () => {
+    try {
+      await api.post('/users/auth/logout');
+      await AsyncStorage.removeItem('userToken');
+      setUser(null);
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
   };
 
   const onLayoutRootView = useCallback(async () => {
@@ -110,7 +130,7 @@ export default function App() {
   return (
     <View style={styles.container} onLayout={onLayoutRootView}>
       <UserLocationContext.Provider value={{ location, setLocation }}>
-        <CurrentUserContext.Provider value={{ user, setUser }}>
+        <CurrentUserContext.Provider value={{ user, setUser, handleLogout }}>
           <CurrentPlaceContext.Provider value={{ currentPlace, setCurrentPlace }}>
             <Toast />
             {renderContent()}
@@ -129,18 +149,13 @@ export default function App() {
       );
     }
 
-    if (!TabNavigation || !TabNavigationOwner || !LoginStack) {
-      console.error('Componentes de navegación no encontrados');
-      return null;
-    }
-
     return (
       <NavigationContainer>
         {user ? (
           user.role === "OWNER" ? (
-            <TabNavigationOwner user={user} />
+            <TabNavigationOwner />
           ) : (
-            <TabNavigation user={user} />
+            <TabNavigation />
           )
         ) : (
           <LoginStack />

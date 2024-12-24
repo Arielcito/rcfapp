@@ -1,4 +1,5 @@
 import React from "react";
+import { Platform } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Colors from "../../infraestructure/utils/Colors";
@@ -117,14 +118,16 @@ const UserTabs = () => (
         tabBarIcon: () => <CalendarIcon width={25} height={25} />,
       }}
     />
-     <Tab.Screen
-      name="mapStack"
-      component={MapStack}
-      options={{
-        ...tabScreenOptions,
-        tabBarIcon: () => <UbicationIcon width={25} height={25} />,
-      }}
-    /> 
+    {Platform.OS === 'android' && (
+      <Tab.Screen
+        name="mapStack"
+        component={MapStack}
+        options={{
+          ...tabScreenOptions,
+          tabBarIcon: () => <UbicationIcon width={25} height={25} />,
+        }}
+      />
+    )}
     <Tab.Screen
       name="myBookingStack"
       component={BookingStack}

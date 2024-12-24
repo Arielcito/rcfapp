@@ -28,7 +28,7 @@ export default function UserLoginScreen() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
-  const auth = FIREBASE_AUTH;
+
   const image = require("../../assets/images/geometrias-circulares.png");
 
   function handleChange(text, eventName) {
@@ -50,12 +50,13 @@ export default function UserLoginScreen() {
         email: email.toLowerCase(),
         password: pwd
       });
-      console.log(response);
       const { user, token } = response.data;
 
       if (user.role === 'USER') {
-        // Aquí podrías guardar el token en AsyncStorage si lo necesitas
-        navigation.navigate("MainApp");
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'TabUserNavigation' }],
+        });
       } else {
         setError("Esta cuenta no tiene permisos de usuario. Por favor, use la opción de inicio de sesión correcta.");
       }

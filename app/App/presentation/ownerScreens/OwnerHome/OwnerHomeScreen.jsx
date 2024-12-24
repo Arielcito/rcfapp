@@ -57,6 +57,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f0f0f0',
+    paddingTop: 50,
   },
   header: {
     flexDirection: 'row',
@@ -65,6 +66,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
+    marginHorizontal: 10,
   },
   profilePic: {
     width: 40,
@@ -90,6 +92,7 @@ const styles = StyleSheet.create({
     margin: 20,
     padding: 20,
     borderRadius: 20,
+    marginHorizontal: 20,
   },
   chartTitle: {
     fontSize: 18,

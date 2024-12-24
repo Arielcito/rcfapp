@@ -23,6 +23,7 @@ import Colors from "../../../infraestructure/utils/Colors";
 import { useEffect } from "react";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import CashImage from "../../assets/images/cash.png";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get("window");
 
@@ -45,8 +46,15 @@ export default function PaymentScreen() {
   console.log(selectedTime)
   const navigator = useNavigation();
   const formatDate = moment(date).format("YYYY-MM-DD");
-  const auth = FIREBASE_AUTH;
-  const user = auth.currentUser;
+  const [userToken, setUserToken] = useState(null);
+
+  useEffect(() => {
+    const getUserToken = async () => {
+      const token = await AsyncStorage.getItem('userToken');
+      setUserToken(token);
+    };
+    getUserToken();
+  }, []);
 
   const bookAppointment = async (paymentMethod) => {
     setLoading(true);
@@ -54,22 +62,12 @@ export default function PaymentScreen() {
     try {
       const formattedDate = moment(date).format("YYYY-MM-DD");
 
-      const appointmentData = {
-        appointmentId: Date.now(),
-        place: place.place,
-        cancha: 1,
-        appointmentDate: formattedDate,
-        appointmentTime: selectedTime,
-        email: user.email,
-        estado: "pendiente",
-        paymentMethod: paymentMethod,
-      };
-
+      // Primero verificamos disponibilidad
       const checkResponse = await fetch(`${API_BASE_URL}/reservas/check`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.token}`
+          'Authorization': `Bearer ${userToken}`
         },
         body: JSON.stringify({
           cancha: 1,
@@ -78,35 +76,64 @@ export default function PaymentScreen() {
         })
       });
 
-      const checkData = await checkResponse.json();
-
       if (!checkResponse.ok) {
-        ToastAndroid.show(
-          "Ya existe una cita en esta cancha para la fecha y hora seleccionada.",
-          ToastAndroid.LONG
-        );
-        setLoading(false);
-        return;
+        throw new Error('La cancha no está disponible para este horario');
       }
 
-      const response = await fetch(`${API_BASE_URL}/reservas`, {
+      // Creamos el pago
+      const pagoResponse = await fetch(`${API_BASE_URL}/pagos`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.token}`
+          'Authorization': `Bearer ${userToken}`
         },
-        body: JSON.stringify(appointmentData)
+        body: JSON.stringify({
+          monto: 30000, // Total del pago
+          metodoPago: paymentMethod,
+          estado: 'pendiente',
+          detallesPago: selectedPaymentMethod === 'tarjeta' ? {
+            numeroTarjeta: cardNumber,
+            nombreTitular: cardName,
+            fechaVencimiento: expiryDate,
+            cvv: cvv
+          } : null
+        })
       });
 
-      if (!response.ok) {
+      if (!pagoResponse.ok) {
+        throw new Error('Error al procesar el pago');
+      }
+
+      const pagoData = await pagoResponse.json();
+
+      // Creamos la reserva con el ID del pago
+      const reservaResponse = await fetch(`${API_BASE_URL}/reservas`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userToken}`
+        },
+        body: JSON.stringify({
+          appointmentId: Date.now(),
+          place: place.place,
+          cancha: 1,
+          appointmentDate: formattedDate,
+          appointmentTime: selectedTime,
+          estado: "pendiente",
+          metodoPago: paymentMethod,
+          pagoId: pagoData.id
+        })
+      });
+
+      if (!reservaResponse.ok) {
         throw new Error('Error al crear la reserva');
       }
 
-      const createdReserva = await response.json();
+      const createdReserva = await reservaResponse.json();
       navigator.navigate("successScreen", { appointmentData: createdReserva });
 
     } catch (error) {
-      console.error("Error agendando:", error);
+      console.error("Error en la reserva:", error);
       ToastAndroid.show(error.message, ToastAndroid.LONG);
     } finally {
       setLoading(false);
@@ -119,13 +146,12 @@ export default function PaymentScreen() {
         case "Mercado Pago": {
           const data = await handleIntegrationMP(place);
           if (!data) {
-            return console.log("Ha ocurrido un error");
+            throw new Error("Error al procesar pago con Mercado Pago");
           }
           const response = await openBrowserAsync(data);
-          console.log(response);
-
+          
           if (response.type === "cancel") {
-            return console.log("El usuario ha cancelado el pago");
+            throw new Error("Pago cancelado por el usuario");
           }
           await bookAppointment("Mercado Pago");
           break;
@@ -135,20 +161,18 @@ export default function PaymentScreen() {
           break;
         }
         case "tarjeta": {
+          if (!cardNumber || !cardName || !expiryDate || !cvv) {
+            throw new Error("Por favor complete todos los campos de la tarjeta");
+          }
           await bookAppointment("Tarjeta");
           break;
         }
         default:
           throw new Error("Método de pago no válido");
       }
-      
-      await bookAppointment();
     } catch (error) {
       console.error("Error en el pago:", error);
-      ToastAndroid.show(
-        `Ha ocurrido un error: ${error.message}`,
-        ToastAndroid.LONG
-      );
+      ToastAndroid.show(error.message, ToastAndroid.LONG);
     }
   };
 
