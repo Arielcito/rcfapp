@@ -39,5 +39,6 @@ Config.js
 android/gradle.properties
 android/app/my-upload-key.keystore
 
+# Variables de entorno
 .env
-android
+.env.*

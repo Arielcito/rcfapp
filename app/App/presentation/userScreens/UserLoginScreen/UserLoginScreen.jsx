@@ -17,6 +17,7 @@ import {
   FIREBASE_AUTH,
   FIREBASE_DB,
 } from "../../../infraestructure/config/FirebaseConfig";
+import { api } from "../../../infraestructure/api/api";
 
 
 export default function UserLoginScreen() {
@@ -45,30 +46,18 @@ export default function UserLoginScreen() {
     setLoading(true);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, pwd);
-      const user = userCredential._tokenResponse;
+      const response = await api.post('/users/login', {
+        email: email,
+        password: pwd
+      });
 
-      // Verificar el tipo de usuario
-      const userDoc = await getDocs(
-        query(collection(FIREBASE_DB, "users"), where("email", "==", user.email))
-      );
+      const { user, token } = response.data;
 
-      console.log(userDoc);
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        if (userData.userType === "user") {
-          navigation.navigate("Tabs");
-        } else {
-          setError(
-            "Esta cuenta no tiene permisos de usuario. Por favor, use la opción de inicio de sesión correcta."
-          );
-          await auth.signOut(); // Cerrar sesión si no es un usuario válido
-        }
+      if (user.role === 'USER') {
+        // Aquí podrías guardar el token en AsyncStorage si lo necesitas
+        navigation.navigate("Tabs");
       } else {
-        setError(
-          "No se encontró información del usuario. Por favor, contacte al soporte."
-        );
-        await auth.signOut();
+        setError("Esta cuenta no tiene permisos de usuario. Por favor, use la opción de inicio de sesión correcta.");
       }
     } catch (error) {
       console.log(error);

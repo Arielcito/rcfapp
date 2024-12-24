@@ -42,7 +42,7 @@ const SuccessScreen = () => {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardHeaderText}>
-              {appointmentData?.place.name}
+              {appointmentData?.place.nombre}
             </Text>
           </View>
           <View style={styles.cardContent}>

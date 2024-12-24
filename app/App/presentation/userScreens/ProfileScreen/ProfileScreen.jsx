@@ -57,7 +57,7 @@ const ProfileScreen = () => {
               source={getImageSource()}
             />
             <View style={styles.profileText}>
-              <Text style={styles.profileName}>{userData?.name || "Cargando..."}</Text>
+              <Text style={styles.profileName}>{userData?.nombre || "Cargando..."}</Text>
               <Text style={styles.profileEmail}>{userData?.email || "Cargando..."}</Text>
             </View>
             <TouchableOpacity
