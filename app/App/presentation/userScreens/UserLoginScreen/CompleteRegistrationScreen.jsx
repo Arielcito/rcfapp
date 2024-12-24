@@ -1,50 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { FIREBASE_AUTH, FIREBASE_DB } from '../../../infraestructure/config/FirebaseConfig';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
 import Colors from '../../../infraestructure/utils/Colors';
+import { api } from '../../../infraestructure/api/api';
 
 export default function CompleteRegistrationScreen({ route, navigation }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { userData } = route.params;
 
-  async function finalizeRegistration() {
+  const finalizeRegistration = useCallback(async () => {
     setLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(
-        FIREBASE_AUTH,
-        userData.email,
-        userData.pwd
-      );
-
-      await setDoc(doc(FIREBASE_DB, 'users', userCredential.user.uid), {
+      await api.post('/users/register', {
         email: userData.email.toLowerCase(),
+        password: userData.pwd,
         name: userData.name,
         phone: userData.phone,
-        userType: 'user',
         phoneVerified: true,
       });
 
-      navigation.navigate('Tabs');
+      navigation.navigate('MainApp');
     } catch (error) {
       console.error("Error en el registro final:", error);
       setError('Error al crear la cuenta. Por favor, intente nuevamente.');
     } finally {
       setLoading(false);
     }
-  }
+  }, [userData, navigation]);
 
-  // Iniciar el registro automáticamente cuando se carga la pantalla
   React.useEffect(() => {
     finalizeRegistration();
-  }, []);
+  }, [finalizeRegistration]);
 
   return (
     <View style={styles.container}>

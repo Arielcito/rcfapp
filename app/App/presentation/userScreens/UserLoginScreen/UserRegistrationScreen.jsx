@@ -15,6 +15,7 @@ import { FIREBASE_AUTH, FIREBASE_DB } from '../../../infraestructure/config/Fire
 import { PhoneAuthProvider } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import Colors from '../../../infraestructure/utils/Colors';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function UserRegistrationScreen() {
   const [values, setValues] = useState({
@@ -44,8 +45,8 @@ export default function UserRegistrationScreen() {
   }
 
   function validateInputs() {
+    const newErrors = {};
     let isValid = true;
-    let newErrors = {};
 
     if (values.name.trim().length < 2) {
       newErrors.name = 'El nombre debe tener al menos 2 caracteres';
@@ -85,7 +86,25 @@ export default function UserRegistrationScreen() {
     try {
       const phoneNumberWithCode = `+54${values.phone}`;
       
-      // Obtener el verificationId usando el recaptcha
+      // Verificar si el email ya existe
+      const response = await fetch('YOUR_API_URL/users/check-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: values.email })
+      });
+      
+      const data = await response.json();
+      if (!response.ok) {
+        setErrors(prev => ({
+          ...prev,
+          email: data.message || 'Error al verificar el email'
+        }));
+        return;
+      }
+
+      // Si el email no existe, continuar con la verificación del teléfono
       const verificationId = await new PhoneAuthProvider(FIREBASE_AUTH)
         .verifyPhoneNumber(
           phoneNumberWithCode,
@@ -98,10 +117,10 @@ export default function UserRegistrationScreen() {
       });
 
     } catch (error) {
-      console.error("Error al enviar el código de verificación:", error);
+      console.error("Error:", error);
       setErrors(prev => ({
         ...prev,
-        phone: 'Error al enviar el código de verificación. Por favor, verifica el número.',
+        general: error?.response?.data?.message || 'Error al procesar la solicitud. Por favor, intente nuevamente.'
       }));
     } finally {
       setLoading(false);
@@ -119,6 +138,14 @@ export default function UserRegistrationScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Botón de retroceso */}
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color={Colors.PRIMARY} />
+      </TouchableOpacity>
+
       {/* Agregar el componente de Recaptcha */}
       <FirebaseRecaptchaVerifierModal
         ref={recaptchaVerifier}
@@ -154,7 +181,7 @@ export default function UserRegistrationScreen() {
           placeholder="Contraseña"
           onChangeText={(text) => handleChange(text, 'pwd')}
           value={values.pwd}
-          secureTextEntry={true}
+          secureTextEntry={false}
           autoCapitalize="none"
         />
         {errors.pwd && <Text style={styles.errorText}>{errors.pwd}</Text>}
@@ -164,7 +191,7 @@ export default function UserRegistrationScreen() {
           placeholder="Confirmar Contraseña"
           onChangeText={(text) => handleChange(text, 'confirmPwd')}
           value={values.confirmPwd}
-          secureTextEntry={true}
+          secureTextEntry={false}
           autoCapitalize="none"
         />
         {errors.confirmPwd && <Text style={styles.errorText}>{errors.confirmPwd}</Text>}
@@ -336,5 +363,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 2,
     elevation: 2,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    zIndex: 1,
+    padding: 10,
   },
 });

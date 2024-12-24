@@ -4,17 +4,17 @@ const ENV = {
   dev: {
     apiUrl: 'http://localhost:8080/api',
     firebase: {
-      apiKey: "tu-api-key",
-      authDomain: "tu-auth-domain.firebaseapp.com",
-      projectId: "tu-project-id",
-      storageBucket: "tu-storage-bucket.appspot.com",
-      messagingSenderId: "tu-messaging-sender-id",
-      appId: "tu-app-id",
-      measurementId: "tu-measurement-id"
+      apiKey: "AIzaSyC63HcJiZPxNDxCSwFm0258ctV0ILQDjRc",
+      authDomain: "rfc-app-11121.firebaseapp.com",
+      projectId: "rfc-app-11121",
+      storageBucket: "rfc-app-11121.appspot.com",
+      messagingSenderId: "12092366512",
+      appId: "1:12092366512:web:4322f9e05508567035a575",
+      measurementId: "G-4XD97Z168J"
     }
   },
   prod: {
-    apiUrl: 'https://tu-produccion-api.com/api',
+    apiUrl: 'https://rrrfc-app-11121.web.app/api',
     firebase: {
       apiKey: process.env.FIREBASE_API_KEY,
       authDomain: process.env.FIREBASE_AUTH_DOMAIN,
