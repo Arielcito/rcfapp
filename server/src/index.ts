@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 8080;
 
 // Configuración de CORS
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -25,23 +25,6 @@ app.use(cors({
 
 app.use(cookieParser()); // Para manejar cookies
 app.use(express.json());
-
-// Middleware de logging para todas las peticiones
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  console.log('Headers:', req.headers);
-  console.log('Body:', req.body);
-  console.log('Cookies:', req.cookies);
-  
-  // Interceptar la respuesta para loggear
-  const oldJson = res.json;
-  res.json = function(body) {
-    console.log('Response:', body);
-    return oldJson.call(this, body);
-  };
-  
-  next();
-});
 
 // Routes
 app.use('/api/users', userRoutes);

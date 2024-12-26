@@ -16,6 +16,7 @@ import { PhoneAuthProvider } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import Colors from '../../../infraestructure/utils/Colors';
 import { Ionicons } from '@expo/vector-icons';
+import { api } from '../../../infraestructure/api/api';
 
 export default function UserRegistrationScreen() {
   const [values, setValues] = useState({
@@ -86,25 +87,10 @@ export default function UserRegistrationScreen() {
     try {
       const phoneNumberWithCode = `+54${values.phone}`;
       
-      // Verificar si el email ya existe
-      const response = await fetch('YOUR_API_URL/users/check-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: values.email })
+      await api.post('/users/check-email', {
+        email: values.email
       });
-      
-      const data = await response.json();
-      if (!response.ok) {
-        setErrors(prev => ({
-          ...prev,
-          email: data.message || 'Error al verificar el email'
-        }));
-        return;
-      }
 
-      // Si el email no existe, continuar con la verificación del teléfono
       const verificationId = await new PhoneAuthProvider(FIREBASE_AUTH)
         .verifyPhoneNumber(
           phoneNumberWithCode,
@@ -116,11 +102,12 @@ export default function UserRegistrationScreen() {
         userData: values
       });
 
-    } catch (error) {
-      console.error("Error:", error);
+    } catch (err) {
+      console.error("Error:", err);
       setErrors(prev => ({
         ...prev,
-        general: error?.response?.data?.message || 'Error al procesar la solicitud. Por favor, intente nuevamente.'
+        email: err?.response?.data?.message || 'Error al verificar el email',
+        general: 'Error al procesar la solicitud. Por favor, intente nuevamente.'
       }));
     } finally {
       setLoading(false);
@@ -181,7 +168,7 @@ export default function UserRegistrationScreen() {
           placeholder="Contraseña"
           onChangeText={(text) => handleChange(text, 'pwd')}
           value={values.pwd}
-          secureTextEntry={false}
+          secureTextEntry={true}
           autoCapitalize="none"
         />
         {errors.pwd && <Text style={styles.errorText}>{errors.pwd}</Text>}
@@ -191,7 +178,7 @@ export default function UserRegistrationScreen() {
           placeholder="Confirmar Contraseña"
           onChangeText={(text) => handleChange(text, 'confirmPwd')}
           value={values.confirmPwd}
-          secureTextEntry={false}
+          secureTextEntry={true}
           autoCapitalize="none"
         />
         {errors.confirmPwd && <Text style={styles.errorText}>{errors.confirmPwd}</Text>}

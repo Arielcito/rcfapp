@@ -10,7 +10,8 @@ import {
   login,
   register,
   logout,
-  getCurrentUser
+  getCurrentUser,
+  checkEmail
 } from '../controllers/userController';
 
 const router = express.Router();
@@ -19,6 +20,7 @@ const router = express.Router();
 router.post('/login', login);
 router.post('/register', register);
 router.post('/logout', logout);
+router.post('/check-email', checkEmail);
 
 // Ruta protegida para obtener usuario actual
 router.get('/me', authenticateToken, getCurrentUser);

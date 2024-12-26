@@ -2,6 +2,9 @@ import type { Request, Response, NextFunction } from 'express';
 import * as userService from '../services/userService';
 import type { UserCreationData, UserUpdateData } from '../types/user';
 import { logger } from '../utils/logger';
+import { db } from '../db';
+import { users } from '../db/schema';
+import { eq } from 'drizzle-orm';
 
 export const createUser = async (
   req: Request,
@@ -178,5 +181,33 @@ export const getCurrentUser = async (
   } catch (error) {
     logger.error('Error al obtener usuario actual:', error);
     next(error);
+  }
+};
+
+export const checkEmail = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    // Verificar si el email ya existe usando drizzle
+    const existingUser = await db.select()
+      .from(users)
+      .where(eq(users.email, email.toLowerCase()))
+      .limit(1);
+
+    if (existingUser.length > 0) {
+      return res.status(400).json({
+        message: 'Este email ya está registrado'
+      });
+    }
+
+    return res.status(200).json({
+      message: 'Email disponible'
+    });
+
+  } catch (error) {
+    console.error('Error al verificar email:', error);
+    return res.status(500).json({
+      message: 'Error al verificar el email'
+    });
   }
 };
