@@ -24,7 +24,7 @@ export default function CompleteRegistrationScreen({ route, navigation }) {
         phoneVerified: true,
       });
 
-      navigation.navigate('Tabs');
+      navigation.navigate('TabUserNavigation');
     } catch (error) {
       console.error("Error en el registro final:", error);
       setError('Error al crear la cuenta. Por favor, intente nuevamente.');
