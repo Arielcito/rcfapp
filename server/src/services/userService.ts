@@ -75,13 +75,35 @@ export const deleteUser = async (id: string): Promise<void> => {
 };
 
 export const loginUser = async (email: string, password: string) => {
+  logger.info('=== Inicio proceso de login ===');
   logger.info(`Buscando usuario con email: ${email}`);
-  const [user] = await db.select().from(users).where(eq(users.email, email));
+  
+  // Obtener usuario con todos los campos necesarios
+  const [user] = await db.select({
+    id: users.id,
+    name: users.name,
+    email: users.email,
+    role: users.role,
+    password: users.password,
+    emailVerified: users.emailVerified,
+    image: users.image,
+    predioTrabajo: users.predioTrabajo,
+    createdAt: users.createdAt
+  })
+  .from(users)
+  .where(eq(users.email, email));
 
   if (!user) {
     logger.warn(`Usuario no encontrado para email: ${email}`);
     throw new Error('Usuario no encontrado');
   }
+
+  logger.info(`Usuario encontrado: ${JSON.stringify({
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    name: user.name
+  })}`);
 
   logger.info('Verificando contraseña');
   const isValidPassword = await bcrypt.compare(password, user.password || '');
@@ -97,8 +119,10 @@ export const loginUser = async (email: string, password: string) => {
     { expiresIn: '24h' }
   );
 
+  // Excluir la contraseña del objeto de usuario
   const { password: _, ...userWithoutPassword } = user;
-  logger.info('Login completado exitosamente');
+  logger.info(`Login completado exitosamente. Datos del usuario: ${JSON.stringify(userWithoutPassword)}`);
+  logger.info('=== Fin proceso de login ===');
 
   return {
     user: userWithoutPassword,
@@ -155,6 +179,9 @@ export const registerUser = async (userData: UserCreationData) => {
 };
 
 export const getCurrentUserById = async (userId: string) => {
+  logger.info('=== Obteniendo usuario actual ===');
+  logger.info(`Buscando usuario con ID: ${userId}`);
+
   const [user] = await db.select({
     id: users.id,
     name: users.name,
@@ -165,8 +192,12 @@ export const getCurrentUserById = async (userId: string) => {
   .where(eq(users.id, userId));
 
   if (!user) {
+    logger.error(`Usuario no encontrado con ID: ${userId}`);
     throw new Error('Usuario no encontrado');
   }
+
+  logger.info(`Usuario encontrado: ${JSON.stringify(user)}`);
+  logger.info('=== Fin obtención usuario actual ===');
 
   return user;
 };

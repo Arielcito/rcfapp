@@ -11,6 +11,9 @@ export interface Cancha {
   iluminacion: boolean | null;
   cesped: boolean | null;
   createdAt: Date | null;
+  precio: number;
+  requiereSeña: boolean;
+  montoSeña: number;
 }
 
 export interface CanchaCreationData {
@@ -24,6 +27,9 @@ export interface CanchaCreationData {
   techado?: boolean | null;
   iluminacion?: boolean | null;
   cesped?: boolean | null;
+  precio: number;
+  requiereSeña: boolean;
+  montoSeña: number;
 }
 
 export interface CanchaUpdateData extends Partial<CanchaCreationData> {}

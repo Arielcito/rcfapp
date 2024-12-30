@@ -5,24 +5,22 @@ import { NavigationContainer } from "@react-navigation/native";
 import * as Location from "expo-location";
 import Toast from "react-native-toast-message";
 import * as SplashScreen from 'expo-splash-screen';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import TabNavigation from "./App/presentation/navigations/TabUserNavigation";
 import TabNavigationOwner from "./App/presentation/navigations/TabOwnerNavigation";
 import { LoginStack } from "./App/presentation/navigations/LoginNavigation";
 
 import { UserLocationContext } from "./App/application/context/UserLocationContext";
-import { CurrentUserContext } from "./App/application/context/CurrentUserContext";
+import { CurrentUserProvider, useCurrentUser } from "./App/application/context/CurrentUserContext";
 import { CurrentPlaceContext } from "./App/application/context/CurrentPlaceContext";
 
 import Colors from "./App/infraestructure/utils/Colors";
 import { fetchOwnerPlace } from "./App/infraestructure/api/places.api";
-import { api } from "./App/infraestructure/api/api";
 
 // Prevenir que la pantalla de splash se oculte automáticamente
 SplashScreen.preventAutoHideAsync();
 
-export default function App() {
+function AppContent() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPlace, setCurrentPlace] = useState(null);
@@ -30,8 +28,8 @@ export default function App() {
     latitude: -34.80468427411911,
     longitude: -58.46083856046927,
   });
-  const [user, setUser] = useState(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
+
+  const { currentUser, isLoading: isLoadingUser } = useCurrentUser();
 
   useEffect(() => {
     async function prepare() {
@@ -39,7 +37,6 @@ export default function App() {
         await Promise.all([
           loadFonts(),
           loadLocation(),
-          checkAuthStatus(),
         ]);
       } catch (e) {
         console.warn(e);
@@ -50,6 +47,16 @@ export default function App() {
 
     prepare();
   }, []);
+
+  useEffect(() => {
+    async function loadOwnerPlace() {
+      if (currentUser?.role === "OWNER") {
+        const place = await fetchOwnerPlace(currentUser.id);
+        setCurrentPlace(place);
+      }
+    }
+    loadOwnerPlace();
+  }, [currentUser]);
 
   const loadFonts = async () => {
     await Font.loadAsync({
@@ -71,52 +78,6 @@ export default function App() {
     setLocation(location.coords);
   };
 
-  const checkAuthStatus = async () => {
-    setIsLoadingUser(true);
-    try {
-      // Verificar si existe un token almacenado
-      const token = await AsyncStorage.getItem('userToken');
-      
-      if (!token) {
-        setUser(null);
-        setIsLoadingUser(false);
-        return;
-      }
-
-      // Verificar si el token es válido y obtener información del usuario
-      const response = await api.get('/users/me');
-      const userData = response.data;
-      
-      if (userData) {
-        setUser(userData);
-        
-        // Si es un propietario, cargar información de su lugar
-        if (userData.role === "OWNER") {
-          const place = await fetchOwnerPlace(userData.id);
-          setCurrentPlace(place);
-        }
-      }
-    } catch (error) {
-      console.error("Error al verificar el estado de autenticación:", error);
-      // Si hay un error (token inválido o expirado), limpiar el almacenamiento
-      await AsyncStorage.removeItem('userToken');
-      setUser(null);
-    } finally {
-      setIsLoadingUser(false);
-    }
-  };
-
-  // Función para manejar el logout globalmente
-  const handleLogout = async () => {
-    try {
-      await api.post('/users/auth/logout');
-      await AsyncStorage.removeItem('userToken');
-      setUser(null);
-    } catch (error) {
-      console.error("Error al cerrar sesión:", error);
-    }
-  };
-
   const onLayoutRootView = useCallback(async () => {
     if (!isLoading) {
       await SplashScreen.hideAsync();
@@ -126,19 +87,6 @@ export default function App() {
   if (isLoading) {
     return null;
   }
-
-  return (
-    <View style={styles.container} onLayout={onLayoutRootView}>
-      <UserLocationContext.Provider value={{ location, setLocation }}>
-        <CurrentUserContext.Provider value={{ user, setUser, handleLogout }}>
-          <CurrentPlaceContext.Provider value={{ currentPlace, setCurrentPlace }}>
-            <Toast />
-            {renderContent()}
-          </CurrentPlaceContext.Provider>
-        </CurrentUserContext.Provider>
-      </UserLocationContext.Provider>
-    </View>
-  );
 
   function renderContent() {
     if (isLoadingUser) {
@@ -151,8 +99,8 @@ export default function App() {
 
     return (
       <NavigationContainer>
-        {user ? (
-          user.role === "OWNER" ? (
+        {currentUser ? (
+          currentUser.role === "OWNER" ? (
             <TabNavigationOwner />
           ) : (
             <TabNavigation />
@@ -163,6 +111,25 @@ export default function App() {
       </NavigationContainer>
     );
   }
+
+  return (
+    <View style={styles.container} onLayout={onLayoutRootView}>
+      <UserLocationContext.Provider value={{ location, setLocation }}>
+        <CurrentPlaceContext.Provider value={{ currentPlace, setCurrentPlace }}>
+          <Toast />
+          {renderContent()}
+        </CurrentPlaceContext.Provider>
+      </UserLocationContext.Provider>
+    </View>
+  );
+}
+
+export default function App() {
+  return (
+    <CurrentUserProvider>
+      <AppContent />
+    </CurrentUserProvider>
+  );
 }
 
 const styles = StyleSheet.create({

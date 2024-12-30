@@ -1,0 +1,13 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1710841234567,
+      "tag": "0001_add_precio_fields",
+      "breakpoints": true
+    }
+  ]
+} 
