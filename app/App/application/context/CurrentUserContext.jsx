@@ -19,13 +19,10 @@ export const CurrentUserProvider = ({ children }) => {
         AsyncStorage.getItem('userToken')
       ]);
 
-      console.log('Datos cargados del storage:', { userData, token });
-
       if (userData && token) {
         const user = JSON.parse(userData);
         setCurrentUser(user);
         api.defaults.headers.common.Authorization = `Bearer ${token}`;
-        console.log('Usuario cargado del storage:', user);
       }
     } catch (error) {
       console.error('Error al cargar usuario almacenado:', error);
@@ -38,23 +35,18 @@ export const CurrentUserProvider = ({ children }) => {
     try {
       const response = await api.post('/users/login', { email, password });
       const { user, token } = response.data;
-      console.log('Datos recibidos del servidor:', { user, token });
 
       if (!user || !token) {
         throw new Error('Respuesta inválida del servidor');
       }
 
-      // Guardar en AsyncStorage
       await AsyncStorage.setItem('userToken', token);
       await AsyncStorage.setItem('userData', JSON.stringify(user));
       await AsyncStorage.setItem('userId', user.id);
 
-      // Configurar headers de API
       api.defaults.headers.common.Authorization = `Bearer ${token}`;
 
-      // Actualizar estado
       setCurrentUser(user);
-      console.log('Estado actualizado - Usuario actual:', user);
       return user;
     } catch (error) {
       console.error('Error en login:', error);
@@ -68,7 +60,6 @@ export const CurrentUserProvider = ({ children }) => {
     } catch (error) {
       console.error('Error en logout:', error);
     } finally {
-      // Limpiar storage y estado
       await AsyncStorage.multiRemove(['userToken', 'userData', 'userId']);
       api.defaults.headers.common.Authorization = '';
       setCurrentUser(null);
