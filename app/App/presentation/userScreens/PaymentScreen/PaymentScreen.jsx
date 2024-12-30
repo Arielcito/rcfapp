@@ -41,7 +41,7 @@ const showMessage = (message) => {
 };
 
 export default function PaymentScreen() {
-  const { user } = useContext(CurrentUserContext);
+  const { currentUser } = useContext(CurrentUserContext);
   const { params } = useRoute();
   const date = params.selectedDate.selectedDate;
   const selectedTime = params.selectedTime.selectedTime;
@@ -71,8 +71,8 @@ export default function PaymentScreen() {
   }, []);
 
   useEffect(() => {
-    console.log('PaymentScreen montado - Usuario actual:', user);
-  }, [user]);
+    console.log('PaymentScreen montado - Usuario actual:', currentUser);
+  }, [currentUser]);
 
   useEffect(() => {
     if (place?.place?.precio) {
@@ -87,8 +87,13 @@ export default function PaymentScreen() {
     setLoading(true);
 
     try {
-      console.log('Usuario actual:', user);
-      console.log('ID del usuario:', user?.id);
+      console.log('Usuario actual:', currentUser);
+      console.log('ID del usuario:', currentUser?.id);
+
+      if (!currentUser?.id) {
+        console.error('Error: Usuario no encontrado en el contexto:', currentUser);
+        throw new Error('No se encontró el ID del usuario');
+      }
 
       const formattedDate = moment(date).format("YYYY-MM-DD");
       const fechaHora = moment(`${formattedDate} ${selectedTime}`, "YYYY-MM-DD HH:mm").toISOString();
@@ -104,15 +109,10 @@ export default function PaymentScreen() {
         throw new Error('El horario seleccionado ya no está disponible');
       }
 
-      if (!user?.id) {
-        console.error('Error: Usuario no encontrado en el contexto:', user);
-        throw new Error('No se encontró el ID del usuario');
-      }
-
       // Creamos la reserva
       const reservaData = {
         canchaId: place.place.id,
-        userId: user.id,
+        userId: currentUser.id,
         fechaHora: fechaHora,
         duracion: 60,
         precioTotal: place?.place?.requiereSeña ? montoSeña : totalAmount,

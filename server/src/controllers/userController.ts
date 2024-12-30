@@ -106,7 +106,7 @@ export const login = async (
     });
 
     logger.info('Cookie establecida correctamente');
-    res.json({ user });
+    res.json({ user, token });
   } catch (error) {
     logger.error('Error en login:', error);
     next(error);

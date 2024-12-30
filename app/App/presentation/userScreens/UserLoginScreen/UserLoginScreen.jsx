@@ -10,15 +10,8 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from "firebase/auth";
-import { collection, doc, getDoc, getDocs, query, where, setDoc } from "firebase/firestore";
 import Colors from "../../../infraestructure/utils/Colors";
-import {
-  FIREBASE_AUTH,
-  FIREBASE_DB,
-} from "../../../infraestructure/config/FirebaseConfig";
-import { api } from "../../../infraestructure/api/api";
-
+import { useCurrentUser } from "../../../application/context/CurrentUserContext";
 
 export default function UserLoginScreen() {
   const [values, setValues] = useState({
@@ -28,6 +21,7 @@ export default function UserLoginScreen() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
+  const { login } = useCurrentUser();
 
   const image = require("../../assets/images/geometrias-circulares.png");
 
@@ -46,12 +40,7 @@ export default function UserLoginScreen() {
     setLoading(true);
 
     try {
-      const response = await api.post('/users/login', {
-        email: email.toLowerCase(),
-        password: pwd
-      });
-      const { user, token } = response.data;
-
+      const user = await login(email.toLowerCase(), pwd);
       if (user.role === 'USER') {
         navigation.reset({
           index: 0,
