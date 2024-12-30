@@ -1,4 +1,3 @@
-import { doc, updateDoc } from "firebase/firestore";
 import React from "react";
 import {
   View,
@@ -11,26 +10,25 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { FIREBASE_DB } from "../../../infraestructure/config/FirebaseConfig";
 import Colors from "../../../infraestructure/utils/Colors";
+import { updateAppointment } from "../../../infraestructure/api/appointments.api";
 
 export default function BookingItem({ place, setLoading }) {
-  const db = FIREBASE_DB;
   const navigation = useNavigation();
 
   const handleCancel = async (appointmentId) => {
     setLoading(true);
-    const appointmentRef = doc(
-      db,
-      "rfc-appointments-place",
-      appointmentId.toString()
-    );
-
-    await updateDoc(appointmentRef, {
-      Estado: "Cancelado",
-    });
-    setLoading(false);
-    ToastAndroid.show("Reserva cancelada!", ToastAndroid.LONG);
+    try {
+      await updateAppointment(appointmentId.toString(), {
+        estadoPago: "cancelado"
+      });
+      ToastAndroid.show("Reserva cancelada!", ToastAndroid.LONG);
+    } catch (error) {
+      console.error("Error al cancelar la reserva:", error);
+      ToastAndroid.show("Error al cancelar la reserva", ToastAndroid.LONG);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -54,7 +52,7 @@ export default function BookingItem({ place, setLoading }) {
               onPress={() => handleCancel(place?.appointmentId)}
               style={[
                 styles.dayButton,
-                place?.Estado === "Reservado"
+                place?.estado === "reservado"
                   ? { backgroundColor: "red" }
                   : { backgroundColor: "grey" },
               ]}
@@ -63,13 +61,10 @@ export default function BookingItem({ place, setLoading }) {
                 style={{
                   fontSize: 15,
                   fontFamily: "montserrat",
+                  color: "#fff"
                 }}
               >
-                {place?.Estado
-                  ? place?.Estado === "Reservado"
-                    ? "Cancelar"
-                    : "Cancelado"
-                  : "Cancelar"}
+                {place?.estado === "reservado" ? "Cancelar" : "Cancelado"}
               </Text>
             </Pressable>
           </View>

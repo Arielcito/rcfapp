@@ -65,28 +65,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      console.log('Intentando login con email:', email);
+      console.log('🔑 Login: Iniciando proceso de login...');
+      console.log('📧 Email utilizado:', email);
+      
       const response = await api.post('/api/users/login', {
         email,
         password
       });
       
-      console.log('Respuesta de login:', {
+      console.log('✅ Login: Respuesta exitosa:', {
         status: response.status,
         headers: response.headers,
-        data: response.data
+        userData: response.data.user
       });
 
-      console.log('Usuario a guardar en contexto:', response.data.user);
+      if (!response.data.user) {
+        console.error('❌ Login: No se recibió información del usuario en la respuesta');
+        throw new Error('No se recibió información del usuario');
+      }
+
+      console.log('👤 Login: Estableciendo usuario en el contexto:', response.data.user);
+      setUser(response.data.user);
       
-      await new Promise<void>((resolve) => {
-        setUser(response.data.user);
-        resolve();
-      });
+      console.log('🔄 Login: Verificando estado del usuario después de setUser');
+      await checkAuth();
 
     } catch (error) {
+      console.error('❌ Login: Error durante el proceso', error);
       if (axios.isAxiosError(error)) {
-        console.error('Error en login:', {
+        console.error('🚫 Login: Detalles del error:', {
           status: error.response?.status,
           data: error.response?.data,
           headers: error.response?.headers

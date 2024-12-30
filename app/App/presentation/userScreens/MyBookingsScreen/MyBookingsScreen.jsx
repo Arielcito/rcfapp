@@ -47,32 +47,36 @@ const filterCancelledAppointments = (appointments) => {
 };
 
 // Componente para mostrar reservas activas
-const Activas = ({ appointments, setLoading, loading }) => (
-  <View style={styles.container}>
-    {appointments.length === 0 ? (
-      <>
-        <Text style={styles.noReservationsText}>
-          Aún no hiciste ninguna reserva en la app
-        </Text>
-        <TouchableOpacity
-          onPress={() => navigator.navigate("home")}
-          style={styles.button}
-        >
-          <Text style={styles.buttonText}>Buscar cancha</Text>
-        </TouchableOpacity>
-      </>
-    ) : (
-      <FlatList
-        data={appointments}
-        refreshing={loading}
-        keyExtractor={(item) => item.appointmentId.toString()}
-        renderItem={({ item }) => (
-          <BookingItem place={item} setLoading={setLoading} />
-        )}
-      />
-    )}
-  </View>
-);
+const Activas = ({ appointments, setLoading, loading }) => {
+  const navigation = useNavigation();
+  
+  return (
+    <View style={styles.container}>
+      {appointments.length === 0 ? (
+        <>
+          <Text style={styles.noReservationsText}>
+            Aún no hiciste ninguna reserva en la app
+          </Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("home")}
+            style={styles.button}
+          >
+            <Text style={styles.buttonText}>Buscar cancha</Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        <FlatList
+          data={appointments}
+          refreshing={loading}
+          keyExtractor={(item) => item.appointmentId?.toString() || Math.random().toString()}
+          renderItem={({ item }) => (
+            <BookingItem place={item} setLoading={setLoading} />
+          )}
+        />
+      )}
+    </View>
+  );
+};
 
 // Componente para mostrar reservas pasadas
 const Pasadas = ({ appointments, setLoading, loading }) => (
@@ -90,7 +94,7 @@ const Pasadas = ({ appointments, setLoading, loading }) => (
       <FlatList
         data={appointments}
         refreshing={loading}
-        keyExtractor={(item) => item.appointmentId.toString()}
+        keyExtractor={(item) => item.appointmentId?.toString() || Math.random().toString()}
         renderItem={({ item }) => (
           <BookingItem place={item} setLoading={setLoading} />
         )}
@@ -115,7 +119,7 @@ const Canceladas = ({ appointments, setLoading, loading }) => (
       <FlatList
         data={appointments}
         refreshing={loading}
-        keyExtractor={(item) => item.appointmentId.toString()}
+        keyExtractor={(item) => item.appointmentId?.toString() || Math.random().toString()}
         renderItem={({ item }) => (
           <BookingItem place={item} setLoading={setLoading} />
         )}
@@ -123,38 +127,6 @@ const Canceladas = ({ appointments, setLoading, loading }) => (
     )}
   </View>
 );
-
-// Función que mapea las escenas
-const renderScene = ({ route, jumpTo }) => {
-  switch (route.key) {
-    case "activas":
-      return (
-        <Activas
-          appointments={jumpTo.appListActive}
-          setLoading={jumpTo.setLoading}
-          loading={jumpTo.loading}
-        />
-      );
-    case "pasadas":
-      return (
-        <Pasadas
-          appointments={jumpTo.appListPast}
-          setLoading={jumpTo.setLoading}
-          loading={jumpTo.loading}
-        />
-      );
-    case "canceladas":
-      return (
-        <Canceladas
-          appointments={jumpTo.appListCancelled}
-          setLoading={jumpTo.setLoading}
-          loading={jumpTo.loading}
-        />
-      );
-    default:
-      return null;
-  }
-};
 
 export default function MyBookingsScreen() {
   const [index, setIndex] = useState(0);
@@ -173,23 +145,64 @@ export default function MyBookingsScreen() {
   const [appListPast, setAppListPast] = useState([]);
   const [appListCancelled, setAppListCancelled] = useState([]);
 
+  const renderScene = ({ route }) => {
+    switch (route.key) {
+      case "activas":
+        return (
+          <Activas
+            appointments={appListActive}
+            setLoading={setLoading}
+            loading={loading}
+          />
+        );
+      case "pasadas":
+        return (
+          <Pasadas
+            appointments={appListPast}
+            setLoading={setLoading}
+            loading={loading}
+          />
+        );
+      case "canceladas":
+        return (
+          <Canceladas
+            appointments={appListCancelled}
+            setLoading={setLoading}
+            loading={loading}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
         const appointments = await getAppointmentsByUser();
         
-        if (appointments.length === 0) {
+        if (!appointments || appointments.length === 0) {
+          setAppList([]);
+          setAppListActive([]);
+          setAppListPast([]);
+          setAppListCancelled([]);
           setLoading(false);
           return;
         }
 
-        setAppList(appointments);
-        setAppListActive(filterActiveAppointments(appointments));
-        setAppListPast(filterPastAppointments(appointments));
-        setAppListCancelled(filterCancelledAppointments(appointments));
+        const validAppointments = appointments.filter(app => app?.appointmentId);
+        
+        setAppList(validAppointments);
+        setAppListActive(filterActiveAppointments(validAppointments));
+        setAppListPast(filterPastAppointments(validAppointments));
+        setAppListCancelled(filterCancelledAppointments(validAppointments));
       } catch (error) {
         console.error("Error fetching data:", error);
+        setAppList([]);
+        setAppListActive([]);
+        setAppListPast([]);
+        setAppListCancelled([]);
       } finally {
         setLoading(false);
       }
@@ -211,18 +224,7 @@ export default function MyBookingsScreen() {
         ) : (
           <TabView
             navigationState={{ index, routes }}
-            renderScene={(props) =>
-              renderScene({
-                ...props,
-                jumpTo: {
-                  appListActive,
-                  appListPast,
-                  appListCancelled,
-                  setLoading,
-                  loading,
-                },
-              })
-            }
+            renderScene={renderScene}
             onIndexChange={setIndex}
             initialLayout={{ width: layout.width }}
             renderTabBar={(props) => (

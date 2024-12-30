@@ -217,4 +217,45 @@ export class ReservaService {
       throw new Error('Error al obtener las reservas del día');
     }
   }
+
+  async getUserBookings(userId: string) {
+    console.log('[ReservaService] Obteniendo reservas del usuario:', userId);
+    try {
+      const reservas = await db
+        .select({
+          id: Reserva.id,
+          fechaHora: Reserva.fechaHora,
+          duracion: Reserva.duracion,
+          precioTotal: Reserva.precioTotal,
+          estadoPago: Reserva.estadoPago,
+          metodoPago: Reserva.metodoPago,
+          notasAdicionales: Reserva.notasAdicionales,
+          cancha: {
+            id: canchas.id,
+            nombre: canchas.nombre,
+            tipo: canchas.tipo,
+            tipoSuperficie: canchas.tipoSuperficie,
+            longitud: canchas.longitud,
+            ancho: canchas.ancho,
+          },
+          predio: {
+            id: predios.id,
+            nombre: predios.nombre,
+            direccion: predios.direccion,
+            telefono: predios.telefono,
+          }
+        })
+        .from(Reserva)
+        .where(eq(Reserva.userId, userId))
+        .leftJoin(canchas, eq(Reserva.canchaId, canchas.id))
+        .leftJoin(predios, eq(canchas.predioId, predios.id))
+        .orderBy(Reserva.fechaHora);
+
+      console.log('[ReservaService] Reservas encontradas:', reservas);
+      return reservas;
+    } catch (error) {
+      console.error('[ReservaService] Error al obtener reservas del usuario:', error);
+      throw new Error('Error al obtener las reservas del usuario');
+    }
+  }
 } 

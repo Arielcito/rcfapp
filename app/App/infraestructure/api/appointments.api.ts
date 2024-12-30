@@ -6,6 +6,20 @@ const HORARIOS_DISPONIBLES = [
   "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00"
 ];
 
+interface ApiAppointment {
+  appointmentId: string | number;
+  place: {
+    name: string;
+    description: string;
+    imageUrl?: string;
+    telefono: string;
+  };
+  appointmentDate: string;
+  appointmentTime: string;
+  estado: string;
+  metodoPago: string;
+}
+
 export const createAppointment = async (appointmentData: {
   canchaId: string;
   userId: string;
@@ -90,7 +104,23 @@ export const getAppointmentsByAppointmentDate = async (date: string): Promise<Ap
 export const getAppointmentsByUser = async (): Promise<Appointment[]> => {
   try {
     const response = await api.get('/reservas/user/bookings');
-    return response.data;
+    const appointments = response.data as ApiAppointment[];
+
+    return appointments.map((appointment: ApiAppointment) => ({
+      appointmentId: typeof appointment.appointmentId === 'string' 
+        ? Number.parseInt(appointment.appointmentId, 10) 
+        : appointment.appointmentId,
+      place: {
+        ...appointment.place,
+        imageUrl: appointment.place.imageUrl || 'https://example.com/placeholder.jpg'
+      },
+      appointmentDate: appointment.appointmentDate,
+      appointmentTime: appointment.appointmentTime,
+      estado: appointment.estado,
+      metodoPago: appointment.metodoPago,
+      email: 'usuario@example.com',
+      pitch: 1
+    }));
   } catch (error) {
     console.error("Error fetching user appointments:", error);
     return [];

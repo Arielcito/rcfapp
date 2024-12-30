@@ -21,35 +21,38 @@ const SuccessScreen = () => {
 
   // Datos por defecto en caso de que falten
   const defaultData = useMemo(() => ({
-    cancha: {
-      nombre: "Cancha sin nombre",
-      tipo: "Fútbol",
-      tipoSuperficie: "Césped sintético",
-      longitud: "25",
-      ancho: "15",
+    data: {
+      cancha: {
+        nombre: "Cancha sin nombre",
+        tipo: "Fútbol",
+        tipoSuperficie: "Césped sintético",
+        longitud: "25",
+        ancho: "15",
+      },
+      predio: {
+        telefono: "+54123456789",
+        nombre: "Predio sin nombre"
+      },
+      fechaHora: new Date(),
+      metodoPago: "Efectivo",
+      precioTotal: "0",
+      estadoPago: "PENDIENTE",
+      duracion: 60
     },
-    predio: {
-      telefono: "+54123456789",
-      nombre: "Predio sin nombre"
-    },
-    fechaHora: new Date(),
-    metodoPago: "Efectivo",
-    precioTotal: "0",
-    estadoPago: "PENDIENTE",
-    duracion: 60
+    success: true
   }), []);
 
   // Combinar datos recibidos con datos por defecto
   const reserva = useMemo(() => ({
-    ...defaultData,
-    ...appointmentData,
+    ...defaultData.data,
+    ...appointmentData.data,
     cancha: {
-      ...defaultData.cancha,
-      ...(appointmentData?.cancha || {})
+      ...defaultData.data.cancha,
+      ...(appointmentData.data?.cancha || {})
     },
     predio: {
-      ...defaultData.predio,
-      ...(appointmentData?.predio || {})
+      ...defaultData.data.predio,
+      ...(appointmentData.data?.predio || {})
     }
   }), [appointmentData, defaultData]);
 
@@ -134,7 +137,7 @@ const SuccessScreen = () => {
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>Total</Text>
-              <Text style={styles.value}>${reserva.precioTotal}</Text>
+              <Text style={styles.value}>${Number(reserva.precioPorHora).toLocaleString()}</Text>
             </View>
             <View style={styles.infoRow}>
               <Ionicons

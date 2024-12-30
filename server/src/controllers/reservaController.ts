@@ -1,8 +1,8 @@
 import type { Request, Response } from 'express';
 import { ReservaService } from '../services/reservaService';
 import type { CreateReservaDTO, UpdateReservaDTO } from '../types/reserva';
+import type { User } from '../types/user';
 import moment from 'moment';
-    
 
 const reservaService = new ReservaService();
 
@@ -147,47 +147,32 @@ export class ReservaController {
 
   async getUserBookings(req: Request, res: Response) {
     try {
-      // Mock data para pruebas
-      const mockBookings = [
-        {
-          appointmentId: 1,
-          place: {
-            name: "Cancha El Gol",
-            address: "Av. Siempreviva 123"
-          },
-          cancha: 1,
-          appointmentDate: moment().format("YYYY-MM-DD"),
-          appointmentTime: "19:00",
-          estado: "reservado",
-          metodoPago: "efectivo"
-        },
-        {
-          appointmentId: 2,
-          place: {
-            name: "Cancha La Pelota",
-            address: "Calle Falsa 123"
-          },
-          cancha: 2,
-          appointmentDate: moment().add(1, 'days').format("YYYY-MM-DD"),
-          appointmentTime: "20:00",
-          estado: "pendiente",
-          metodoPago: "tarjeta"
-        },
-        {
-          appointmentId: 3,
-          place: {
-            name: "Cancha El Corner",
-            address: "Av. del Futbol 456"
-          },
-          cancha: 1,
-          appointmentDate: moment().subtract(1, 'days').format("YYYY-MM-DD"),
-          appointmentTime: "18:00",
-          estado: "cancelado",
-          metodoPago: "efectivo"
-        }
-      ];
+      const userId = req.body.user?.id;
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: 'Usuario no autorizado'
+        });
+      }
 
-      res.json(mockBookings);
+      const reservas = await reservaService.getUserBookings(userId);
+      const now = new Date();
+
+      const formattedReservas = reservas.map(reserva => ({
+        appointmentId: reserva.id,
+        place: {
+          name: reserva.cancha?.nombre || 'Cancha sin nombre',
+          description: reserva.cancha ? `${reserva.cancha.tipo || 'Fútbol'} - ${reserva.cancha.tipoSuperficie || 'No especificado'}` : 'Sin descripción',
+          imageUrl: "https://example.com/placeholder.jpg",
+          telefono: reserva.predio?.telefono || 'No disponible'
+        },
+        appointmentDate: new Date(reserva.fechaHora).toISOString().split('T')[0],
+        appointmentTime: new Date(reserva.fechaHora).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+        estado: reserva.estadoPago?.toLowerCase() || 'pendiente',
+        metodoPago: reserva.metodoPago
+      }));
+
+      res.json(formattedReservas);
     } catch (error) {
       console.error('Error al obtener las reservas:', error);
       res.status(500).json({ message: 'Error al obtener las reservas' });
