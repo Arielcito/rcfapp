@@ -9,8 +9,10 @@ import {
   ActivityIndicator,
   Dimensions,
   ScrollView,
+  Platform,
+  Alert,
 } from "react-native";
-import React from "react";
+import React, { useContext } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { useState } from "react";
 import { useRoute } from "@react-navigation/native";
@@ -23,13 +25,23 @@ import Colors from "../../../infraestructure/utils/Colors";
 import { useEffect } from "react";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import CashImage from "../../assets/images/cash.png";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { api } from "../../../infraestructure/api/api";
+import { CurrentUserContext } from "../../../application/context/CurrentUserContext";
 
 const { width } = Dimensions.get("window");
 
 const API_BASE_URL = 'http://tu-api-url/api';
 
+const showMessage = (message) => {
+  if (Platform.OS === 'ios') {
+    Alert.alert('Mensaje', message);
+  } else {
+    ToastAndroid.show(message, ToastAndroid.LONG);
+  }
+};
+
 export default function PaymentScreen() {
+  const { user } = useContext(CurrentUserContext);
   const { params } = useRoute();
   const date = params.selectedDate.selectedDate;
   const selectedTime = params.selectedTime.selectedTime;
@@ -41,6 +53,8 @@ export default function PaymentScreen() {
   const [cardName, setCardName] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [cvv, setCvv] = useState('');
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [montoSeña, setMontoSeña] = useState(0);
   console.log(params)
   console.log(date)
   console.log(selectedTime)
@@ -56,85 +70,71 @@ export default function PaymentScreen() {
     getUserToken();
   }, []);
 
+  useEffect(() => {
+    console.log('PaymentScreen montado - Usuario actual:', user);
+  }, [user]);
+
+  useEffect(() => {
+    if (place?.place?.precio) {
+      setTotalAmount(place.place.precio);
+      if (place.place.requiereSeña) {
+        setMontoSeña(place.place.montoSeña);
+      }
+    }
+  }, [place]);
+
   const bookAppointment = async (paymentMethod) => {
     setLoading(true);
 
     try {
+      console.log('Usuario actual:', user);
+      console.log('ID del usuario:', user?.id);
+
       const formattedDate = moment(date).format("YYYY-MM-DD");
+      const fechaHora = moment(`${formattedDate} ${selectedTime}`, "YYYY-MM-DD HH:mm").toISOString();
 
-      // Primero verificamos disponibilidad
-      const checkResponse = await fetch(`${API_BASE_URL}/reservas/check`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${userToken}`
-        },
-        body: JSON.stringify({
-          cancha: 1,
-          appointmentDate: formattedDate,
-          appointmentTime: selectedTime
-        })
+      // Verificamos disponibilidad
+      const { data: disponibilidadData } = await api.post('/reservas/check', {
+        canchaId: place.place.id,
+        fechaHora: fechaHora,
+        duracion: 60,
       });
 
-      if (!checkResponse.ok) {
-        throw new Error('La cancha no está disponible para este horario');
+      if (!disponibilidadData.success || !disponibilidadData.data.disponible) {
+        throw new Error('El horario seleccionado ya no está disponible');
       }
 
-      // Creamos el pago
-      const pagoResponse = await fetch(`${API_BASE_URL}/pagos`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${userToken}`
-        },
-        body: JSON.stringify({
-          monto: 30000, // Total del pago
-          metodoPago: paymentMethod,
-          estado: 'pendiente',
-          detallesPago: selectedPaymentMethod === 'tarjeta' ? {
-            numeroTarjeta: cardNumber,
-            nombreTitular: cardName,
-            fechaVencimiento: expiryDate,
-            cvv: cvv
-          } : null
-        })
-      });
-
-      if (!pagoResponse.ok) {
-        throw new Error('Error al procesar el pago');
+      if (!user?.id) {
+        console.error('Error: Usuario no encontrado en el contexto:', user);
+        throw new Error('No se encontró el ID del usuario');
       }
 
-      const pagoData = await pagoResponse.json();
+      // Creamos la reserva
+      const reservaData = {
+        canchaId: place.place.id,
+        userId: user.id,
+        fechaHora: fechaHora,
+        duracion: 60,
+        precioTotal: place?.place?.requiereSeña ? montoSeña : totalAmount,
+        metodoPago: paymentMethod,
+        estadoPago: 'PENDIENTE',
+        notasAdicionales: `Reserva para ${place.place.name}`
+      };
 
-      // Creamos la reserva con el ID del pago
-      const reservaResponse = await fetch(`${API_BASE_URL}/reservas`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${userToken}`
-        },
-        body: JSON.stringify({
-          appointmentId: Date.now(),
-          place: place.place,
-          cancha: 1,
-          appointmentDate: formattedDate,
-          appointmentTime: selectedTime,
-          estado: "pendiente",
-          metodoPago: paymentMethod,
-          pagoId: pagoData.id
-        })
-      });
+      console.log('Datos de la reserva a crear:', reservaData);
 
-      if (!reservaResponse.ok) {
+      const { data: createdReserva } = await api.post('/reservas', reservaData);
+
+      if (!createdReserva) {
         throw new Error('Error al crear la reserva');
       }
 
-      const createdReserva = await reservaResponse.json();
       navigator.navigate("successScreen", { appointmentData: createdReserva });
 
     } catch (error) {
       console.error("Error en la reserva:", error);
-      ToastAndroid.show(error.message, ToastAndroid.LONG);
+      const errorMessage = error.response?.data?.error || error.message || "Error al procesar la reserva";
+      showMessage(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -172,7 +172,7 @@ export default function PaymentScreen() {
       }
     } catch (error) {
       console.error("Error en el pago:", error);
-      ToastAndroid.show(error.message, ToastAndroid.LONG);
+      showMessage(error.message);
     }
   };
 
@@ -280,16 +280,20 @@ export default function PaymentScreen() {
         <View style={styles.billDetailsContainer}>
           <View style={styles.billRow}>
             <Text style={styles.billDetailText}>Costo de la cancha:</Text>
-            <Text style={styles.billDetailAmount}>$20000</Text>
+            <Text style={styles.billDetailAmount}>20000</Text>
           </View>
-          <View style={styles.billRow}>
-            <Text style={styles.billDetailText}>Reserva:</Text>
-            <Text style={styles.billDetailAmount}>$10000</Text>
+          {place?.place?.requiereSeña && (
+            <View style={styles.billRow}>
+              <Text style={styles.billDetailText}>Seña requerida:</Text>
+              <Text style={styles.billDetailAmount}>$10000</Text>
+            </View>
+          )}
+          <View style={[styles.billRow, styles.totalRow]}>
+            <Text style={styles.totalText}>Total a pagar:</Text>
+            <Text style={styles.totalAmount}>
+              ${place?.place?.requiereSeña ? montoSeña : totalAmount}
+            </Text>
           </View>
-          {/*<View style={[styles.billRow, styles.totalRow]}>
-            <Text style={styles.totalText}>Total:</Text>
-            <Text style={styles.totalAmount}>$30000</Text>
-          </View>*/}
         </View>
       </View>
       <Text style={styles.heading}>Método de Pago</Text>

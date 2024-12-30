@@ -5,7 +5,15 @@ import { authenticateToken } from '../middleware/auth';
 const router = Router();
 const reservaController = new ReservaController();
 
-router.use(authenticateToken); // Protegemos todas las rutas con autenticación
+router.use(authenticateToken);
+
+router.use((req, res, next) => {
+  console.log(`[Reserva Route] ${req.method} ${req.originalUrl}`);
+  console.log('[Reserva Route] Request Body:', req.body);
+  console.log('[Reserva Route] Request Params:', req.params);
+  console.log('[Reserva Route] Request Query:', req.query);
+  next();
+});
 
 router.get('/user/bookings', reservaController.getUserBookings);
 router.post('/', reservaController.createReserva);

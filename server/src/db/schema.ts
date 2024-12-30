@@ -63,7 +63,10 @@ export const canchas = pgTable('canchas', {
   ultimoMantenimiento: timestamp('ultimo_mantenimiento'),
   equipamientoIncluido: text('equipamiento_incluido'),
   imagenUrl: text('imagen_url'),
-  createdAt: timestamp('created_at').defaultNow()
+  createdAt: timestamp('created_at').defaultNow(),
+  precio: integer('precio').notNull().default(0),
+  requiereSeña: boolean('requiere_seña').notNull().default(false),
+  montoSeña: integer('monto_seña').notNull().default(0),
 });
 
 export const reservas = pgTable('Reserva', {

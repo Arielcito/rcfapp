@@ -15,6 +15,13 @@
       "when": 1733695404142,
       "tag": "0001_exotic_riptide",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1735260600177,
+      "tag": "0002_cute_lionheart",
+      "breakpoints": true
     }
   ]
 }

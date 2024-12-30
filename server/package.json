@@ -7,7 +7,7 @@
     "start": "node dist/index.js",
     "test": "vitest",
     "generate": "drizzle-kit generate:pg",
-    "migrate": "ts-node src/db/migrate.ts"
+    "migrate": "tsx src/db/migrate.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

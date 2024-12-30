@@ -70,16 +70,29 @@ export class ReservaController {
   async checkReservaAvailability(req: Request, res: Response) {
     try {
       const { canchaId, fechaHora, duracion } = req.body;
-      const disponible = await reservaService.checkReservaAvailability(canchaId, fechaHora, duracion);
+      
+      if (!canchaId || !fechaHora || !duracion) {
+        return res.status(400).json({
+          success: false,
+          error: 'Faltan datos requeridos'
+        });
+      }
 
-      res.json({
+      const disponible = await reservaService.checkReservaAvailability(
+        canchaId,
+        new Date(fechaHora),
+        duracion
+      );
+
+      return res.status(200).json({
         success: true,
         data: { disponible }
       });
     } catch (error) {
-      res.status(500).json({
+      console.error('[ReservaController] Error al verificar disponibilidad:', error);
+      return res.status(500).json({
         success: false,
-        error: 'Error al verificar la disponibilidad de la reserva'
+        error: error instanceof Error ? error.message : 'Error al verificar la disponibilidad de la reserva'
       });
     }
   }
