@@ -11,7 +11,7 @@ interface UserProfile {
 export const getProfileInfo = async (userEmail: string): Promise<User> => {
   try {
     const response = await api.get<User>('/users/me');
-    console.log(response.data)
+    console.log("response getProfileInfo",response.data)
     return response.data;
   } catch (error) {
     console.error("Error obteniendo información del perfil: ", error);
