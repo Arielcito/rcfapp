@@ -29,7 +29,10 @@ export default function HomeScreen() {
   const [next7Days, setNext7Days] = useState([]);
   const [timeList, setTimeList] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().getDate());
-  const [selectedTime, setSelectedTime] = useState(new Date().getHours());
+  const [selectedTime, setSelectedTime] = useState(() => {
+    const now = new Date();
+    return now.getHours() + 2;
+  });
   const [loading, setLoading] = useState(true);
   const [isTimePickerVisible, setIsTimePickerVisible] = useState(false);
 
@@ -56,19 +59,59 @@ export default function HomeScreen() {
   const initializeDateAndTime = () => {
     const date = getDays();
     const time = getTime();
+    const today = new Date();
+    const currentHour = today.getHours();
+    const currentMinutes = today.getMinutes();
 
     setNext7Days(date);
-    setTimeList(time);
+    
+    // Extraemos solo el día de la fecha completa
+    const diaSeleccionado = Number(date[0].date.split('-')[2]);
+    const esHoy = diaSeleccionado === today.getDate();
+    
+    // Filtramos los horarios solo si es hoy
+    const horariosDisponibles = esHoy ? time.filter((timeSlot) => {
+      const hora = Number(timeSlot.time.split(':')[0]);
+      return hora > currentHour + 1 || (hora === currentHour + 1 && currentMinutes < 30);
+    }) : time;
 
+    setTimeList(horariosDisponibles);
     setSelectedDate(date[0].date);
-    const today = new Date();
 
-    if (selectedDate == today) {
-      const preselectedTime = time.filter(
-        (time) => time.time > today.getHours()
-      );
-      setSelectedTime(preselectedTime);
-    } else setSelectedTime(time[12].time);
+    if (esHoy) {
+      // Para hoy, establecemos el horario a una hora después de la actual
+      const siguienteHora = currentHour + 2;
+      const horarioDisponible = horariosDisponibles.find(slot => {
+        const hora = Number(slot.time.split(':')[0]);
+        return hora >= siguienteHora;
+      }) || horariosDisponibles[0];
+      
+      setSelectedTime(horarioDisponible ? horarioDisponible.time : null);
+    } else {
+      // Para otros días, seleccionamos el primer horario disponible
+      setSelectedTime(horariosDisponibles[0]?.time || null);
+    }
+  };
+
+  const handleDateSelection = (newDate) => {
+    setSelectedDate(newDate);
+    
+    // Al cambiar la fecha, actualizamos los horarios disponibles
+    const time = getTime();
+    const today = new Date();
+    const diaSeleccionado = Number(newDate.split('-')[2]);
+    const esHoy = diaSeleccionado === today.getDate();
+    
+    // Si es hoy, filtramos los horarios. Si no, mostramos todos
+    const horariosDisponibles = esHoy ? time.filter((timeSlot) => {
+      const hora = Number(timeSlot.time.split(':')[0]);
+      return hora > today.getHours() + 1 || (hora === today.getHours() + 1 && today.getMinutes() < 30);
+    }) : time;
+
+    setTimeList(horariosDisponibles);
+    
+    // Seleccionamos el primer horario disponible
+    setSelectedTime(horariosDisponibles[0]?.time || null);
   };
 
   const fetchData = async () => {
@@ -81,9 +124,11 @@ export default function HomeScreen() {
       
       const fechaFormateada = `${fecha.year}-${String(fecha.month).padStart(2, '0')}-${String(fecha.date).padStart(2, '0')}`;
       const horariosDisponibles = await getAvailableTimes(fechaFormateada);
-      const horaSeleccionada = `${String(selectedTime).padStart(2, '0')}`;
+      
+      // Convertimos la hora seleccionada al formato correcto (HH:00)
+      const horaSeleccionada = `${String(selectedTime).split(':')[0].padStart(2, '0')}:00`;
       const horaEstaDisponible = horariosDisponibles.includes(horaSeleccionada);
-      console.log(horaEstaDisponible)
+      
       if (!horaEstaDisponible) {
         setPlaceList([]);
         return;
@@ -138,15 +183,15 @@ export default function HomeScreen() {
     <TouchableOpacity
       style={[
         styles.dayButton,
-        selectedDate == item.date && { backgroundColor: Colors.PRIMARY },
+        selectedDate === item.date && { backgroundColor: Colors.PRIMARY },
         isTablet && styles.tabletDayButton,
       ]}
-      onPress={() => setSelectedDate(item.date)}
+      onPress={() => handleDateSelection(item.date)}
     >
       <View style={styles.dayButtonHeader}>
         <Text style={[
           styles.dayButtonHeaderText,
-          selectedDate == item.date && { color: Colors.WHITE },
+          selectedDate === item.date && { color: Colors.WHITE },
         ]}>
           {item.day}
         </Text>
@@ -154,7 +199,7 @@ export default function HomeScreen() {
       <View>
         <Text style={[
           styles.dayButtonDateText,
-          selectedDate == item.date && { color: Colors.WHITE },
+          selectedDate === item.date && { color: Colors.WHITE },
         ]}>
           {item.formmatedDate}
         </Text>
