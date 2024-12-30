@@ -98,7 +98,7 @@ export default function PaymentScreen() {
       };
 
       const { data: createdReserva } = await api.post('/reservas', reservaData);
-
+      console.log('createdReserva', createdReserva);
       if (!createdReserva) {
         throw new Error('Error al crear la reserva');
       }
