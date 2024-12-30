@@ -9,6 +9,8 @@ import { UploadButton } from "@/utils/uploadthings";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { LocationSelector } from "../Maps/LocationSelector";
+import { getPredioById, updatePredio } from "@/api/predios";
+import { createCancha, updateCancha, deleteCancha } from "@/api/canchas";
 
 interface ProfileData extends IPredio {
   canchas: ICancha[];
@@ -28,8 +30,7 @@ const ProfileBox = () => {
 
   const fetchProfileData = async () => {
     try {
-      const response = await fetch('/api/profile');
-      const data = await response.json();
+      const data = await getPredioById('current');
       setProfileData(data);
     } catch (error) {
       console.error('Error fetching profile data:', error);
@@ -40,15 +41,9 @@ const ProfileBox = () => {
 
   const handleProfileUpdate = async (formData: Partial<IPredio>) => {
     try {
-      const response = await fetch('/api/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ...formData, id: profileData?.id }),
-      });
-      const updatedData = await response.json();
-      setProfileData(prev => ({ ...prev!, ...updatedData }));
+      if (!profileData?.id) return;
+      const updatedData = await updatePredio(profileData.id, formData);
+      setProfileData(prev => prev ? { ...prev, ...updatedData } : null);
       setIsEditMode(false);
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -57,22 +52,11 @@ const ProfileBox = () => {
 
   const handleAddCancha = async (formData: Partial<ICancha>) => {
     try {
-      const response = await fetch('/api/canchas', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          predioId: profileData?.id
-        }),
+      if (!profileData?.id) return;
+      const newCancha = await createCancha({
+        ...formData,
+        predioId: profileData.id
       });
-      
-      if (!response.ok) {
-        throw new Error('Error al crear la cancha');
-      }
-
-      const newCancha = await response.json();
       
       setProfileData(prev => prev ? {
         ...prev,
@@ -87,19 +71,8 @@ const ProfileBox = () => {
 
   const handleUpdateCancha = async (formData: Partial<ICancha>) => {
     try {
-      const response = await fetch('/api/canchas', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ...formData, id: editingCancha?.id }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al actualizar la cancha');
-      }
-
-      const updatedCancha = await response.json();
+      if (!editingCancha?.id) return;
+      const updatedCancha = await updateCancha(editingCancha.id, formData);
       
       setProfileData(prev => prev ? {
         ...prev,
@@ -118,13 +91,11 @@ const ProfileBox = () => {
     if (!confirm('¿Estás seguro de que deseas eliminar esta cancha?')) return;
 
     try {
-      await fetch(`/api/canchas?id=${canchaId}`, {
-        method: 'DELETE',
-      });
-      setProfileData(prev => ({
-        ...prev!,
-        canchas: prev!.canchas.filter(c => c.id !== canchaId),
-      }));
+      await deleteCancha(canchaId);
+      setProfileData(prev => prev ? {
+        ...prev,
+        canchas: prev.canchas.filter(c => c.id !== canchaId),
+      } : null);
     } catch (error) {
       console.error('Error deleting cancha:', error);
     }
@@ -132,21 +103,14 @@ const ProfileBox = () => {
 
   const handleImageUpload = async (imageUrl: string) => {
     try {
-      const response = await fetch('/api/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: profileData?.id,
-          imagenUrl: imageUrl,
-        }),
+      if (!profileData?.id) return;
+      const updatedData = await updatePredio(profileData.id, {
+        imagenUrl: imageUrl,
       });
-      const updatedData = await response.json();
-      setProfileData(prev => ({
-        ...prev!,
+      setProfileData(prev => prev ? {
+        ...prev,
         imagenUrl: updatedData.imagenUrl,
-      }));
+      } : null);
     } catch (error) {
       console.error('Error updating profile image:', error);
     }
@@ -173,10 +137,8 @@ const ProfileBox = () => {
 
   const toggleEditMode = () => {
     if (isEditMode) {
-      // Si estamos guardando los cambios, enviar el formulario
       handleProfileUpdate(editForm);
     } else {
-      // Si estamos entrando en modo edición, cargar los datos actuales
       setEditForm({
         nombre: profileData?.nombre,
         descripcion: profileData?.descripcion,
