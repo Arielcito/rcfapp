@@ -40,10 +40,37 @@ export class ReservaService {
       console.log('[ReservaService] Datos preparados para inserción:', JSON.stringify(reservaData, null, 2));
 
       console.log('[ReservaService] Intentando insertar en la base de datos...');
-      const nuevaReserva = await db.insert(Reserva).values(reservaData).returning();
+      const [nuevaReserva] = await db.insert(Reserva).values(reservaData).returning();
 
-      console.log('[ReservaService] Reserva creada exitosamente:', JSON.stringify(nuevaReserva[0], null, 2));
-      return nuevaReserva[0];
+      // Obtener datos completos de la cancha
+      const [cancha] = await db.select()
+        .from(canchas)
+        .where(eq(canchas.id, data.canchaId));
+
+      // Obtener datos del predio
+      const [predio] = await db.select()
+        .from(predios)
+        .where(eq(predios.id, cancha.predioId));
+
+      // Combinar todos los datos
+      const reservaCompleta = {
+        ...nuevaReserva,
+        cancha: {
+          ...cancha,
+          nombre: cancha.nombre || "Cancha sin nombre",
+          tipo: cancha.tipo || "Fútbol",
+          tipoSuperficie: cancha.tipoSuperficie || "Césped sintético",
+          longitud: cancha.longitud || "25",
+          ancho: cancha.ancho || "15",
+        },
+        predio: {
+          ...predio,
+          telefono: predio?.telefono || "+54123456789"
+        }
+      };
+
+      console.log('[ReservaService] Reserva creada exitosamente:', JSON.stringify(reservaCompleta, null, 2));
+      return reservaCompleta;
     } catch (error) {
       console.error('[ReservaService] Error detallado al crear reserva:', {
         message: error instanceof Error ? error.message : 'Error desconocido',

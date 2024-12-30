@@ -1,70 +1,140 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useMemo } from "react";
 import {
   View,
   Text,
   StyleSheet,
   SafeAreaView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
-import { CurrentUserContext } from "../../../application/context/CurrentUserContext";
 import Colors from "../../../infraestructure/utils/Colors";
 import ButtonPrimary from "../../components/ButtonPrimary";
-import { getProfileInfo } from "../../../infraestructure/api/user.api";
 import WhatsappButton from "../../components/WhatsappButton";
+import moment from "moment";
+import "moment/locale/es";
 
 const SuccessScreen = () => {
   const { appointmentData } = useRoute().params;
-  const { user } = useContext(CurrentUserContext);
   const navigation = useNavigation();
-  const [userData, setUserData] = useState(null);
-  
-  useEffect(() => {
-    const obtenerDatosUsuario = async () => {
-      try {
-        const perfilUsuario = await getProfileInfo({ email: user.email });
-        console.log(perfilUsuario);
-        setUserData(perfilUsuario);
-      } catch (error) {
-        console.error("Error al obtener datos del usuario:", error);
-      }
-    };
+  moment.locale("es");
 
-    obtenerDatosUsuario();
-  }, [user.email]);
+  // Datos por defecto en caso de que falten
+  const defaultData = useMemo(() => ({
+    cancha: {
+      nombre: "Cancha sin nombre",
+      tipo: "Fútbol",
+      tipoSuperficie: "Césped sintético",
+      longitud: "25",
+      ancho: "15",
+    },
+    predio: {
+      telefono: "+54123456789",
+      nombre: "Predio sin nombre"
+    },
+    fechaHora: new Date(),
+    metodoPago: "Efectivo",
+    precioTotal: "0",
+    estadoPago: "PENDIENTE",
+    duracion: 60
+  }), []);
+
+  // Combinar datos recibidos con datos por defecto
+  const reserva = useMemo(() => ({
+    ...defaultData,
+    ...appointmentData,
+    cancha: {
+      ...defaultData.cancha,
+      ...(appointmentData?.cancha || {})
+    },
+    predio: {
+      ...defaultData.predio,
+      ...(appointmentData?.predio || {})
+    }
+  }), [appointmentData, defaultData]);
+
+  const formatDate = (date) => {
+    try {
+      return moment(date).format("dddd, D [de] MMMM [de] YYYY");
+    } catch (error) {
+      console.error("Error formateando fecha:", error);
+      return "Fecha no disponible";
+    }
+  };
+
+  const formatTime = (date) => {
+    try {
+      return moment(date).format("HH:mm");
+    } catch (error) {
+      console.error("Error formateando hora:", error);
+      return "00:00";
+    }
+  };
+
+  const getEndTime = (date) => {
+    try {
+      return moment(date).add(reserva.duracion || 60, 'minutes').format("HH:mm");
+    } catch (error) {
+      console.error("Error calculando hora final:", error);
+      return "00:00";
+    }
+  };
+
+  if (!appointmentData) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.content}>
+          <ActivityIndicator size="large" color={Colors.PRIMARY} />
+          <Text style={styles.errorText}>Cargando datos de la reserva...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>¡ {userData?.name}</Text>
-        <Text style={styles.subtitle}>TU RESERVA YA ESTÁ LISTA !</Text>
+        <Text style={styles.title}>¡FELICITACIONES!</Text>
+        <Text style={styles.subtitle}>TU RESERVA YA ESTÁ LISTA</Text>
 
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardHeaderText}>
-              {appointmentData?.place.nombre}
+              {reserva.cancha.nombre}
             </Text>
           </View>
           <View style={styles.cardContent}>
             <View style={styles.row}>
-              <Text style={styles.label}>Deporte</Text>
-              <Text style={styles.value}>Fútbol</Text>
+              <Text style={styles.label}>Tipo</Text>
+              <Text style={styles.value}>{reserva.cancha.tipo}</Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>Cancha</Text>
-              <Text style={styles.value}>Cancha {appointmentData?.cancha}</Text>
+              <Text style={styles.label}>Superficie</Text>
+              <Text style={styles.value}>{reserva.cancha.tipoSuperficie}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Dimensiones</Text>
+              <Text style={styles.value}>{reserva.cancha.longitud}m x {reserva.cancha.ancho}m</Text>
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>Fecha</Text>
               <Text style={styles.value}>
-                {appointmentData.appointmentDate}
+                {formatDate(reserva.fechaHora)}
               </Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>Hora</Text>
+              <Text style={styles.label}>Horario</Text>
               <Text style={styles.value}>
-                {appointmentData.appointmentTime}
+                {formatTime(reserva.fechaHora)}hs - {getEndTime(reserva.fechaHora)}hs
               </Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Método de Pago</Text>
+              <Text style={styles.value}>{reserva.metodoPago}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Total</Text>
+              <Text style={styles.value}>${reserva.precioTotal}</Text>
             </View>
             <View style={styles.infoRow}>
               <Ionicons
@@ -73,7 +143,7 @@ const SuccessScreen = () => {
                 color="#666"
               />
               <Text style={styles.infoText}>
-                Estado: {appointmentData.estado}
+                Estado: {reserva.estadoPago}
               </Text>
             </View>
           </View>
@@ -88,8 +158,8 @@ const SuccessScreen = () => {
       </View>
       <View style={styles.whatsappButtonContainer}>
         <WhatsappButton 
-          phoneNumber={appointmentData?.place.phone} 
-          message={`Hola! Acabo de reservar la cancha de ${appointmentData?.place.name} para el día ${appointmentData?.appointmentDate} a las ${appointmentData?.appointmentTime}. ¿Podrías confirmarme la reserva?`} 
+          phoneNumber={reserva.predio.telefono} 
+          message={`Hola! Acabo de reservar la cancha ${reserva.cancha.nombre} para el día ${formatDate(reserva.fechaHora)} a las ${formatTime(reserva.fechaHora)}hs. ¿Podrías confirmarme la reserva?`} 
         />
       </View>
     </SafeAreaView>
@@ -105,6 +175,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 16,
+    justifyContent: 'center',
   },
   title: {
     fontSize: 24,
@@ -119,20 +190,32 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 16,
   },
+  errorText: {
+    fontSize: 16,
+    color: Colors.GRAY,
+    textAlign: "center",
+    marginTop: 16,
+  },
   card: {
     backgroundColor: "#fff",
     borderRadius: 8,
     overflow: "hidden",
     marginBottom: 16,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   cardHeader: {
-    backgroundColor: Colors.BLUE,
+    backgroundColor: Colors.PRIMARY,
     padding: 16,
   },
   cardHeaderText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
+    textAlign: "center",
   },
   cardContent: {
     padding: 16,
@@ -140,24 +223,31 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 8,
+    marginBottom: 12,
+    paddingHorizontal: 8,
   },
   label: {
     fontWeight: "bold",
     color: "#666",
+    fontSize: 16,
   },
   value: {
     color: "#333",
+    fontSize: 16,
   },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 16,
+    backgroundColor: "#f8f8f8",
+    padding: 12,
+    borderRadius: 8,
   },
   infoText: {
     marginLeft: 8,
     color: "#666",
     flex: 1,
+    fontSize: 16,
   },
   whatsappButtonContainer: {
     position: 'absolute',

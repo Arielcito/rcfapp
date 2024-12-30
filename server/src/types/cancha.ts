@@ -7,11 +7,14 @@ export interface Cancha {
   longitud: string | null;
   ancho: string | null;
   tipoSuperficie: string | null;
-  techado: boolean | null;
-  iluminacion: boolean | null;
-  cesped: boolean | null;
+  tieneIluminacion: boolean | null;
+  esTechada: boolean | null;
+  precioPorHora: number | null;
+  estado: string | null;
+  ultimoMantenimiento: Date | null;
+  equipamientoIncluido: string | null;
+  imagenUrl: string | null;
   createdAt: Date | null;
-  precio: number;
   requiereSeña: boolean;
   montoSeña: number;
 }
@@ -24,12 +27,15 @@ export interface CanchaCreationData {
   longitud?: string | null;
   ancho?: string | null;
   tipoSuperficie?: string | null;
-  techado?: boolean | null;
-  iluminacion?: boolean | null;
-  cesped?: boolean | null;
-  precio: number;
-  requiereSeña: boolean;
-  montoSeña: number;
+  tieneIluminacion?: boolean | null;
+  esTechada?: boolean | null;
+  precioPorHora?: number | null;
+  estado?: string | null;
+  ultimoMantenimiento?: Date | null;
+  equipamientoIncluido?: string | null;
+  imagenUrl?: string | null;
+  requiereSeña?: boolean;
+  montoSeña?: number;
 }
 
 export interface CanchaUpdateData extends Partial<CanchaCreationData> {}

@@ -6,17 +6,20 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
-  FlatList
+  FlatList,
+  Alert
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import moment from "moment";
-import "moment/locale/es"; // Importamos la localización en español
+import "moment/locale/es";
 import { useNavigation } from "@react-navigation/native";
 import SubHeading from "../../components/SubHeading";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Colors from "../../../infraestructure/utils/Colors";
 import { FIREBASE_AUTH } from "../../../infraestructure/config/FirebaseConfig";
 import CaracteristicItem from "../../components/CaracteristicItem";
+import { api } from "../../../infraestructure/api/api";
+
 export default function BookingSection({
   place,
   preselectedDate,
@@ -27,38 +30,89 @@ export default function BookingSection({
   const [endTime, setEndTime] = useState();
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const [canchas, setCanchas] = useState([]);
+  const [selectedCancha, setSelectedCancha] = useState(null);
   const navigator = useNavigation();
 
   const auth = FIREBASE_AUTH;
   const user = auth.currentUser;
 
   useEffect(() => {
-    moment.locale("es"); // Configuramos moment para usar español
-
+    moment.locale("es");
     setSelectedDate(preselectedDate);
     setSelectedTime(preselectedTime);
-
-    // Convierte preselectedTime a un objeto Moment
     const timeMoment = moment(preselectedTime, "HH:mm");
-
-    // Añade una hora
     const newTimeMoment = timeMoment.add(1, "hour");
-
-    // Formatea el nuevo tiempo
     const newTime = newTimeMoment.format("HH:mm");
     setEndTime(newTime);
-  }, []);
+    fetchCanchas();
+  }, [preselectedDate, preselectedTime]);
+
+  const fetchCanchas = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get(`/canchas/predio/${place.id}`);
+      if (response.data && response.data.length > 0) {
+        setCanchas(response.data);
+        setSelectedCancha(response.data[0]);
+        console.log(response.data[0]);
+      } else {
+        Alert.alert("Error", "No hay canchas disponibles en este predio");
+      }
+    } catch (error) {
+      Alert.alert("Error", "No se pudieron cargar las canchas");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatDate = (date) => {
     return moment(date).format("dddd, D [de] MMMM");
   };
 
-  const caracteristicsArray = ["techada", "iluminada", "sintetico"];
+  const renderCanchaItem = ({ item }) => (
+    <TouchableOpacity
+      style={[
+        styles.canchaItem,
+        selectedCancha?.id === item.id && styles.selectedCanchaItem,
+      ]}
+      onPress={() => setSelectedCancha(item)}
+    >
+      <Text style={styles.canchaText}>Cancha {item.numero}</Text>
+      <Text style={styles.canchaDetail}>{item.nombre}</Text>
+      <Text style={styles.canchaDetail}>{item.tipo_superficie}</Text>
+    </TouchableOpacity>
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={Colors.PRIMARY} />
+      </View>
+    );
+  }
+
+  if (canchas.length === 0) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>No hay canchas disponibles en este momento</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
-      <SubHeading subHeadingTitle={"Detalles de la Reserva"} seeAll={false} />
+      <SubHeading subHeadingTitle={"Seleccionar Cancha"} seeAll={false} />
+      <FlatList
+        data={canchas}
+        renderItem={renderCanchaItem}
+        keyExtractor={(item) => item.id}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.canchasList}
+      />
 
+      <SubHeading subHeadingTitle={"Detalles de la Reserva"} seeAll={false} />
       <View style={styles.detailsContainer}>
         <View style={styles.detailItem}>
           <Ionicons name="calendar-outline" size={24} color={Colors.PRIMARY} />
@@ -74,24 +128,36 @@ export default function BookingSection({
           <Ionicons name="location-outline" size={24} color={Colors.PRIMARY} />
           <Text style={styles.detailText}>{place.direccion}</Text>
         </View>
-        <View style={styles.detailItem}>
-          <Ionicons name="cash-outline" size={24} color={Colors.PRIMARY} />
-          <Text style={styles.detailText}>$20.000 /hora</Text>
-        </View>
-        <View style={styles.detailItem}>
-          <Ionicons name="pricetag-outline" size={24} color={Colors.PRIMARY} />
-          <Text style={styles.detailText}>Seña: $10.000</Text>
-        </View>
+        {selectedCancha && (
+          <>
+            <View style={styles.detailItem}>
+              <Ionicons name="football-outline" size={24} color={Colors.PRIMARY} />
+              <Text style={styles.detailText}> {selectedCancha.nombre}</Text>
+            </View>
+            <View style={styles.detailItem}>
+              <Ionicons name="cash-outline" size={24} color={Colors.PRIMARY} />
+              <Text style={styles.detailText}>${Number(selectedCancha.precioPorHora).toLocaleString()} /hora</Text>
+            </View>
+            <View style={styles.detailItem}>
+              <Ionicons name="pricetag-outline" size={24} color={Colors.PRIMARY} />
+              <Text style={styles.detailText}>Seña: ${Number(selectedCancha.precioPorHora / 2).toLocaleString()}</Text>
+            </View>
+          </>
+        )}
       </View>
+
       <SubHeading subHeadingTitle={"Características"} seeAll={false} />
-      <FlatList
-        data={caracteristicsArray}
-        horizontal={true}
-        showsHorizontalScrollIndicator={false}
-        renderItem={({ item }) => <CaracteristicItem name={item} />}
-        keyExtractor={(item, index) => index.toString()}
-        style={styles.caracteristicsList}
-      />
+      {selectedCancha && (
+        <FlatList
+          data={selectedCancha.caracteristicas || []}
+          horizontal={true}
+          showsHorizontalScrollIndicator={false}
+          renderItem={({ item }) => <CaracteristicItem name={item} />}
+          keyExtractor={(item, index) => index.toString()}
+          style={styles.caracteristicsList}
+        />
+      )}
+
       <SubHeading subHeadingTitle={"Notas"} seeAll={false} />
       <TextInput
         numberOfLines={3}
@@ -107,33 +173,26 @@ export default function BookingSection({
               place: place,
               selectedDate: selectedDate,
               selectedTime: selectedTime,
+              selectedCancha: selectedCancha
             })
           }
-          disabled={loading}
-          style={styles.viewProfileButton}
+          disabled={!selectedCancha || loading}
+          style={[styles.viewProfileButton, !selectedCancha && styles.disabledButton]}
         >
-          {!loading ? (
-            <Text style={styles.buttonText}>Ver Perfil</Text>
-          ) : (
-            <ActivityIndicator color="#ffffff" />
-          )}
+          <Text style={styles.buttonText}>Ver Perfil</Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() =>
             navigator.navigate("payment", {
-              appointmentData: { place },
-              selectedDate: { selectedDate },
-              selectedTime: { selectedTime },
+              appointmentData: { place, cancha: selectedCancha },
+              selectedDate: selectedDate,
+              selectedTime: selectedTime,
             })
           }
-          disabled={loading}
-          style={styles.reserveButton}
+          disabled={!selectedCancha || loading}
+          style={[styles.reserveButton, !selectedCancha && styles.disabledButton]}
         >
-          {!loading ? (
-            <Text style={styles.buttonText}>Reservar</Text>
-          ) : (
-            <ActivityIndicator color="#ffffff" />
-          )}
+          <Text style={styles.buttonText}>Reservar</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -144,6 +203,46 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: Colors.ERROR,
+    textAlign: 'center',
+  },
+  canchasList: {
+    marginBottom: 16,
+  },
+  canchaItem: {
+    backgroundColor: Colors.LIGHT_GRAY,
+    borderRadius: 8,
+    padding: 12,
+    marginRight: 8,
+    minWidth: 120,
+    alignItems: 'center',
+  },
+  selectedCanchaItem: {
+    backgroundColor: Colors.PRIMARY,
+  },
+  canchaText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  canchaDetail: {
+    fontSize: 14,
+    color: Colors.GRAY,
   },
   detailsContainer: {
     backgroundColor: "#f0f0f0",
@@ -171,6 +270,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
+    marginBottom: 20,
   },
   viewProfileButton: {
     backgroundColor: Colors.GRAY,
@@ -188,22 +288,14 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     alignItems: "center",
   },
+  disabledButton: {
+    opacity: 0.5,
+  },
   buttonText: {
     color: "white",
     fontWeight: "bold",
   },
   caracteristicsList: {
     marginBottom: 16,
-  },
-  caracteristicItem: {
-    backgroundColor: '#00B894',
-    borderRadius: 20,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    marginRight: 8,
-  },
-  caracteristicText: {
-    color: 'white',
-    fontWeight: 'bold',
   },
 });

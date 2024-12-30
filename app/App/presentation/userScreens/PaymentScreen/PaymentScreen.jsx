@@ -26,11 +26,10 @@ import { useEffect } from "react";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import CashImage from "../../assets/images/cash.png";
 import { api } from "../../../infraestructure/api/api";
-import { CurrentUserContext } from "../../../application/context/CurrentUserContext";
+import { useCurrentUser } from "../../../application/context/CurrentUserContext";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get("window");
-
-const API_BASE_URL = 'http://tu-api-url/api';
 
 const showMessage = (message) => {
   if (Platform.OS === 'ios') {
@@ -41,11 +40,12 @@ const showMessage = (message) => {
 };
 
 export default function PaymentScreen() {
-  const { currentUser } = useContext(CurrentUserContext);
+  const { currentUser } = useCurrentUser();
   const { params } = useRoute();
-  const date = params.selectedDate.selectedDate;
-  const selectedTime = params.selectedTime.selectedTime;
-  const place = params.appointmentData;
+  const date = params.selectedDate;
+  const selectedTime = params.selectedTime;
+  const cancha = params.appointmentData.cancha;
+  const place = params.appointmentData.place;
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("efectivo");
   const [loading, setLoading] = useState(false);
   const [endTime, setEndTime] = useState();
@@ -53,54 +53,29 @@ export default function PaymentScreen() {
   const [cardName, setCardName] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [cvv, setCvv] = useState('');
-  const [totalAmount, setTotalAmount] = useState(0);
-  const [montoSeña, setMontoSeña] = useState(0);
-  console.log(params)
-  console.log(date)
-  console.log(selectedTime)
   const navigator = useNavigation();
   const formatDate = moment(date).format("YYYY-MM-DD");
-  const [userToken, setUserToken] = useState(null);
 
   useEffect(() => {
-    const getUserToken = async () => {
-      const token = await AsyncStorage.getItem('userToken');
-      setUserToken(token);
-    };
-    getUserToken();
-  }, []);
-
-  useEffect(() => {
-    console.log('PaymentScreen montado - Usuario actual:', currentUser);
-  }, [currentUser]);
-
-  useEffect(() => {
-    if (place?.place?.precio) {
-      setTotalAmount(place.place.precio);
-      if (place.place.requiereSeña) {
-        setMontoSeña(place.place.montoSeña);
-      }
-    }
-  }, [place]);
+    const timeMoment = moment(selectedTime, "HH:mm");
+    const newTimeMoment = timeMoment.add(1, "hour");
+    const newTime = newTimeMoment.format("HH:mm");
+    setEndTime(newTime);
+  }, [selectedTime]);
 
   const bookAppointment = async (paymentMethod) => {
     setLoading(true);
 
     try {
-      console.log('Usuario actual:', currentUser);
-      console.log('ID del usuario:', currentUser?.id);
-
       if (!currentUser?.id) {
-        console.error('Error: Usuario no encontrado en el contexto:', currentUser);
         throw new Error('No se encontró el ID del usuario');
       }
 
       const formattedDate = moment(date).format("YYYY-MM-DD");
       const fechaHora = moment(`${formattedDate} ${selectedTime}`, "YYYY-MM-DD HH:mm").toISOString();
 
-      // Verificamos disponibilidad
       const { data: disponibilidadData } = await api.post('/reservas/check', {
-        canchaId: place.place.id,
+        canchaId: cancha.id,
         fechaHora: fechaHora,
         duracion: 60,
       });
@@ -109,19 +84,18 @@ export default function PaymentScreen() {
         throw new Error('El horario seleccionado ya no está disponible');
       }
 
-      // Creamos la reserva
+      const montoAPagar = cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora;
+
       const reservaData = {
-        canchaId: place.place.id,
+        canchaId: cancha.id,
         userId: currentUser.id,
         fechaHora: fechaHora,
         duracion: 60,
-        precioTotal: place?.place?.requiereSeña ? montoSeña : totalAmount,
+        precioTotal: montoAPagar,
         metodoPago: paymentMethod,
         estadoPago: 'PENDIENTE',
-        notasAdicionales: `Reserva para ${place.place.name}`
+        notasAdicionales: `Reserva para ${cancha.nombre}`
       };
-
-      console.log('Datos de la reserva a crear:', reservaData);
 
       const { data: createdReserva } = await api.post('/reservas', reservaData);
 
@@ -140,11 +114,11 @@ export default function PaymentScreen() {
     }
   };
 
-  const handlePayment = async (place) => {
+  const handlePayment = async () => {
     try {
       switch (selectedPaymentMethod) {
         case "Mercado Pago": {
-          const data = await handleIntegrationMP(place);
+          const data = await handleIntegrationMP(cancha);
           if (!data) {
             throw new Error("Error al procesar pago con Mercado Pago");
           }
@@ -175,17 +149,6 @@ export default function PaymentScreen() {
       showMessage(error.message);
     }
   };
-
-  useEffect(() => {
-    const timeMoment = moment(selectedTime, "HH:mm");
-
-    // Añade una hora
-    const newTimeMoment = timeMoment.add(1, "hour");
-
-    // Formatea el nuevo tiempo
-    const newTime = newTimeMoment.format("HH:mm");
-    setEndTime(newTime);
-  }, [selectedTime]);
 
   const renderCreditCardForm = () => {
     if (selectedPaymentMethod !== 'tarjeta') return null;
@@ -244,15 +207,8 @@ export default function PaymentScreen() {
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.heading}>Confirma tu reserva</Text>
-      <Text
-        style={{
-          color: Colors.PRIMARY,
-          fontSize: 18,
-          fontFamily: "montserrat-medium",
-        }}
-      >
-        {place.place.name}
-      </Text>
+      <Text style={styles.subHeading}>{cancha.nombre}</Text>
+      
       <View style={styles.appointmentCardContainer}>
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionHeading}>Horario y Fecha</Text>
@@ -264,13 +220,31 @@ export default function PaymentScreen() {
               {selectedTime}hs - {endTime}hs
             </Text>
             <View style={styles.iconContainer}>
-              <Ionicons
-                name="calendar-outline"
-                size={24}
-                color={Colors.PRIMARY}
-              />
+              <Ionicons name="calendar-outline" size={24} color={Colors.PRIMARY} />
             </View>
             <Text style={styles.scheduleText}>{formatDate}</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionHeading}>Detalles de la Cancha</Text>
+        <View style={styles.billDetailsContainer}>
+          {cancha.tipo && (
+            <View style={styles.billRow}>
+              <Text style={styles.billDetailText}>Tipo:</Text>
+              <Text style={styles.billDetailAmount}>{cancha.tipo}</Text>
+            </View>
+          )}
+          {cancha.tipoSuperficie && (
+            <View style={styles.billRow}>
+              <Text style={styles.billDetailText}>Superficie:</Text>
+              <Text style={styles.billDetailAmount}>{cancha.tipoSuperficie}</Text>
+            </View>
+          )}
+          <View style={styles.billRow}>
+            <Text style={styles.billDetailText}>Dimensiones:</Text>
+            <Text style={styles.billDetailAmount}>{cancha.longitud}m x {cancha.ancho}m</Text>
           </View>
         </View>
       </View>
@@ -279,23 +253,24 @@ export default function PaymentScreen() {
         <Text style={styles.sectionHeading}>Pago</Text>
         <View style={styles.billDetailsContainer}>
           <View style={styles.billRow}>
-            <Text style={styles.billDetailText}>Costo de la cancha:</Text>
-            <Text style={styles.billDetailAmount}>20000</Text>
+            <Text style={styles.billDetailText}>Costo por hora:</Text>
+            <Text style={styles.billDetailAmount}>${cancha.precioPorHora}</Text>
           </View>
-          {place?.place?.requiereSeña && (
+          {cancha.requiereSeña && (
             <View style={styles.billRow}>
               <Text style={styles.billDetailText}>Seña requerida:</Text>
-              <Text style={styles.billDetailAmount}>$10000</Text>
+              <Text style={styles.billDetailAmount}>${cancha.montoSeña}</Text>
             </View>
           )}
           <View style={[styles.billRow, styles.totalRow]}>
             <Text style={styles.totalText}>Total a pagar:</Text>
             <Text style={styles.totalAmount}>
-              ${place?.place?.requiereSeña ? montoSeña : totalAmount}
+              ${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}
             </Text>
           </View>
         </View>
       </View>
+
       <Text style={styles.heading}>Método de Pago</Text>
       <View style={styles.paymentMethodContainer}>
         <TouchableOpacity
@@ -340,14 +315,14 @@ export default function PaymentScreen() {
 
       <View style={styles.stickyButtonContainer}>
         <TouchableOpacity
-          onPress={() => handlePayment(place)}
+          onPress={handlePayment}
           disabled={loading}
           style={styles.reserveButton}
         >
           {!loading ? (
             <Text style={styles.reserveButtonText}>Reservar</Text>
           ) : (
-            <ActivityIndicator />
+            <ActivityIndicator color={Colors.WHITE} />
           )}
         </TouchableOpacity>
       </View>
@@ -370,6 +345,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     marginTop: 20,
   },
+  subHeading: {
+    color: Colors.PRIMARY,
+    fontSize: 18,
+    fontFamily: "montserrat-medium",
+    marginBottom: 15,
+  },
   sectionContainer: {
     marginBottom: 20,
   },
@@ -385,6 +366,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
   },
   scheduleText: {
     fontSize: 16,
@@ -457,42 +439,6 @@ const styles = StyleSheet.create({
     height: 40,
     resizeMode: 'contain',
   },
-  paymentForm: {
-    marginBottom: 20,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 10,
-  },
-  expirySecurityContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  expiryInput: {
-    flex: 1,
-    marginRight: 10,
-  },
-  securityInput: {
-    flex: 1,
-  },
-  reserveButton: {
-    padding: 13,
-    backgroundColor: Colors.PRIMARY,
-    margin: 10,
-    borderRadius: 10,
-    marginBottom: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  reserveButtonText: {
-    color: Colors.WHITE,
-    textAlign: "center",
-    fontFamily: "montserrat-medium",
-    fontSize: 17,
-  },
   creditCardForm: {
     backgroundColor: Colors.WHITE,
     padding: 15,
@@ -521,5 +467,20 @@ const styles = StyleSheet.create({
   },
   halfWidth: {
     flex: 1,
+  },
+  reserveButton: {
+    padding: 13,
+    backgroundColor: Colors.PRIMARY,
+    margin: 10,
+    borderRadius: 10,
+    marginBottom: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  reserveButtonText: {
+    color: Colors.WHITE,
+    textAlign: "center",
+    fontFamily: "montserrat-medium",
+    fontSize: 17,
   },
 });
