@@ -2,43 +2,48 @@ import React from "react";
 import { StyleSheet, Text, View, Image, TouchableOpacity } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 import { getProfileInfo } from "../../../infraestructure/api/user.api";
-import { CurrentUserContext } from "../../../application/context/CurrentUserContext";
+import { useCurrentUser } from "../../../application/context/CurrentUserContext";
 import defaultAvatar from "../../assets/images/avatar.png";
 import { api } from "../../../infraestructure/api/api";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ProfileScreen = () => {
   const navigator = useNavigation();
-  const { user, setUser } = useContext(CurrentUserContext);
-  const [userData, setUserData] = useState(null);
+  const { currentUser, logout } = useCurrentUser();
+  const [additionalData, setAdditionalData] = useState(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (user) {
-        const userData = await getProfileInfo(user);
-        console.log(userData)
-        setUserData(userData);
+    console.log('ProfileScreen - Usuario del contexto:', currentUser);
+    const fetchAdditionalData = async () => {
+      if (currentUser?.id) {
+        console.log('ProfileScreen - Obteniendo datos adicionales para:', currentUser.id);
+        try {
+          const data = await getProfileInfo(currentUser.id);
+          console.log('ProfileScreen - Datos adicionales obtenidos:', data);
+          setAdditionalData(data);
+        } catch (error) {
+          console.error('ProfileScreen - Error al obtener datos adicionales:', error);
+        }
       }
     };
-    fetchData();
-  }, [user]);
+    fetchAdditionalData();
+  }, [currentUser]);
 
   const signOut = async () => {
+    console.log('ProfileScreen - Iniciando cierre de sesión');
     try {
-      await api.post('/auth/logout');
-      await AsyncStorage.removeItem('userToken');
-      setUser(null);
-      setUserData(null);
+      await logout();
       navigator.navigate('userLoginStack');
     } catch (error) {
-      console.error("Error al cerrar sesión:", error);
+      console.error("ProfileScreen - Error al cerrar sesión:", error);
     }
   };
 
   const getImageSource = () => {
-    if (userData?.imageUrl) {
-      return { uri: userData.imageUrl };
+    if (additionalData?.imageUrl) {
+      return { uri: additionalData.imageUrl };
     }
     return defaultAvatar;
   };
@@ -57,8 +62,8 @@ const ProfileScreen = () => {
               source={getImageSource()}
             />
             <View style={styles.profileText}>
-              <Text style={styles.profileName}>{userData?.nombre || "Cargando..."}</Text>
-              <Text style={styles.profileEmail}>{userData?.email || "Cargando..."}</Text>
+              <Text style={styles.profileName}>{currentUser?.name || additionalData?.name || "Cargando..."}</Text>
+              <Text style={styles.profileEmail}>{currentUser?.email || additionalData?.email || "Cargando..."}</Text>
             </View>
             <TouchableOpacity
               style={styles.editButton}
