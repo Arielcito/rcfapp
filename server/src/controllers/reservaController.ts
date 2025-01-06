@@ -178,4 +178,53 @@ export class ReservaController {
       res.status(500).json({ message: 'Error al obtener las reservas' });
     }
   }
+
+  async getReservasByOwner(req: Request, res: Response) {
+    try {
+      const ownerId = req.params.ownerId;
+
+      if (!ownerId) {
+        return res.status(400).json({
+          success: false,
+          error: 'ID del dueño es requerido'
+        });
+      }
+
+      const reservas = await reservaService.getReservasByOwner(ownerId);
+
+      const formattedReservas = reservas.map(reserva => ({
+        id: reserva.id,
+        fechaHora: reserva.fechaHora,
+        duracion: reserva.duracion,
+        precioTotal: reserva.precioTotal,
+        estadoPago: reserva.estadoPago,
+        metodoPago: reserva.metodoPago,
+        notasAdicionales: reserva.notasAdicionales,
+        cancha: {
+          id: reserva.cancha.id,
+          nombre: reserva.cancha.nombre,
+          tipo: reserva.cancha.tipo,
+          tipoSuperficie: reserva.cancha.tipoSuperficie,
+          dimensiones: `${reserva.cancha.longitud}x${reserva.cancha.ancho}`
+        },
+        predio: {
+          id: reserva.predio.id,
+          nombre: reserva.predio.nombre,
+          direccion: reserva.predio.direccion,
+          telefono: reserva.predio.telefono
+        }
+      }));
+
+      res.json({
+        success: true,
+        data: formattedReservas
+      });
+    } catch (error) {
+      console.error('Error al obtener las reservas del dueño:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error al obtener las reservas del dueño'
+      });
+    }
+  }
 } 

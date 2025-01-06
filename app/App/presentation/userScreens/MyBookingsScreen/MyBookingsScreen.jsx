@@ -223,13 +223,15 @@ export default function MyBookingsScreen() {
           </View>
         ) : (
           <TabView
+            key={layout.width}
             navigationState={{ index, routes }}
             renderScene={renderScene}
             onIndexChange={setIndex}
             initialLayout={{ width: layout.width }}
-            renderTabBar={(props) => (
+            renderTabBar={props => (
               <TabBar
                 {...props}
+                key={`tabbar-${index}`}
                 indicatorStyle={{ backgroundColor: Colors.PRIMARY }}
                 style={{ backgroundColor: "#fff" }}
                 activeColor={Colors.PRIMARY}

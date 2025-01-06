@@ -18,7 +18,7 @@ const SuccessScreen = () => {
   const { appointmentData } = useRoute().params;
   const navigation = useNavigation();
   moment.locale("es");
-
+  console.log(appointmentData)
   // Datos por defecto en caso de que falten
   const defaultData = useMemo(() => ({
     data: {
@@ -137,7 +137,7 @@ const SuccessScreen = () => {
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>Total</Text>
-              <Text style={styles.value}>${Number(reserva.precioPorHora).toLocaleString()}</Text>
+              <Text style={styles.value}>${Number(reserva.precioTotal).toLocaleString()}</Text>
             </View>
             <View style={styles.infoRow}>
               <Ionicons

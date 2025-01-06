@@ -10,47 +10,58 @@ import {
   ToastAndroid,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { useContext } from "react";
 import Colors from "../../../infraestructure/utils/Colors";
-import { CurrentUserContext } from "../../../application/context/CurrentUserContext";
+import { useCurrentUser } from "../../../application/context/CurrentUserContext";
 import { getProfileInfo } from "../../../infraestructure/api/user.api";
 import defaultAvatar from "../../assets/images/avatar.png";
 import { api } from "../../../infraestructure/api/api";
 
 const EditProfileScreen = () => {
-  const { user, setUser } = useContext(CurrentUserContext);
+  const navigation = useNavigation();
+  const { currentUser, setCurrentUser } = useCurrentUser();
   const [name, setName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState(user.email);
+  const [email, setEmail] = useState(currentUser?.email || "");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
-  const navigation = useNavigation();
 
   useEffect(() => {
+    console.log('EditProfileScreen - Cargando datos del usuario:', currentUser?.id);
     const fetchData = async () => {
-      const userData = await getProfileInfo(user);
-      setName(userData.nombre);
-      setLastName(userData.apellido);
-      setPhone(userData.telefono.toString());
+      try {
+        const userData = await getProfileInfo(currentUser.id);
+        console.log('EditProfileScreen - Datos obtenidos:', userData);
+        setName(userData.nombre || "");
+        setLastName(userData.apellido || "");
+        setPhone(userData.telefono ? userData.telefono.toString() : "");
+      } catch (error) {
+        console.error('EditProfileScreen - Error al obtener datos:', error);
+        ToastAndroid.show("Error al cargar los datos del perfil", ToastAndroid.LONG);
+      }
     };
-    fetchData();
-  }, [user]);
+    if (currentUser?.id) {
+      fetchData();
+    }
+  }, [currentUser]);
 
   const handleSave = async () => {
     try {
       setLoading(true);
+      console.log('EditProfileScreen - Guardando cambios para usuario:', currentUser?.id);
+      
       const userData = {
         nombre: name,
         apellido: lastName,
-        telefono: Number.parseInt(phone, 10),
-        email: user.email,
+        telefono: phone ? Number.parseInt(phone, 10) : null,
+        email: currentUser.email,
       };
 
-      const response = await api.put(`/users/${user.uid}`, userData);
+      const response = await api.put(`/users/${currentUser.id}`, userData);
 
       if (response.status === 200) {
-        setUser({
-          ...user,
+        console.log('EditProfileScreen - Datos actualizados:', response.data);
+        await setCurrentUser({
+          ...currentUser,
           ...response.data
         });
 
@@ -58,7 +69,7 @@ const EditProfileScreen = () => {
         navigation.goBack();
       }
     } catch (error) {
-      console.error("Error saving profile info: ", error);
+      console.error("EditProfileScreen - Error al guardar:", error);
       ToastAndroid.show("Error al guardar los cambios.", ToastAndroid.LONG);
     } finally {
       setLoading(false);

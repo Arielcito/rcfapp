@@ -15,7 +15,7 @@ import { updateAppointment } from "../../../infraestructure/api/appointments.api
 
 export default function BookingItem({ place, setLoading }) {
   const navigation = useNavigation();
-
+  console.log("place", place)
   const handleCancel = async (appointmentId) => {
     setLoading(true);
     try {

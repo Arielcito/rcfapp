@@ -1,12 +1,19 @@
+version: '3.8'
+
+networks:
+  rcf_network:
+    name: rcf_network
+
 services:
   server:
+    container_name: rcf_backend
     build:
       context: ./server
       dockerfile: Dockerfile
       platforms:
         - linux/arm64
     ports:
-      - "3001:8080"
+      - "3501:8080"
     environment:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://postgres.hpzmwbctmctagutqgjpf:Casa43515134@aws-0-us-east-1.pooler.supabase.com:6543/postgres
@@ -16,19 +23,9 @@ services:
     volumes:
       - ./server:/app
       - /app/node_modules
-    depends_on:
-      - db
-
-  db:
-    image: postgres:15-alpine
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data: 
+    networks:
+      - rcf_network
+    labels:
+      - "project=rcf"
+      - "environment=production"
+    restart: unless-stopped 

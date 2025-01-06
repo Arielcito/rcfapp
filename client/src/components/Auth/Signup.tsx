@@ -38,6 +38,7 @@ const Signup = () => {
       });
       
       toast.success("Usuario registrado exitosamente", { id: "signup" });
+      setData({ name: "", email: "", password: "", confirmPassword: "" });
       router.push("/onboarding");
     } catch (error) {
       console.error("Error en registro:", error);
