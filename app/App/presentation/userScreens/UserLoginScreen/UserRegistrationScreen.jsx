@@ -99,7 +99,8 @@ export default function UserRegistrationScreen() {
 
       navigation.navigate('PhoneVerification', {
         verificationId,
-        userData: values
+        userData: values,
+        recaptchaVerifier: recaptchaVerifier.current
       });
 
     } catch (err) {
@@ -168,7 +169,7 @@ export default function UserRegistrationScreen() {
           placeholder="Contraseña"
           onChangeText={(text) => handleChange(text, 'pwd')}
           value={values.pwd}
-          secureTextEntry={true}
+          secureTextEntry={false}
           autoCapitalize="none"
         />
         {errors.pwd && <Text style={styles.errorText}>{errors.pwd}</Text>}
@@ -178,7 +179,7 @@ export default function UserRegistrationScreen() {
           placeholder="Confirmar Contraseña"
           onChangeText={(text) => handleChange(text, 'confirmPwd')}
           value={values.confirmPwd}
-          secureTextEntry={true}
+          secureTextEntry={false}
           autoCapitalize="none"
         />
         {errors.confirmPwd && <Text style={styles.errorText}>{errors.confirmPwd}</Text>}

@@ -11,6 +11,11 @@ export const getUserBookings = async () => {
   return response.data;
 };
 
+export const getOwnerBookings = async (ownerId: string) => {
+  const response = await api.get(`/reservas/owner/${ownerId}`);
+  return response.data.data;
+};
+
 export const checkReservaAvailability = async (data: {
   canchaId: string;
   fecha: string;

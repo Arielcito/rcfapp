@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const publicRoutes = ['/signin', '/signup', '/forgot-password']
+const publicRoutes = ['/auth/signin', '/auth/signup', '/auth/forgot-password']
 const protectedRoutes = ['/dashboard', '/profile', '/settings']
 
 export async function middleware(request: NextRequest) {
@@ -15,7 +15,7 @@ export async function middleware(request: NextRequest) {
       
       // Si el usuario ya está autenticado, redirigir al dashboard
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/me`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/me`, {
           headers: {
             Cookie: request.headers.get('cookie') || '',
           },
@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
       console.log('🔒 Middleware: Verificando ruta protegida...');
       console.log('🍪 Cookies presentes:', request.headers.get('cookie'));
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/me`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/me`, {
         headers: {
           Cookie: request.headers.get('cookie') || '',
         },
@@ -47,16 +47,7 @@ export async function middleware(request: NextRequest) {
 
       if (!response.ok) {
         console.log('❌ No hay sesión válida, redirigiendo a login');
-        return NextResponse.redirect(new URL('/signin', request.url))
-      }
-
-      const user = await response.json()
-      console.log('👤 Usuario autenticado:', user);
-
-      // Verificar si el usuario necesita completar el onboarding
-      if (!user.onboardingCompleted && pathname !== '/onboarding') {
-        console.log('🔄 Usuario necesita completar onboarding');
-        return NextResponse.redirect(new URL('/onboarding', request.url))
+        return NextResponse.redirect(new URL('/auth/signin', request.url))
       }
 
       console.log('✅ Acceso permitido a ruta protegida');
@@ -65,7 +56,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   } catch (error) {
     console.error('💥 Error en middleware:', error)
-    return NextResponse.redirect(new URL('/signin', request.url))
+    return NextResponse.redirect(new URL('/auth/signin', request.url))
   }
 }
 
@@ -74,9 +65,8 @@ export const config = {
     '/dashboard/:path*',
     '/profile/:path*',
     '/settings/:path*',
-    '/signin',
-    '/signup',
-    '/forgot-password',
-    '/onboarding'
+    '/auth/signin',
+    '/auth/signup',
+    '/auth/forgot-password'
   ]
 } 

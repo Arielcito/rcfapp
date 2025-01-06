@@ -16,7 +16,21 @@ export default function PhoneVerificationScreen({ route, navigation }) {
   const [verificationCode, setVerificationCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [resendDisabled, setResendDisabled] = useState(true);
+  const [countdown, setCountdown] = useState(60);
   const { verificationId, userData } = route.params;
+
+  useEffect(() => {
+    let timer;
+    if (countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown(prev => prev - 1);
+      }, 1000);
+    } else {
+      setResendDisabled(false);
+    }
+    return () => clearInterval(timer);
+  }, [countdown]);
 
   async function verifyCode() {
     if (verificationCode.length !== 6) {
@@ -37,6 +51,44 @@ export default function PhoneVerificationScreen({ route, navigation }) {
     } catch (err) {
       console.error(err);
       setError('Código inválido. Por favor intenta nuevamente.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function resendCode() {
+    setLoading(true);
+    try {
+      const phoneNumberWithCode = `+54${userData.phone}`;
+      console.log('Intentando reenviar código a:', phoneNumberWithCode);
+      
+      if (!route.params.recaptchaVerifier) {
+        throw new Error('No se encontró el verificador de reCAPTCHA');
+      }
+
+      const newVerificationId = await new PhoneAuthProvider(FIREBASE_AUTH)
+        .verifyPhoneNumber(
+          phoneNumberWithCode,
+          route.params.recaptchaVerifier
+        );
+
+      // Actualizar el verificationId en los parámetros de la ruta
+      route.params.verificationId = newVerificationId;
+      
+      console.log('Código reenviado exitosamente');
+      setResendDisabled(true);
+      setCountdown(60);
+      setError('');
+      // Mostrar mensaje de éxito
+      setError('Código reenviado exitosamente');
+      setTimeout(() => setError(''), 3000);
+    } catch (err) {
+      console.error('Error al reenviar código:', err);
+      setError(
+        err.message === 'No se encontró el verificador de reCAPTCHA'
+          ? 'Error: Necesitas volver a la pantalla anterior e intentar nuevamente'
+          : 'Error al reenviar el código. Por favor intenta nuevamente.'
+      );
     } finally {
       setLoading(false);
     }
@@ -70,6 +122,18 @@ export default function PhoneVerificationScreen({ route, navigation }) {
         ) : (
           <Text style={styles.verifyButtonText}>Verificar Código</Text>
         )}
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.resendButton, resendDisabled && styles.resendButtonDisabled]}
+        onPress={resendCode}
+        disabled={resendDisabled || loading}
+      >
+        <Text style={[styles.resendButtonText, resendDisabled && styles.resendButtonTextDisabled]}>
+          {resendDisabled 
+            ? `Reenviar código en ${countdown}s`
+            : 'Reenviar código'}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -129,5 +193,20 @@ const styles = StyleSheet.create({
     color: 'red',
     marginBottom: 15,
     textAlign: 'center',
+  },
+  resendButton: {
+    marginTop: 20,
+    padding: 10,
+  },
+  resendButtonDisabled: {
+    opacity: 0.6,
+  },
+  resendButtonText: {
+    color: Colors.PRIMARY,
+    fontSize: 16,
+    fontFamily: 'montserrat',
+  },
+  resendButtonTextDisabled: {
+    color: '#666',
   },
 }); 

@@ -12,6 +12,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import Colors from "../../../infraestructure/utils/Colors";
 import { useCurrentUser } from "../../../application/context/CurrentUserContext";
+import { Ionicons } from '@expo/vector-icons';
 
 export default function UserLoginScreen() {
   const [values, setValues] = useState({
@@ -61,6 +62,12 @@ export default function UserLoginScreen() {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity 
+        style={styles.backButton} 
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color="black" />
+      </TouchableOpacity>
       <ImageBackground
         source={image}
         resizeMode="contain"
@@ -203,5 +210,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontFamily: "montserrat",
     fontSize: 17,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 1,
+    padding: 10,
   },
 });
