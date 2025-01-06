@@ -14,11 +14,14 @@ RUN npm install
 RUN npm rebuild bcrypt --build-from-source
 
 # Copiar código fuente
-COPY src ./src
+COPY . .
 
 # Construir la aplicación
 RUN npm run build
 
 EXPOSE 8080
+
+# Asegurarnos que el directorio dist existe
+RUN ls -la dist/
 
 CMD ["npm", "start"] 
