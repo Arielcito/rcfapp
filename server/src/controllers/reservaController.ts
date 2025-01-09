@@ -181,7 +181,7 @@ export class ReservaController {
 
   async getReservasByOwner(req: Request, res: Response) {
     try {
-      const ownerId = req.params.ownerId;
+      const ownerId = req.params.id;
 
       if (!ownerId) {
         return res.status(400).json({

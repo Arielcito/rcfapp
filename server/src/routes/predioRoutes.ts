@@ -15,7 +15,7 @@ const router = express.Router();
 router.post('/', authenticateToken, createPredio);
 router.get('/', getPredios);
 router.get('/:id', authenticateToken, getPredioById);
-router.get('/usuario/:usuarioId', authenticateToken, getPrediosByUsuarioId);
+router.get('/usuario/:id', authenticateToken, getPrediosByUsuarioId);
 router.put('/:id', authenticateToken, authorizeRole([Role.ADMIN, Role.OWNER]), updatePredio);
 router.delete('/:id', authenticateToken, authorizeRole([Role.ADMIN, Role.OWNER]), deletePredio);
 

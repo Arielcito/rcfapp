@@ -16,7 +16,7 @@ router.use((req, res, next) => {
 });
 
 router.get('/user/bookings', reservaController.getUserBookings);
-router.get('/owner/:ownerId', reservaController.getReservasByOwner);
+router.get('/owner/:id', reservaController.getReservasByOwner);
 router.post('/', reservaController.createReserva);
 router.post('/check', reservaController.checkReservaAvailability);
 router.post('/available-times', reservaController.getAvailableTimes);
