@@ -87,9 +87,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('👤 Login: Estableciendo usuario en el contexto:', response.data.user);
       setUser(response.data.user);
       
-      console.log('🔄 Login: Verificando estado del usuario después de setUser');
-      await checkAuth();
-
     } catch (error) {
       console.error('❌ Login: Error durante el proceso', error);
       if (axios.isAxiosError(error)) {
@@ -154,7 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider value={{ 
       user, 
-      isAuthenticated: loading, 
+      isAuthenticated: !!user, 
       isLoading: loading, 
       login, 
       register, 

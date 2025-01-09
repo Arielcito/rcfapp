@@ -200,6 +200,7 @@ const Header = () => {
                   >
                     Cerrar Sesión
                   </button>
+                  <Link href="/dashboard"> Dashboard </Link>
                 </div>
               ) : (
                 <Link
