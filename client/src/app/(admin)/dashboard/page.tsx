@@ -10,29 +10,18 @@ export default function DashboardPage() {
   const router = useRouter()
 
   useEffect(() => {
-    console.log('🔄 Dashboard: Estado actual:', {
-      isLoading,
-      user
-    });
-
     if (!isLoading && !user) {
-      console.log('❌ No hay usuario, redirigiendo...');
       router.push('/')
-    } else if (!isLoading && user) {
-      console.log('✅ Usuario verificado');
     }
   }, [user, isLoading, router])
 
   if (isLoading) {
-    console.log('⏳ Dashboard: Cargando...');
     return <div>Cargando...</div>
   }
 
   if (!user) {
-    console.log('🚫 Dashboard: Acceso denegado');
     return null
   }
 
-  console.log('🎉 Dashboard: Renderizando componente');
   return <DashboardAdmin />
 }

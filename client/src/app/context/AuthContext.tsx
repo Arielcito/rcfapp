@@ -33,68 +33,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('Estado del usuario actualizado:', user);
-  }, [user]);
-
-  useEffect(() => {
     checkAuth();
   }, []);
 
   const checkAuth = async () => {
     try {
-      console.log('🔍 AuthContext: Verificando autenticación...');
       const response = await api.get('/api/users/me');
-      console.log('📡 AuthContext: Respuesta de checkAuth:', response.data);
       setUser(response.data);
-      console.log('✅ AuthContext: Usuario establecido:', response.data);
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error('❌ AuthContext: Error en checkAuth:', {
-          status: error.response?.status,
-          data: error.response?.data,
-          headers: error.response?.headers
-        });
-      } else {
-        console.error('💥 AuthContext: Error desconocido en checkAuth:', error);
-      }
+      // Manejar el error silenciosamente
     } finally {
       setLoading(false);
-      console.log('🏁 AuthContext: Loading finalizado');
     }
   };
 
   const login = async (email: string, password: string) => {
     try {
-      console.log('🔑 Login: Iniciando proceso de login...');
-      console.log('📧 Email utilizado:', email);
-      
       const response = await api.post('/api/users/login', {
         email,
         password
       });
-      
-      console.log('✅ Login: Respuesta exitosa:', {
-        status: response.status,
-        headers: response.headers,
-        userData: response.data.user
-      });
 
       if (!response.data.user) {
-        console.error('❌ Login: No se recibió información del usuario en la respuesta');
         throw new Error('No se recibió información del usuario');
       }
 
-      console.log('👤 Login: Estableciendo usuario en el contexto:', response.data.user);
       setUser(response.data.user);
-      
     } catch (error) {
-      console.error('❌ Login: Error durante el proceso', error);
       if (axios.isAxiosError(error)) {
-        console.error('🚫 Login: Detalles del error:', {
-          status: error.response?.status,
-          data: error.response?.data,
-          headers: error.response?.headers
-        });
         throw new Error(error.response?.data?.message || 'Error en el inicio de sesión');
       }
       throw error;
@@ -103,23 +69,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (data: RegisterData) => {
     try {
-      console.log('Intentando registro con datos:', { ...data, password: '[PROTECTED]' });
       const response = await api.post('/api/users/register', data);
-      
-      console.log('Respuesta de registro:', {
-        status: response.status,
-        headers: response.headers,
-        data: response.data
-      });
-
       setUser(response.data.user);
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        console.error('Error en registro:', {
-          status: error.response?.status,
-          data: error.response?.data,
-          headers: error.response?.headers
-        });
         throw new Error(error.response?.data?.message || 'Error en el registro');
       }
       throw error;
@@ -128,18 +81,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      console.log('Intentando logout...');
       await api.post('/api/users/logout');
-      console.log('Logout exitoso');
       setUser(null);
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error('Error en logout:', {
-          status: error.response?.status,
-          data: error.response?.data,
-          headers: error.response?.headers
-        });
-      }
       throw error;
     }
   };
