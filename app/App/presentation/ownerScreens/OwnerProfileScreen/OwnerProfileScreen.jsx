@@ -4,6 +4,7 @@ import Colors from '../../../infraestructure/utils/Colors'
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import { api } from '../../../infraestructure/api/api'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 export default function OwnerProfileScreen() {
   const [user, setUser] = useState(null)
@@ -36,9 +37,11 @@ export default function OwnerProfileScreen() {
   const signOut = async () => {
     try {
       await api.post('/users/logout')
+      await AsyncStorage.multiRemove(['userToken', 'userData', 'userId'])
+      api.defaults.headers.common.Authorization = ''
       navigation.reset({
         index: 0,
-        routes: [{ name: 'Login' }]
+        routes: [{ name: 'welcomePage' }]
       })
     } catch (error) {
       console.log('Error al cerrar sesión:', error)

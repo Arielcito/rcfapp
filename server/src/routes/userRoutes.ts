@@ -13,6 +13,7 @@ import {
   getCurrentUser,
   checkEmail
 } from '../controllers/userController';
+import { getPredioById, getPrediosByUsuarioId } from '../controllers/predioController';
 
 const router = express.Router();
 
@@ -31,7 +32,7 @@ router.get('/', authenticateToken, getUsers);
 router.get('/:id', authenticateToken, getUserById);
 router.put('/:id', authenticateToken, updateUser);
 router.delete('/:id', authenticateToken, authorizeRole([Role.ADMIN, Role.OWNER]), deleteUser);
-
+router.get('/:id/predio', authenticateToken, getPrediosByUsuarioId);
 router.post('/auth/logout', async (req, res) => {
   try {
     res.clearCookie('token');

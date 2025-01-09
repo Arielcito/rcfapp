@@ -2,7 +2,8 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Skeleton } from "@/components/ui/skeleton"
-import { getUserBookings } from "@/api/reservas"
+import { getOwnerBookings, getUserBookings } from "@/api/reservas"
+import { useAuth } from "@/app/context/AuthContext"
 
 interface Reserva {
   appointmentId: string;
@@ -19,12 +20,12 @@ export function ProximasAgendas() {
   const [reservas, setReservas] = useState<Reserva[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
+  const { user } = useAuth()
   useEffect(() => {
     const cargarReservas = async () => {
       try {
         setIsLoading(true)
-        const data = await getUserBookings()
+        const data = await getOwnerBookings(user?.id || '')
         setReservas(data)
         setError(null)
       } catch (err) {
