@@ -51,7 +51,20 @@ export const getPrediosByUsuarioId = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const predios = await predioService.getPrediosByUsuarioId(req.params.usuarioId);
+    const { id } = req.params;
+    
+    if (!id) {
+      res.status(400).json({ message: 'ID de usuario no proporcionado' });
+      return;
+    }
+
+    const predios = await predioService.getPrediosByUsuarioId(id);
+    
+    if (!predios || predios.length === 0) {
+      res.status(404).json({ message: 'No se encontraron predios para este usuario' });
+      return;
+    }
+
     res.json(predios);
   } catch (error) {
     next(error);

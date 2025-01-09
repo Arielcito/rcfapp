@@ -35,9 +35,6 @@ export async function middleware(request: NextRequest) {
 
     // Verificar rutas protegidas
     if (protectedRoutes.some(route => pathname.startsWith(route))) {
-      console.log('🔒 Middleware: Verificando ruta protegida...');
-      console.log('🍪 Cookies presentes:', request.headers.get('cookie'));
-      
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/me`, {
         headers: {
           Cookie: request.headers.get('cookie') || '',

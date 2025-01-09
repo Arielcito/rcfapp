@@ -13,6 +13,7 @@ export const getUserBookings = async () => {
 
 export const getOwnerBookings = async (ownerId: string) => {
   const response = await api.get(`/reservas/owner/${ownerId}`);
+  console.log(response.data)
   return response.data.data;
 };
 
