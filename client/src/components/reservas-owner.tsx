@@ -41,6 +41,7 @@ export function ReservasOwner({ ownerId }: ReservasOwnerProps) {
       try {
         setIsLoading(true)
         const data = await getOwnerBookings(ownerId)
+        console.log(data)
         setReservas(data)
         setError(null)
       } catch (err) {

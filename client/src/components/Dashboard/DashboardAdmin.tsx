@@ -9,6 +9,7 @@ import { usePredio } from "@/hooks/usePredio";
 import { ProximasAgendas } from "../proximas-agendas";
 import { ResumenSemana } from "../resumen-semana";
 import { GraficoDineroGanado } from "../grafico-dinero-ganado";
+import api from "@/lib/axios";
 
 interface DashboardStats {
   totalCanchas: number;
@@ -46,16 +47,16 @@ const DashboardAdmin = () => {
 
   const fetchDashboardStats = async () => {
     try {
-      const response = await fetch(`/api/dashboard/stats?predioId=${predio?.id}`);
-      const data = await response.json();
+      const { data } = await api.get<DashboardStats>('/api/dashboard/stats', {
+        params: { predioId: predio?.id }
+      });
       setStats(data);
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
+      setStats(null);
     } finally {
       setLoading(false);
     }
   };
-
 
   return (
     <>

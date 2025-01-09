@@ -260,7 +260,6 @@ export class ReservaService {
   }
 
   async getReservasByOwner(ownerId: string) {
-    console.log('[ReservaService] Obteniendo reservas futuras del dueño:', ownerId);
     try {
       const now = new Date();
       const reservas = await db
@@ -296,10 +295,8 @@ export class ReservaService {
         .where(gt(Reserva.fechaHora, now))
         .orderBy(Reserva.fechaHora);
 
-      console.log('[ReservaService] Reservas futuras encontradas:', reservas.length);
       return reservas;
     } catch (error) {
-      console.error('[ReservaService] Error al obtener reservas del dueño:', error);
       throw new Error('Error al obtener las reservas del dueño');
     }
   }

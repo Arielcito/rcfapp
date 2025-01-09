@@ -181,7 +181,7 @@ export class ReservaController {
 
   async getReservasByOwner(req: Request, res: Response) {
     try {
-      const ownerId = req.params.id;
+      const { id: ownerId } = req.params;
 
       if (!ownerId) {
         return res.status(400).json({
@@ -193,26 +193,17 @@ export class ReservaController {
       const reservas = await reservaService.getReservasByOwner(ownerId);
 
       const formattedReservas = reservas.map(reserva => ({
-        id: reserva.id,
-        fechaHora: reserva.fechaHora,
-        duracion: reserva.duracion,
-        precioTotal: reserva.precioTotal,
-        estadoPago: reserva.estadoPago,
-        metodoPago: reserva.metodoPago,
-        notasAdicionales: reserva.notasAdicionales,
-        cancha: {
-          id: reserva.cancha.id,
-          nombre: reserva.cancha.nombre,
-          tipo: reserva.cancha.tipo,
-          tipoSuperficie: reserva.cancha.tipoSuperficie,
-          dimensiones: `${reserva.cancha.longitud}x${reserva.cancha.ancho}`
+        appointmentId: reserva.id,
+        place: {
+          name: reserva.cancha.nombre || 'Cancha sin nombre',
+          description: `${reserva.cancha.tipo || 'Fútbol'} - ${reserva.cancha.tipoSuperficie || 'No especificado'}`,
+          imageUrl: "https://example.com/placeholder.jpg",
+          telefono: reserva.predio.telefono || 'No disponible'
         },
-        predio: {
-          id: reserva.predio.id,
-          nombre: reserva.predio.nombre,
-          direccion: reserva.predio.direccion,
-          telefono: reserva.predio.telefono
-        }
+        appointmentDate: new Date(reserva.fechaHora).toISOString().split('T')[0],
+        appointmentTime: new Date(reserva.fechaHora).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+        estado: reserva.estadoPago?.toLowerCase() || 'pendiente',
+        metodoPago: reserva.metodoPago
       }));
 
       res.json({
@@ -220,7 +211,6 @@ export class ReservaController {
         data: formattedReservas
       });
     } catch (error) {
-      console.error('Error al obtener las reservas del dueño:', error);
       res.status(500).json({
         success: false,
         error: 'Error al obtener las reservas del dueño'
