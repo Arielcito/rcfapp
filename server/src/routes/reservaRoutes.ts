@@ -5,23 +5,21 @@ import { authenticateToken } from '../middleware/auth';
 const router = Router();
 const reservaController = new ReservaController();
 
+// Aplicar middleware de autenticación a todas las rutas
 router.use(authenticateToken);
 
-router.use((req, res, next) => {
-  console.log(`[Reserva Route] ${req.method} ${req.originalUrl}`);
-  console.log('[Reserva Route] Request Body:', req.body);
-  console.log('[Reserva Route] Request Params:', req.params);
-  console.log('[Reserva Route] Request Query:', req.query);
-  next();
-});
-
+// Rutas GET
 router.get('/user/bookings', reservaController.getUserBookings);
 router.get('/owner/:id', reservaController.getReservasByOwner);
+router.get('/owner/:date/:ownerId', reservaController.getReservasByDate);
+router.get('/:id', reservaController.getReservaById);
+
+// Rutas POST
 router.post('/', reservaController.createReserva);
 router.post('/check', reservaController.checkReservaAvailability);
 router.post('/available-times', reservaController.getAvailableTimes);
-router.get('/owner/:date/:ownerId', reservaController.getReservasByDate);
-router.get('/:id', reservaController.getReservaById);
+
+// Rutas PUT
 router.put('/:id', reservaController.updateReserva);
 
 export default router; 
