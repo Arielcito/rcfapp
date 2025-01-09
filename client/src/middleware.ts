@@ -9,51 +9,44 @@ export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl
     console.log('🛣️ Middleware: Ruta actual:', pathname);
 
+    const token = request.cookies.get('token')?.value;
+    
+    // Si el usuario está en el dashboard y tiene token, permitir acceso
+    if (pathname.startsWith('/dashboard') && token) {
+      console.log('✅ Usuario autenticado en dashboard');
+      return NextResponse.next();
+    }
+
     // Verificar si es una ruta pública
     if (publicRoutes.some(route => pathname.startsWith(route))) {
       console.log('🔓 Middleware: Ruta pública detectada');
       
-      // Si el usuario ya está autenticado, redirigir al dashboard
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/me`, {
-          headers: {
-            Cookie: request.headers.get('cookie') || '',
-          },
-          credentials: 'include',
-        })
-
-        if (response.ok) {
-          console.log('👤 Usuario ya autenticado, redirigiendo al dashboard');
-          return NextResponse.redirect(new URL('/dashboard', request.url))
+      if (token) {
+        // Solo redirigir si no está ya en el dashboard
+        if (!pathname.startsWith('/dashboard')) {
+          console.log('👤 Token detectado, redirigiendo al dashboard');
+          return NextResponse.redirect(new URL('/dashboard', request.url));
         }
-      } catch (error) {
-        console.error('❌ Error verificando autenticación:', error);
       }
       
-      return NextResponse.next()
+      return NextResponse.next();
     }
 
     // Verificar rutas protegidas
     if (protectedRoutes.some(route => pathname.startsWith(route))) {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/me`, {
-        headers: {
-          Cookie: request.headers.get('cookie') || '',
-        },
-        credentials: 'include',
-      })
-
-      if (!response.ok) {
-        console.log('❌ No hay sesión válida, redirigiendo a login');
-        return NextResponse.redirect(new URL('/auth/signin', request.url))
+      if (!token) {
+        console.log('❌ No hay token, redirigiendo a login');
+        return NextResponse.redirect(new URL('/auth/signin', request.url));
       }
-
-      console.log('✅ Acceso permitido a ruta protegida');
+      
+      console.log('✅ Token encontrado, acceso permitido a ruta protegida');
+      return NextResponse.next();
     }
 
-    return NextResponse.next()
+    return NextResponse.next();
   } catch (error) {
-    console.error('💥 Error en middleware:', error)
-    return NextResponse.redirect(new URL('/auth/signin', request.url))
+    console.error('💥 Error en middleware:', error);
+    return NextResponse.redirect(new URL('/auth/signin', request.url));
   }
 }
 
