@@ -234,34 +234,37 @@ export default function HomeScreen() {
           {renderTimePickerModal()}
         </View>
         
-        {loading ? (
-          <View style={styles.listLoadingContainer}>
-            <ActivityIndicator size="large" color={Colors.PRIMARY} />
-          </View>
-        ) : placeList.length > 0 ? (
-          <FlatList
-            data={placeList}
-            style={[styles.placeList]}
-            renderItem={({ item }) => (
-              <PlaceItem
-                place={item}
-                selectedDate={selectedDate}
-                selectedTime={selectedTime}
-                isTablet={isTablet}
-              />
-            )}
-            keyExtractor={(item) => item.id}
-            removeClippedSubviews={true}
-            maxToRenderPerBatch={10}
-            windowSize={21}
-            initialNumToRender={5}
-            numColumns={isTablet ? 2 : 1}
-          />
-        ) : (
-          <Text style={[styles.noPlacesText, isTablet && styles.tabletNoPlacesText]}>
-            No hay lugares disponibles
-          </Text>
-        )}
+        <View style={styles.listContainer}>
+          {loading ? (
+            <View style={styles.listLoadingContainer}>
+              <ActivityIndicator size="large" color={Colors.PRIMARY} />
+            </View>
+          ) : placeList.length > 0 ? (
+            <FlatList
+              data={placeList}
+              style={styles.placeList}
+              contentContainerStyle={styles.placeListContent}
+              renderItem={({ item }) => (
+                <PlaceItem
+                  place={item}
+                  selectedDate={selectedDate}
+                  selectedTime={selectedTime}
+                  isTablet={isTablet}
+                />
+              )}
+              keyExtractor={(item) => item.id}
+              removeClippedSubviews={true}
+              maxToRenderPerBatch={10}
+              windowSize={21}
+              initialNumToRender={5}
+              numColumns={isTablet ? 2 : 1}
+            />
+          ) : (
+            <Text style={[styles.noPlacesText, isTablet && styles.tabletNoPlacesText]}>
+              No hay lugares disponibles
+            </Text>
+          )}
+        </View>
       </View>
     </SelectMarkerContext.Provider>
   );
@@ -269,6 +272,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     paddingTop: 50,
   },
   headerContainer: {
@@ -276,6 +280,7 @@ const styles = StyleSheet.create({
     padding: 10,
     width: "100%",
     paddingHorizontal: 20,
+    backgroundColor: Colors.WHITE,
   },
   sectionTitle: {
     padding: 10,
@@ -377,8 +382,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   placeList: {
-    paddingBottom: 300,
-    marginBottom: 100,
+    flex: 1,
+  },
+  placeListContent: {
+    paddingBottom: 20,
   },
   noPlacesText: {
     fontFamily: "montserrat-medium",
@@ -420,5 +427,8 @@ const styles = StyleSheet.create({
   tabletNoPlacesText: {
     fontSize: 20,
     marginTop: 40,
+  },
+  listContainer: {
+    flex: 1,
   },
 });

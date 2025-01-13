@@ -14,7 +14,7 @@ export const authenticateToken = (
   next: NextFunction
 ) => {
   const token = req.cookies.auth_token;
-
+  console.log("token", token);
   if (!token) {
     return res.status(401).json({ message: 'No autorizado' });
   }
@@ -24,13 +24,14 @@ export const authenticateToken = (
       token, 
       process.env.JWT_SECRET || 'your-secret-key'
     ) as JWTPayload;
-    
+    console.log(decoded);
     req.body.user = {
       id: decoded.id,
       email: decoded.email,
       role: decoded.role,
       name: null
     };
+    console.log(req.body.user);
     next();
   } catch (error) {
     res.status(401).json({ message: 'Token inválido' });

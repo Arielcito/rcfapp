@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 
 const ENV = {
   dev: {
-    apiUrl: 'http://localhost:3001/api',
+    apiUrl: 'http://localhost:8080/api',
     firebase: {
       apiKey: "AIzaSyC63HcJiZPxNDxCSwFm0258ctV0ILQDjRc",
       authDomain: "rfc-app-11121.firebaseapp.com",

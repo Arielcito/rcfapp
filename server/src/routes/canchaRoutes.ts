@@ -13,9 +13,9 @@ import {
 const router = express.Router();
 
 router.post('/', authenticateToken, authorizeRole([Role.ADMIN, Role.OWNER]), createCancha);
-router.get('/', authenticateToken, getCanchas);
-router.get('/:id', authenticateToken, getCanchaById);
-router.get('/predio/:predioId', authenticateToken, getCanchasByPredioId);
+router.get('/', getCanchas);
+router.get('/:id', getCanchaById);
+router.get('/predio/:predioId', getCanchasByPredioId);
 router.put('/:id', authenticateToken, authorizeRole([Role.ADMIN, Role.OWNER]), updateCancha);
 router.delete('/:id', authenticateToken, authorizeRole([Role.ADMIN, Role.OWNER]), deleteCancha);
 

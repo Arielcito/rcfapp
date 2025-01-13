@@ -5,10 +5,10 @@ import { authenticateToken } from '../middleware/auth';
 const router = Router();
 const reservaController = new ReservaController();
 
-// Aplicar middleware de autenticación a todas las rutas
-router.use(authenticateToken);
+
 
 // Rutas GET
+router.get('/', reservaController.getReservas);
 router.get('/user/bookings', reservaController.getUserBookings);
 router.get('/owner/:id', reservaController.getReservasByOwner);
 router.get('/owner/:date/:ownerId', reservaController.getReservasByDate);

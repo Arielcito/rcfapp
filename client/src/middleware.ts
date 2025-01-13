@@ -24,7 +24,6 @@ export async function middleware(request: NextRequest) {
       if (token) {
         // Solo redirigir si no está ya en el dashboard
         if (!pathname.startsWith('/dashboard')) {
-          console.log('👤 Token detectado, redirigiendo al dashboard');
           return NextResponse.redirect(new URL('/dashboard', request.url));
         }
       }
