@@ -239,6 +239,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 4,
+    color: Colors.WHITE,
   },
   canchaDetail: {
     fontSize: 14,

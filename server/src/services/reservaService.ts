@@ -4,6 +4,15 @@ import { eq, sql, and, lt, gt } from 'drizzle-orm';
 import type { CreateReservaDTO, UpdateReservaDTO } from '../types/reserva';
 
 export class ReservaService {
+  async getReservas() {
+    try {
+      return db.select().from(Reserva);
+    } catch (error) {
+      console.error('[ReservaService] Error al obtener las reservas:', error);
+      throw new Error('Error al obtener las reservas');
+    }
+  }
+
   async createReserva(data: CreateReservaDTO) {
     console.log('[ReservaService] Iniciando creación de reserva');
     console.log('[ReservaService] Datos recibidos:', JSON.stringify(data, null, 2));

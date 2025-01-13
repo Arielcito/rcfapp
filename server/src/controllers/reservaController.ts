@@ -7,6 +7,21 @@ import moment from 'moment';
 const reservaService = new ReservaService();
 
 export class ReservaController {
+  async getReservas(req: Request, res: Response) {
+    try {
+      const reservas = await reservaService.getReservas();
+      res.json({
+        success: true,
+        data: reservas
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Error al obtener las reservas'
+      });
+    }
+  }
+
   async createReserva(req: Request, res: Response) {
     try {
       const data: CreateReservaDTO = req.body;
