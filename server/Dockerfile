@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 node:18-alpine
+FROM node:18-alpine
 
 # Instalar dependencias necesarias
 RUN apk add --no-cache python3 make g++ gcc openssl-dev
