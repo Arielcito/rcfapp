@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 8080;
 const BASE_PATH = process.env.BASE_PATH || '/api';
 
 // Configuración de CORS
-const allowedOrigins = ['http://localhost:3000', 'http://localhost:3003', 'https://rcfapp.com.ar'];
+const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001', 'https://rcfapp.com.ar'];
 app.use(cors({
   origin: (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) => {
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {

@@ -8,131 +8,140 @@ import {
   ActivityIndicator,
 } from "react-native";
 import Colors from "../../../infraestructure/utils/Colors";
-import { getDays, getTime } from "../../../infraestructure/utils/TimeDate";
+import { getDays } from "../../../infraestructure/utils/TimeDate";
 import AppointmentItem from "./AppointmentItem";
 import Divider from "../../components/Divider";
-import { getAppointmentsByAppointmentDate } from "../../../infraestructure/api/appointments.api";
+import { reservaApi } from "../../../infraestructure/api/reserva.api";
+import { format, parseISO, compareDesc } from 'date-fns';
 
 export default function OwnerAppointments() {
   const [next7Days, setNext7Days] = useState([]);
-  const [timeList, setTimeList] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date().getDate());
-  const [selectedTime, setSelectedTime] = useState(new Date().getHours());
-  const [appList, setAppList] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [reservas, setReservas] = useState([]);
+  const [reservasFiltradas, setReservasFiltradas] = useState([]);
 
   useEffect(() => {
     const date = getDays();
-    const time = getTime().filter(t => {
-      const hour = parseInt(t.time.split(':')[0]);
-      return hour >= 10 && hour <= 23;
-    });
-
     setNext7Days(date);
-    setTimeList(time);
-
-    setSelectedDate(date[0].date);
-    setSelectedTime(time[0].time);
   }, []);
 
-  useEffect( () => {
+  const ordenarReservas = (reservasArray) => {
+    return [...reservasArray].sort((a, b) => 
+      compareDesc(parseISO(a.fechaReserva), parseISO(b.fechaReserva))
+    );
+  };
+
+  useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const date = await getAppointmentsByAppointmentDate(selectedDate);
-      setAppList(date);
+      try {
+        const response = await reservaApi.obtenerTodasReservas();
+        const todasLasReservas = response.data || response;
+        const reservasOrdenadas = ordenarReservas(todasLasReservas);
+        setReservas(reservasOrdenadas);
+        setReservasFiltradas(reservasOrdenadas);
+      } catch (error) {
+        console.error('Error al cargar reservas:', error);
+      }
       setLoading(false);
     }
     fetchData();
-  }, [selectedDate]);
+  }, []);
+
+  useEffect(() => {
+    if (selectedDate && reservas.length > 0) {
+      const reservasDelDia = reservas.filter(reserva => {
+        const fechaReserva = format(parseISO(reserva.fechaHora), 'yyyy-MM-dd');
+        return fechaReserva === selectedDate;
+      });
+      setReservasFiltradas(reservasDelDia);
+    } else {
+      setReservasFiltradas(reservas);
+    }
+  }, [selectedDate, reservas]);
+
+  const handleDateSelect = (fullDate) => {
+    if (selectedDate === fullDate) {
+      setSelectedDate(null);
+    } else {
+      setSelectedDate(fullDate);
+    }
+  };
   
   return (
     <View style={styles.headerContainer}>
-      <Text
-        style={{
-          fontFamily: "montserrat-medium",
-          fontSize: 30,
-          marginBottom: 20,
-          marginTop: 30,
-        }}
-      >
+      <Text style={styles.title}>
         Mis Reservas
         <Text style={{ color: Colors.PRIMARY }}> Cancha</Text>
       </Text>
-      <Text style={{ padding: 10 }}>Elegi la fecha</Text>
+      <Text style={styles.subtitle}>Elegi la fecha</Text>
       <FlatList
         data={next7Days}
         horizontal={true}
         showsHorizontalScrollIndicator={false}
         style={{ marginBottom: 20 }}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[
-              styles.dayButton,
-              selectedDate == item.date
-                ? { backgroundColor: Colors.PRIMARY }
-                : null,
-            ]}
-            onPress={() => setSelectedDate(item.date)}
-          >
-            <View
+        renderItem={({ item }) => {
+          const isSelected = selectedDate === item.fullDate;
+          return (
+            <TouchableOpacity
               style={[
-                {
-                  backgroundColor: "#003366",
-                  width: "100%",
-                  height: 20,
-                  display: "flex",
-                  alignItems: "center",
-                  borderTopLeftRadius: 12,
-                  borderTopRightRadius: 12,
-                },
+                styles.dayButton,
+                isSelected ? { backgroundColor: Colors.PRIMARY } : null,
               ]}
+              onPress={() => handleDateSelect(item.fullDate)}
             >
-              <Text
-                style={[
-                  {
-                    fontFamily: "montserrat-medium",
-                    fontSize: 10,
-                    paddingTop: 5,
-                  },
-                  selectedDate == item.date
-                    ? { color: Colors.WHITE }
-                    : { color: Colors.PRIMARY },
-                ]}
-              >
-                {item.day}
-              </Text>
-            </View>
-            <View>
-              <Text
-                style={[
-                  {
-                    fontFamily: "montserrat-medium",
-                    fontSize: 16,
-                    
-                  },
-                  selectedDate == item.date ? { color: Colors.WHITE } : null,
-                ]}
-              >
-                {item.formmatedDate}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        )}
+              <View style={styles.dayHeader}>
+                <Text
+                  style={[
+                    styles.dayText,
+                    isSelected ? { color: Colors.WHITE } : { color: Colors.PRIMARY },
+                  ]}
+                >
+                  {item.day}
+                </Text>
+              </View>
+              <View>
+                <Text
+                  style={[
+                    styles.dateText,
+                    isSelected ? { color: Colors.WHITE } : null,
+                  ]}
+                >
+                  {item.formmatedDate}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          );
+        }}
       />
-      <Divider  />
+      <Divider />
       
       {!loading ? (
-        <FlatList
-          data={timeList}
-          horizontal={false}
-          showsHorizontalScrollIndicator={false}
-          style={{ paddingBottom: 400, marginBottom: 200, marginTop: 20 }}
-          renderItem={({ item }) => (
-            <AppointmentItem item={item} appList={appList} selectedTime={selectedTime}/>
-          )}
-        />
+        <>
+          <Text style={styles.resultText}>
+            {selectedDate ? 
+              `Reservas para ${format(parseISO(selectedDate), 'dd/MM/yyyy')}` : 
+              'Todas las reservas'}
+            <Text style={styles.countText}> ({reservasFiltradas.length})</Text>
+          </Text>
+          <FlatList
+            data={reservasFiltradas}
+            horizontal={false}
+            showsHorizontalScrollIndicator={false}
+            style={styles.reservasList}
+            renderItem={({ item }) => (
+              <AppointmentItem reserva={item} />
+            )}
+            ListEmptyComponent={() => (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No hay reservas para esta fecha</Text>
+              </View>
+            )}
+          />
+        </>
       ) : (
-        <ActivityIndicator style={{ "height":"70%" }} size={"large"} />
+        <ActivityIndicator style={styles.loading} size={"large"} />
       )}
     </View>
   );
@@ -145,6 +154,25 @@ const styles = StyleSheet.create({
     width: "100%",
     paddingHorizontal: 20,
   },
+  title: {
+    fontFamily: "montserrat-medium",
+    fontSize: 30,
+    marginBottom: 20,
+    marginTop: 30,
+  },
+  subtitle: {
+    padding: 10,
+  },
+  resultText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: Colors.PRIMARY,
+  },
+  countText: {
+    fontSize: 14,
+    color: '#666',
+  },
   dayButton: {
     borderWidth: 2,
     borderRadius: 16,
@@ -154,5 +182,41 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 10,
     borderColor: Colors.BLUE,
+  },
+  dayHeader: {
+    backgroundColor: "#003366",
+    width: "100%",
+    height: 20,
+    display: "flex",
+    alignItems: "center",
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  dayText: {
+    fontFamily: "montserrat-medium",
+    fontSize: 10,
+    paddingTop: 5,
+  },
+  dateText: {
+    fontFamily: "montserrat-medium",
+    fontSize: 16,
+  },
+  reservasList: {
+    paddingBottom: 400,
+    marginBottom: 200,
+    marginTop: 20,
+  },
+  loading: {
+    height: "70%",
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
+    fontStyle: 'italic',
   },
 });

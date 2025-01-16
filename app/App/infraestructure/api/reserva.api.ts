@@ -1,4 +1,5 @@
 import api from '../config/api';
+import { format, isAfter, isBefore, startOfDay, endOfDay, parseISO } from 'date-fns';
 
 interface ReservaDisponibilidad {
   canchaId: string;
@@ -16,13 +17,96 @@ interface CreateReservaDTO {
   notasAdicionales?: string;
 }
 
+interface Reserva {
+  id: string;
+  fechaHora: string;
+  duracion: number;
+  precioTotal: string;
+  estadoPago: string;
+  metodoPago?: string;
+  notasAdicionales?: string;
+  cancha: {
+    id: string;
+    nombre: string;
+    tipo: string;
+    tipoSuperficie: string;
+  };
+  usuario: {
+    id: string;
+    nombre: string;
+    email: string;
+    telefono: string;
+  };
+}
+
 export const reservaApi = {
-  obtenerReservasUsuario: async () => {
+  obtenerTodasReservas: async () => {
     try {
-      const response = await api.get('/reserva/user/bookings');
-      return response.data;
+      const response = await api.get('/reservas');
+      return response.data.data;
     } catch (error) {
-      console.error('Error al obtener reservas del usuario:', error);
+      console.error('Error al obtener todas las reservas:', error);
+      throw error;
+    }
+  },
+
+  filtrarReservasPorFecha: (reservas: Reserva[], fecha: Date) => {
+    const inicioDia = startOfDay(fecha);
+    const finDia = endOfDay(fecha);
+    
+    return reservas.filter(reserva => {
+      const fechaReserva = parseISO(reserva.fechaHora);
+      return isAfter(fechaReserva, inicioDia) && isBefore(fechaReserva, finDia);
+    });
+  },
+
+  filtrarReservasPorEstado: (reservas: Reserva[], estado: string) => {
+    return reservas.filter(reserva => 
+      reserva.estadoPago.toLowerCase() === estado.toLowerCase()
+    );
+  },
+
+  filtrarReservasPorCancha: (reservas: Reserva[], canchaId: string) => {
+    return reservas.filter(reserva => 
+      reserva.cancha.id === canchaId
+    );
+  },
+
+  obtenerReservasDelDia: async (fecha: Date) => {
+    try {
+      const todasLasReservas = await reservaApi.obtenerTodasReservas();
+      return reservaApi.filtrarReservasPorFecha(todasLasReservas, fecha);
+    } catch (error) {
+      console.error('Error al obtener reservas del día:', error);
+      throw error;
+    }
+  },
+
+  obtenerReservasPorFecha: async (fecha: string, ownerId: string) => {
+    try {
+      const todasLasReservas = await reservaApi.obtenerTodasReservas();
+      const reservasFiltradas = reservaApi.filtrarReservasPorFecha(
+        todasLasReservas,
+        parseISO(fecha)
+      );
+
+      // Formatear las reservas para la vista
+      return {
+        proximasReservas: reservasFiltradas.map(reserva => ({
+          id: reserva.id,
+          fechaHora: reserva.fechaHora,
+          canchaId: reserva.cancha.nombre,
+          duracion: reserva.duracion,
+          estado: reserva.estadoPago.toLowerCase(),
+          usuario: reserva.usuario.nombre,
+          precio: Number.parseInt(reserva.precioTotal, 10),
+          telefono: reserva.usuario.telefono,
+          email: reserva.usuario.email,
+          notas: reserva.notasAdicionales || ''
+        }))
+      };
+    } catch (error) {
+      console.error('Error al obtener reservas por fecha:', error);
       throw error;
     }
   },
@@ -53,16 +137,6 @@ export const reservaApi = {
       return response.data;
     } catch (error) {
       console.error('Error al obtener horarios disponibles:', error);
-      throw error;
-    }
-  },
-
-  obtenerReservasPorFecha: async (fecha: string, ownerId: string) => {
-    try {
-      const response = await api.get(`/reserva/owner/${fecha}/${ownerId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error al obtener reservas por fecha:', error);
       throw error;
     }
   },
