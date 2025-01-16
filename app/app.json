@@ -2,7 +2,7 @@
   "expo": {
     "name": "RFC-App",
     "slug": "RFC-App",
-    "version": "5.0.0",
+    "version": "6.0.0",
     "orientation": "portrait",
     "icon": "./App/presentation/assets/icon.png",
     "userInterfaceStyle": "light",
@@ -27,18 +27,19 @@
       ],
       "expo-font",
       "expo-secure-store",
-      "@react-native-firebase/app",
-      "@react-native-firebase/auth",
-      "@react-native-firebase/crashlytics",
       [
         "expo-build-properties",
         {
           "ios": {
             "deploymentTarget": "15.1",
-            "useFrameworks": "static"
+            "useFrameworks": "static",
+            "flipper": false
           }
         }
-      ]
+      ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      "@react-native-firebase/crashlytics"
     ],
     "android": {
       "config": {
@@ -85,9 +86,15 @@
     },
     "extra": {
       "eas": {
-        "projectId": "3f2c002c-cc79-46b0-8b8d-d24f2126b8ca"
+        "projectId": "your-project-id"
       }
     },
-    "newArchEnabled": true
+    "newArchEnabled": true,
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "your-update-url"
+    }
   }
 }
