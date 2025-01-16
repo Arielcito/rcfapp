@@ -14,7 +14,7 @@ const ENV = {
     }
   },
   prod: {
-    apiUrl: 'https://rrrfc-app-11121.web.app/api',
+    apiUrl: 'https://backoffice.xerato.io/rcf/api',
     firebase: {
       apiKey: process.env.FIREBASE_API_KEY,
       authDomain: process.env.FIREBASE_AUTH_DOMAIN,
@@ -32,4 +32,6 @@ const getEnvVars = () => {
   return ENV.prod;
 };
 
-export default getEnvVars(); 
+export default getEnvVars();
+
+export const API_URL = 'http://localhost:3000/api'; 

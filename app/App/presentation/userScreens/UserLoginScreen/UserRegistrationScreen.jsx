@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,10 +9,9 @@ import {
   ActivityIndicator,
   ImageBackground,
 } from 'react-native';
-import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
 import { useNavigation } from '@react-navigation/native';
 import { FIREBASE_AUTH, FIREBASE_DB } from '../../../infraestructure/config/FirebaseConfig';
-import { PhoneAuthProvider } from 'firebase/auth';
+import { PhoneAuthProvider, signInWithPhoneNumber } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import Colors from '../../../infraestructure/utils/Colors';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,9 +29,6 @@ export default function UserRegistrationScreen() {
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
   const image = require('../../assets/images/geometrias-circulares.png');
-
-  // Agregar la referencia para el captcha
-  const recaptchaVerifier = useRef(null);
 
   function handleChange(text, eventName) {
     setValues(prev => ({
@@ -91,16 +87,11 @@ export default function UserRegistrationScreen() {
         email: values.email
       });
 
-      const verificationId = await new PhoneAuthProvider(FIREBASE_AUTH)
-        .verifyPhoneNumber(
-          phoneNumberWithCode,
-          recaptchaVerifier.current
-        );
+      const confirmationResult = await signInWithPhoneNumber(FIREBASE_AUTH, phoneNumberWithCode);
 
       navigation.navigate('PhoneVerification', {
-        verificationId,
-        userData: values,
-        recaptchaVerifier: recaptchaVerifier.current
+        verificationId: confirmationResult.verificationId,
+        userData: values
       });
 
     } catch (err) {
@@ -126,22 +117,12 @@ export default function UserRegistrationScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Botón de retroceso */}
       <TouchableOpacity 
         style={styles.backButton}
         onPress={() => navigation.goBack()}
       >
         <Ionicons name="arrow-back" size={24} color={Colors.PRIMARY} />
       </TouchableOpacity>
-
-      {/* Agregar el componente de Recaptcha */}
-      <FirebaseRecaptchaVerifierModal
-        ref={recaptchaVerifier}
-        firebaseConfig={FIREBASE_AUTH.app.options}
-        // Puedes personalizar el título si lo deseas
-        title='Verificación de número telefónico'
-        cancelLabel='Cancelar'
-      />
 
       <ImageBackground source={image} resizeMode="contain" style={styles.image} />
       <Text style={styles.heading}>Registro de Usuario</Text>

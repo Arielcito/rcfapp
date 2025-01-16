@@ -46,7 +46,6 @@ export default function PhoneVerificationScreen({ route, navigation }) {
       );
       await signInWithCredential(FIREBASE_AUTH, credential);
       
-      console.log(userData);
       navigation.replace('CompleteRegistration', { userData });
     } catch (err) {
       console.error(err);
@@ -60,35 +59,19 @@ export default function PhoneVerificationScreen({ route, navigation }) {
     setLoading(true);
     try {
       const phoneNumberWithCode = `+54${userData.phone}`;
-      console.log('Intentando reenviar código a:', phoneNumberWithCode);
+      const confirmationResult = await signInWithPhoneNumber(FIREBASE_AUTH, phoneNumberWithCode);
       
-      if (!route.params.recaptchaVerifier) {
-        throw new Error('No se encontró el verificador de reCAPTCHA');
-      }
-
-      const newVerificationId = await new PhoneAuthProvider(FIREBASE_AUTH)
-        .verifyPhoneNumber(
-          phoneNumberWithCode,
-          route.params.recaptchaVerifier
-        );
-
       // Actualizar el verificationId en los parámetros de la ruta
-      route.params.verificationId = newVerificationId;
+      route.params.verificationId = confirmationResult.verificationId;
       
-      console.log('Código reenviado exitosamente');
       setResendDisabled(true);
       setCountdown(60);
       setError('');
-      // Mostrar mensaje de éxito
       setError('Código reenviado exitosamente');
       setTimeout(() => setError(''), 3000);
     } catch (err) {
       console.error('Error al reenviar código:', err);
-      setError(
-        err.message === 'No se encontró el verificador de reCAPTCHA'
-          ? 'Error: Necesitas volver a la pantalla anterior e intentar nuevamente'
-          : 'Error al reenviar el código. Por favor intenta nuevamente.'
-      );
+      setError('Error al reenviar el código. Por favor intenta nuevamente.');
     } finally {
       setLoading(false);
     }

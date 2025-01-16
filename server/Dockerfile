@@ -1,7 +1,7 @@
 FROM node:18-alpine
 
 # Instalar dependencias necesarias
-RUN apk add --no-cache python3 make g++ gcc openssl-dev
+RUN apk add --no-cache python3 make g++ gcc openssl-dev curl
 
 WORKDIR /app
 
@@ -9,19 +9,21 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# Instalar dependencias
+# Instalar dependencias incluyendo TypeScript
 RUN npm install
+RUN npm install -g typescript
 RUN npm rebuild bcrypt --build-from-source
 
 # Copiar código fuente
 COPY . .
 
-# Construir la aplicación
-RUN npm run build
+# Limpiar dist si existe y compilar
+RUN rm -rf dist || true
+RUN npx tsc
 
 EXPOSE 8080
 
-# Asegurarnos que el directorio dist existe
+# Verificar la compilación
 RUN ls -la dist/
 
-CMD ["npm", "start"] 
+CMD ["node", "dist/index.js"] 

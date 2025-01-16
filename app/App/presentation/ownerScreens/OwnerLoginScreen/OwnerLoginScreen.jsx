@@ -6,6 +6,7 @@ import Colors from "../../../infraestructure/utils/Colors";
 import { useNavigation } from "@react-navigation/native";
 import { api } from "../../../infraestructure/api/api";
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
@@ -39,12 +40,31 @@ export default function OwnerLoginScreen() {
       });
 
       const userData = response.data.user;
-      console.log(userData)
+      const token = response.data.token;
       
+      // Verificar si el usuario es propietario
       if (userData.role !== 'OWNER') {
         alert('No tienes permisos de propietario');
         return;
       }
+
+      // Obtener el token de la cookie si está disponible
+      const cookieToken = response.headers?.['set-cookie']?.[0]?.split(';')[0]?.split('=')[1];
+      
+      // Guardar el token (preferir el de la cookie si está disponible)
+      const tokenToStore = cookieToken || token;
+      
+      if (!tokenToStore) {
+        throw new Error('No se recibió token de autenticación');
+      }
+
+      // Guardar datos en AsyncStorage
+      await Promise.all([
+        AsyncStorage.setItem('auth_token', tokenToStore),
+        AsyncStorage.setItem('userId', userData.id),
+        AsyncStorage.setItem('userRole', userData.role),
+        AsyncStorage.setItem('userName', userData.name || '')
+      ]);
 
       navigation.navigate("TabOwnerNavigation");
       
