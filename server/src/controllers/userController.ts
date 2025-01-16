@@ -38,7 +38,9 @@ export const getUserById = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    console.log("req.params.id", req.params.id);
     const user = await userService.getUserById(req.params.id);
+    console.log("user", user);
     if (!user) {
       res.status(404).json({ message: 'User not found' });
       return;
@@ -95,7 +97,7 @@ export const login = async (
     }
 
     const { user, token } = await userService.loginUser(email, password);
-    logger.info(`Login exitoso para usuario: ${user.id}`);
+    logger.info(`Login exitoso para usuario: ${user.role}`);
 
     // Establecer cookie con el token
     res.cookie('auth_token', token, {
@@ -105,7 +107,7 @@ export const login = async (
       maxAge: 24 * 60 * 60 * 1000 // 24 horas
     });
 
-    logger.info('Cookie establecida correctamente');
+    logger.info('Cookie establecida correctamente', { token });
     res.json({ user, token });
   } catch (error) {
     logger.error('Error en login:', error);

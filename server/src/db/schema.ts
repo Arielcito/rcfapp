@@ -9,17 +9,18 @@ type PrediosTable = ReturnType<typeof pgTable>;
 
 // Crear las tablas con funciones separadas para evitar referencias circulares
 const createUsersTable = (): UsersTable => pgTable('users', {
-  id: uuid('id').primaryKey().$defaultFn(createId),
+  id: uuid('id').defaultRandom().primaryKey(),
   name: text('name'),
-  email: text('email').unique(),
-  emailVerified: timestamp('email_verified'),
-  image: text('image'),
+  email: text('email').notNull().unique(),
   password: text('password'),
-  passwordResetToken: text('password_reset_token').unique(),
-  passwordResetTokenExp: timestamp('password_reset_token_exp'),
-  role: text('role', { enum: [Role.USER, Role.ADMIN, Role.OWNER] }).default(Role.USER).notNull(),
+  role: text('role', { enum: ['USER', 'ADMIN', 'OWNER'] }).notNull().default('USER'),
+  telefono: text('telefono'),
+  direccion: text('direccion'),
   predioTrabajo: uuid('predio_trabajo').references(() => predios.id),
-  createdAt: timestamp('created_at').defaultNow()
+  emailVerified: boolean('email_verified').default(false),
+  image: text('image'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
 
 const createPrediosTable = (): PrediosTable => pgTable('predios', {

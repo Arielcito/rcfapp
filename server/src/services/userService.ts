@@ -2,7 +2,7 @@ import { db } from '../db';
 import { users } from '../db/schema';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { User, UserCreationData, UserUpdateData } from '../types/user';
 import { logger } from '../utils/logger';
 
@@ -37,16 +37,45 @@ export const getUsers = async (): Promise<User[]> => {
 };
 
 export const getUserById = async (id: string): Promise<User | null> => {
-  const [user] = await db.select({
-    id: users.id,
-    name: users.name,
-    email: users.email,
-    role: users.role
-  })
-  .from(users)
-  .where(eq(users.id, id));
+  try {
+    console.log("Intentando obtener usuario con ID:", id);
+    
+    // Consulta simplificada sin campos opcionales primero
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id));
 
-  return user || null;
+    if (!user) {
+      console.log("Usuario no encontrado");
+      return null;
+    }
+
+    console.log("Datos del usuario obtenidos (raw):", user);
+    
+    // Construir el objeto de respuesta con valores por defecto
+    const userResponse = {
+      id: user.id,
+      name: user.name ?? null,
+      email: user.email,
+      role: user.role,
+      telefono: user.telefono ?? null,
+      direccion: user.direccion ?? null,
+      predioTrabajo: user.predioTrabajo ?? null,
+      createdAt: user.createdAt ?? null,
+      updatedAt: user.updatedAt ?? null
+    };
+
+    console.log("Objeto de usuario procesado:", userResponse);
+    return userResponse;
+  } catch (error) {
+    console.error("Error detallado al obtener usuario:", {
+      error,
+      stack: error instanceof Error ? error.stack : undefined,
+      message: error instanceof Error ? error.message : 'Error desconocido'
+    });
+    throw error;
+  }
 };
 
 export const updateUser = async (id: string, userData: UserUpdateData): Promise<User | null> => {
