@@ -14,6 +14,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+const BASE_PATH = process.env.BASE_PATH || '/api';
 
 // Configuración de CORS
 const allowedOrigins = ['http://localhost:3000', 'http://localhost:3003', 'https://rcfapp.com.ar'];
@@ -31,19 +32,19 @@ app.use(cors({
   exposedHeaders: ['set-cookie']
 }));
 
-app.use(cookieParser()); // Para manejar cookies
+app.use(cookieParser());
 app.use(express.json());
 
 // Routes
-app.use('/api/users', userRoutes);
-app.use('/api/predios', predioRoutes);
-app.use('/api/canchas', canchaRoutes);
-app.use('/api/reservas', reservaRoutes);
-app.use('/api/pagos', pagoRoutes);
-app.use('/api/movimientos-caja', movimientoCajaRoutes);
+app.use(`${BASE_PATH}/users`, userRoutes);
+app.use(`${BASE_PATH}/predios`, predioRoutes);
+app.use(`${BASE_PATH}/canchas`, canchaRoutes);
+app.use(`${BASE_PATH}/reservas`, reservaRoutes);
+app.use(`${BASE_PATH}/pagos`, pagoRoutes);
+app.use(`${BASE_PATH}/movimientos-caja`, movimientoCajaRoutes);
 
 // Error handling con logging
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: Error & { status?: number }, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Error:', {
     message: err.message,
     stack: err.stack,
@@ -58,4 +59,5 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log('CORS origin:', process.env.CLIENT_URL || 'http://localhost:3000');
+  console.log('Base path:', BASE_PATH);
 });

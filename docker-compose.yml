@@ -20,6 +20,7 @@ services:
       - DIRECT_URL=postgresql://postgres.hpzmwbctmctagutqgjpf:Casa43515134@aws-0-us-east-1.pooler.supabase.com:5432/postgres
       - JWT_SECRET=${JWT_SECRET}
       - CLIENT_URL=https://rcfapp.com.ar
+      - BASE_PATH=/rcf/api
     volumes:
       - ./server:/app
       - /app/node_modules
