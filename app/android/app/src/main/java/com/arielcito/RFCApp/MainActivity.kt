@@ -1,4 +1,4 @@
-package com.rfcapp
+package com.arielcito.RFCApp
 
 import android.os.Build
 import android.os.Bundle
