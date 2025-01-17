@@ -67,6 +67,7 @@
     "react-native-image-picker": "^7.1.2",
     "react-native-inappbrowser-reborn": "^3.7.0",
     "react-native-ionicons": "^4.6.5",
+    "react-native-maps": "1.7.1",
     "react-native-maps-directions": "^1.9.0",
     "react-native-pager-view": "6.5.1",
     "react-native-paper": "^5.12.5",
