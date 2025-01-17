@@ -82,7 +82,7 @@
         "INTERNET"
       ],
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./App/presentation/assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "softwareKeyboardLayoutMode": "pan"

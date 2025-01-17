@@ -1,4 +1,4 @@
-package com.rfcapp
+package com.arielcito.RFCApp
 
 import android.app.Application
 import android.content.res.Configuration
