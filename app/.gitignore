@@ -42,3 +42,6 @@ android/app/my-upload-key.keystore
 # Variables de entorno
 .env
 .env.*
+
+android/
+ios/
