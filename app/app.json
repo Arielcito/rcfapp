@@ -41,9 +41,9 @@
             }
           },
           "android": {
-            "compileSdkVersion": 33,
-            "targetSdkVersion": 33,
-            "buildToolsVersion": "33.0.0"
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34,
+            "buildToolsVersion": "34.0.0"
           }
         }
       ],
@@ -82,7 +82,7 @@
         "INTERNET"
       ],
       "adaptiveIcon": {
-        "foregroundImage": "./App/presentation/assets/adaptive-icon.png",
+        "foregroundImage": "./App/presentation/assets/adaptative-icon.png",
         "backgroundColor": "#ffffff"
       },
       "softwareKeyboardLayoutMode": "pan"

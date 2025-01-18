@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, ActivityIndicator, Dimensions, Modal, TouchableOpacity, Linking, Platform } from 'react-native';
-import { LineChart } from 'react-native-chart-kit';
+import { VictoryLine, VictoryChart, VictoryAxis, VictoryTheme, VictoryContainer } from 'victory-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { reservaApi } from '../../../infraestructure/api/reserva.api';
 import { format, parseISO, compareDesc, subDays } from 'date-fns';
@@ -38,14 +38,10 @@ const OwnerHomeScreen = () => {
       }
     }
 
-    return {
-      labels,
-      datasets: [{
-        data: datos,
-        color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`,
-        strokeWidth: 2
-      }]
-    };
+    return labels.map((label, index) => ({
+      x: label,
+      y: datos[index]
+    }));
   };
 
   useEffect(() => {
@@ -219,38 +215,41 @@ const OwnerHomeScreen = () => {
         <View style={styles.chartContainer}>
           <Text style={styles.chartTitle}>Canchas reservadas</Text>
           <Text style={styles.chartSubtitle}>Última semana</Text>
-          <LineChart
-            data={chartData}
-            width={screenWidth - 60}
+          <VictoryChart
+            theme={VictoryTheme.material}
             height={220}
-            chartConfig={{
-              backgroundColor: '#ffffff',
-              backgroundGradientFrom: '#ffffff',
-              backgroundGradientTo: '#ffffff',
-              decimalPlaces: 0,
-              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-              labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-              propsForDots: {
-                r: '6',
-                strokeWidth: '2',
-                stroke: '#1AFF92'
-              },
-              propsForBackgroundLines: {
-                strokeWidth: 1,
-                stroke: '#e3e3e3'
-              }
-            }}
-            bezier
-            style={styles.chart}
-            withDots={true}
-            withShadow={false}
-            withInnerLines={true}
-            withOuterLines={true}
-            withVerticalLines={true}
-            withHorizontalLines={true}
-          />
+            width={screenWidth - 60}
+            padding={{ top: 20, bottom: 40, left: 40, right: 20 }}
+            containerComponent={<VictoryContainer responsive={true} />}
+          >
+            <VictoryAxis
+              tickFormat={(t) => t}
+              style={{
+                axis: { stroke: '#e3e3e3' },
+                tickLabels: { fontSize: 10, fill: '#888' }
+              }}
+            />
+            <VictoryAxis
+              dependentAxis
+              tickFormat={(t) => Math.round(t)}
+              style={{
+                axis: { stroke: '#e3e3e3' },
+                tickLabels: { fontSize: 10, fill: '#888' }
+              }}
+            />
+            <VictoryLine
+              data={chartData}
+              style={{
+                data: { stroke: '#1AFF92', strokeWidth: 2 },
+              }}
+              animate={{
+                duration: 2000,
+                onLoad: { duration: 1000 }
+              }}
+            />
+          </VictoryChart>
           <Text style={styles.chartFooter}>
-            {chartData.datasets[0].data.reduce((a, b) => a + b, 0)} canchas reservadas en total
+            {chartData.reduce((a, b) => a + b.y, 0)} canchas reservadas en total
           </Text>
         </View>
 
