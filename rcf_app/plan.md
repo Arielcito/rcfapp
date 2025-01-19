@@ -95,6 +95,8 @@ PASOS DE IMPLEMENTACIÓN
 - Configurar APIs de mapas (Google Maps y Apple Maps)
 - Configurar Mercado Pago SDK
 - Crear estructura base del proyecto (carpetas: models, views, controllers, services)
+- Realizar commit inicial
+- Verificar build en Android e iOS
 
 2. Autenticación
 - Implementar login con Google
@@ -102,6 +104,8 @@ PASOS DE IMPLEMENTACIÓN
 - Crear sistema de verificación SMS
 - Implementar manejo de sesiones
 - Crear sistema de roles (dueño/usuario)
+- Commit de cambios
+- Verificar build en ambas plataformas
 
 3. Modelos de Datos
 Predio {
@@ -136,6 +140,8 @@ Usuario {
 - Implementar vista de reservas activas
 - Crear sistema de favoritos
 - Implementar sistema de reseñas
+- Commit de cambios
+- Verificar build en ambas plataformas
 
 5. Interfaz de Usuario - Sección Dueño
 - Crear dashboard con gráficos
@@ -143,18 +149,24 @@ Usuario {
 - Crear vista de gestión de pagos
 - Implementar lista de reservas con filtros
 - Crear sistema de notificaciones
+- Commit de cambios
+- Verificar build en ambas plataformas
 
 6. Integración de Pagos
 - Implementar SDK de Mercado Pago
 - Crear flujo de pago de seña (50%)
 - Implementar sistema de pago completo
 - Crear sistema de cancelaciones
+- Commit de cambios
+- Verificar build en ambas plataformas
 
 7. Sistema de Mapas
 - Implementar vista de mapa multiplataforma
 - Crear marcadores personalizados para predios
 - Implementar vista de canchas dentro del predio
 - Crear sistema de navegación hacia la cancha
+- Commit de cambios
+- Verificar build en ambas plataformas
 
 8. Sistema de Notificaciones
 - Configurar Firebase Cloud Messaging
@@ -163,26 +175,36 @@ Usuario {
   - Confirmación de pago
   - Nuevas reservas (dueños)
   - Cancelaciones
+- Commit de cambios
+- Verificar build en ambas plataformas
 
 9. Integración de WhatsApp
 - Implementar deep linking con WhatsApp
 - Crear sistema de mensajes predeterminados
 - Integrar datos de reserva en mensaje
+- Commit de cambios
+- Verificar build en ambas plataformas
 
 10. Testing y Optimización
 - Crear tests unitarios básicos
 - Implementar manejo de errores
 - Optimizar rendimiento de consultas
 - Pruebas de integración
+- Commit de cambios
+- Verificar build en ambas plataformas
 
 11. Características Adicionales
 - Implementar sistema de caché para datos frecuentes
 - Crear sistema de respaldo de datos
 - Implementar analytics
 - Crear sistema de logs
+- Commit de cambios
+- Verificar build en ambas plataformas
 
 12. Preparación para Producción
 - Configurar variables de entorno
 - Preparar builds para ambas plataformas
 - Crear documentación básica
 - Implementar sistema de reportes de errores
+- Commit de cambios
+- Verificar build en ambas plataformas
