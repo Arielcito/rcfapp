@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/user/user_model.dart';
+import 'dart:async';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -9,111 +10,116 @@ class AuthService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Stream de cambios en el estado de autenticación
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
+  Stream<UserModel?> get authStateChanges {
+    return _auth.authStateChanges().asyncMap((user) async {
+      if (user == null) return null;
+      final doc = await _firestore.collection('users').doc(user.uid).get();
+      if (!doc.exists) return null;
+      return UserModel.fromMap(doc.data()!..['id'] = user.uid);
+    });
+  }
 
   // Obtener usuario actual
-  User? get currentUser => _auth.currentUser;
+  UserModel? get currentUser {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+    return UserModel(
+      id: user.uid,
+      email: user.email ?? '',
+      name: user.displayName ?? '',
+      phoneNumber: user.phoneNumber,
+      role: 'user',
+      isPhoneVerified: user.phoneNumber != null,
+    );
+  }
 
   // Registro con email y contraseña
-  Future<UserModel> registerWithEmail({
+  Future<void> registerWithEmail({
     required String email,
     required String password,
     required String name,
   }) async {
     try {
-      final UserCredential result = await _auth.createUserWithEmailAndPassword(
+      final userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      final User? user = result.user;
-      if (user == null) throw Exception('Error al crear usuario');
+      await userCredential.user?.updateDisplayName(name);
 
-      final UserModel newUser = UserModel(
-        id: user.uid,
+      final user = UserModel(
+        id: userCredential.user!.uid,
         email: email,
         name: name,
         role: 'user',
       );
 
-      await _firestore.collection('users').doc(user.uid).set(newUser.toMap());
-
-      return newUser;
+      await _firestore
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .set(user.toMap());
     } catch (e) {
-      throw Exception('Error en el registro: $e');
+      throw _handleAuthError(e);
     }
   }
 
   // Login con email y contraseña
-  Future<UserModel> loginWithEmail({
+  Future<void> loginWithEmail({
     required String email,
     required String password,
   }) async {
     try {
-      final UserCredential result = await _auth.signInWithEmailAndPassword(
+      await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-
-      final User? user = result.user;
-      if (user == null) throw Exception('Error al iniciar sesión');
-
-      final DocumentSnapshot doc = await _firestore.collection('users').doc(user.uid).get();
-      
-      if (!doc.exists) throw Exception('Usuario no encontrado');
-      
-      return UserModel.fromMap(doc.data() as Map<String, dynamic>);
     } catch (e) {
-      throw Exception('Error en el inicio de sesión: $e');
+      throw _handleAuthError(e);
     }
   }
 
   // Login con Google
-  Future<UserModel> signInWithGoogle() async {
+  Future<void> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) throw Exception('Selección de cuenta cancelada');
+      if (googleUser == null) throw 'Inicio de sesión cancelado';
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      final UserCredential result = await _auth.signInWithCredential(credential);
-      final User? user = result.user;
-      
-      if (user == null) throw Exception('Error al iniciar sesión con Google');
+      final userCredential = await _auth.signInWithCredential(credential);
 
-      // Verificar si el usuario ya existe
-      final DocumentSnapshot doc = await _firestore.collection('users').doc(user.uid).get();
-      
-      if (!doc.exists) {
-        // Crear nuevo usuario
-        final UserModel newUser = UserModel(
-          id: user.uid,
-          email: user.email!,
-          name: user.displayName ?? 'Usuario',
+      final userDoc =
+          await _firestore.collection('users').doc(userCredential.user!.uid).get();
+
+      if (!userDoc.exists) {
+        final user = UserModel(
+          id: userCredential.user!.uid,
+          email: userCredential.user!.email!,
+          name: userCredential.user!.displayName!,
           role: 'user',
         );
 
-        await _firestore.collection('users').doc(user.uid).set(newUser.toMap());
-        return newUser;
+        await _firestore
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .set(user.toMap());
       }
-
-      return UserModel.fromMap(doc.data() as Map<String, dynamic>);
     } catch (e) {
-      throw Exception('Error en el inicio de sesión con Google: $e');
+      throw _handleAuthError(e);
     }
   }
 
   // Verificación de número de teléfono
-  Future<void> verifyPhone({
-    required String phoneNumber,
-    required Function(String) onCodeSent,
-    required Function(String) onError,
-  }) async {
+  Future<String> verifyPhone(String phoneNumber) async {
     try {
+      Completer<String> completer = Completer<String>();
+
       await _auth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
         verificationCompleted: (PhoneAuthCredential credential) async {
@@ -121,23 +127,26 @@ class AuthService {
           await _updatePhoneVerificationStatus(true);
         },
         verificationFailed: (FirebaseAuthException e) {
-          onError(e.message ?? 'Error en la verificación');
+          completer.completeError(_handleAuthError(e));
         },
         codeSent: (String verificationId, int? resendToken) {
-          onCodeSent(verificationId);
+          completer.complete(verificationId);
         },
-        codeAutoRetrievalTimeout: (String verificationId) {},
+        codeAutoRetrievalTimeout: (String verificationId) {
+          if (!completer.isCompleted) {
+            completer.complete(verificationId);
+          }
+        },
       );
+
+      return await completer.future;
     } catch (e) {
-      throw Exception('Error en la verificación del teléfono: $e');
+      throw _handleAuthError(e);
     }
   }
 
   // Verificar código SMS
-  Future<void> verifySmsCode({
-    required String smsCode,
-    required String verificationId,
-  }) async {
+  Future<void> verifySmsCode(String verificationId, String smsCode) async {
     try {
       final PhoneAuthCredential credential = PhoneAuthProvider.credential(
         verificationId: verificationId,
@@ -147,15 +156,17 @@ class AuthService {
       await _auth.currentUser?.updatePhoneNumber(credential);
       await _updatePhoneVerificationStatus(true);
     } catch (e) {
-      throw Exception('Error en la verificación del código: $e');
+      throw _handleAuthError(e);
     }
   }
 
   // Actualizar estado de verificación del teléfono
   Future<void> _updatePhoneVerificationStatus(bool isVerified) async {
-    if (_auth.currentUser != null) {
-      await _firestore.collection('users').doc(_auth.currentUser!.uid).update({
+    final user = _auth.currentUser;
+    if (user != null) {
+      await _firestore.collection('users').doc(user.uid).update({
         'isPhoneVerified': isVerified,
+        'phoneNumber': user.phoneNumber,
       });
     }
   }
@@ -168,7 +179,33 @@ class AuthService {
         _googleSignIn.signOut(),
       ]);
     } catch (e) {
-      throw Exception('Error al cerrar sesión: $e');
+      throw _handleAuthError(e);
     }
+  }
+
+  String _handleAuthError(dynamic error) {
+    if (error is FirebaseAuthException) {
+      switch (error.code) {
+        case 'user-not-found':
+          return 'No existe una cuenta con este correo';
+        case 'wrong-password':
+          return 'Contraseña incorrecta';
+        case 'email-already-in-use':
+          return 'Ya existe una cuenta con este correo';
+        case 'invalid-email':
+          return 'Correo electrónico inválido';
+        case 'weak-password':
+          return 'La contraseña debe tener al menos 6 caracteres';
+        case 'invalid-verification-code':
+          return 'Código de verificación inválido';
+        case 'invalid-verification-id':
+          return 'Código de verificación expirado';
+        case 'too-many-requests':
+          return 'Demasiados intentos fallidos. Intenta más tarde';
+        default:
+          return error.message ?? 'Error de autenticación';
+      }
+    }
+    return error.toString();
   }
 } 
