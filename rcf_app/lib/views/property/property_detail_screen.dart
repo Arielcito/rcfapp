@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:rcf_app/controllers/property/favorite_controller.dart';
 import 'package:rcf_app/models/property/property_model.dart';
+import 'package:rcf_app/utils/whatsapp_utils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -183,8 +184,17 @@ class PropertyDetailScreen extends GetView<FavoriteController> {
   }
 
   Future<void> _launchWhatsApp(String phone) async {
-    final message = 'Hola, me interesa el predio ${property.name}';
-    final url = 'whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}';
-    await _launchUrl(url);
+    try {
+      await WhatsAppUtils.launchWhatsApp(
+        phone: phone,
+        message: WhatsAppUtils.getPropertyInquiryMessage(property.name),
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'No se pudo abrir WhatsApp',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
   }
 } 

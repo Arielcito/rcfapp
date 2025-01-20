@@ -245,3 +245,37 @@ lib/
 - Se implementará un sistema de bloqueo temporal durante la reserva
 - Las notificaciones usarán Firebase Cloud Messaging
 - Se implementará manejo de errores para pagos fallidos 
+
+## Paso 9: Integración de WhatsApp 🚧
+
+### Fecha: [22/01/2024]
+
+### En Progreso:
+- 🚧 Implementación de deep linking con WhatsApp
+- 🚧 Creación de sistema de mensajes predeterminados
+- 🚧 Integración de datos de reserva en mensaje
+
+### Detalles:
+
+#### 1. Estructura de Archivos
+```
+lib/
+  ├── utils/
+  │   └── whatsapp_utils.dart
+```
+
+#### 2. Funcionalidades a Implementar
+- Deep linking con WhatsApp para comunicación directa
+- Mensajes predeterminados para diferentes situaciones:
+  - Consultas sobre reservas
+  - Confirmación de pagos
+  - Cancelaciones
+  - Información general
+- Integración automática de datos de la reserva en los mensajes
+
+#### 3. Próximos Pasos
+- [ ] Crear utilidad para manejo de WhatsApp
+- [ ] Implementar función de formateo de mensajes
+- [ ] Agregar botones de WhatsApp en pantallas relevantes
+- [ ] Verificar compatibilidad multiplataforma
+- [ ] Realizar pruebas de integración 

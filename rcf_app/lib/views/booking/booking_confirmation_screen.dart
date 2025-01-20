@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rcf_app/controllers/booking/booking_controller.dart';
 import 'package:rcf_app/models/booking/booking_model.dart';
+import 'package:rcf_app/utils/whatsapp_utils.dart';
+import 'package:rcf_app/services/property/property_service.dart';
 import 'package:intl/intl.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class BookingConfirmationScreen extends GetView<BookingController> {
   final BookingModel booking = Get.arguments;
+  final PropertyService _propertyService = PropertyService();
 
   @override
   Widget build(BuildContext context) {
@@ -140,6 +144,19 @@ class BookingConfirmationScreen extends GetView<BookingController> {
       children: [
         SizedBox(
           width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () => _contactOwner(),
+            icon: FaIcon(FontAwesomeIcons.whatsapp),
+            label: Text('Contactar al Propietario'),
+            style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              backgroundColor: Colors.green,
+            ),
+          ),
+        ),
+        SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
           child: ElevatedButton(
             onPressed: () => Get.offAllNamed('/home'),
             child: Text('Volver al Inicio'),
@@ -161,6 +178,30 @@ class BookingConfirmationScreen extends GetView<BookingController> {
         ),
       ],
     );
+  }
+
+  Future<void> _contactOwner() async {
+    try {
+      final property = await _propertyService.getPropertyById(booking.propertyId);
+      if (property != null) {
+        await WhatsAppUtils.launchWhatsApp(
+          phone: property.phone,
+          message: WhatsAppUtils.getBookingMessage(booking),
+        );
+      } else {
+        Get.snackbar(
+          'Error',
+          'No se pudo obtener la información del predio',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'No se pudo abrir WhatsApp',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
   }
 
   String _getStatusText(BookingStatus status) {
