@@ -358,3 +358,59 @@ lib/
 - Se utiliza el formato internacional para números (+52)
 - Los códigos SMS tienen una validez de 60 segundos
 - Se implementó manejo de errores específicos de Firebase 
+
+## Paso 7: Implementación de la Pantalla de Perfil ✅
+
+### Fecha: [19/01/2024]
+
+### Completado:
+- ✅ Creación de la pantalla de perfil
+- ✅ Visualización de información del usuario
+- ✅ Integración con AuthController
+- ✅ Build verificado exitosamente
+
+### Detalles:
+
+#### 1. Estructura de Archivos Actualizada
+```
+lib/
+  └── views/
+      ├── auth/
+      │   ├── login_screen.dart
+      │   ├── register_screen.dart
+      │   └── phone_verification_screen.dart
+      └── profile/
+          └── profile_screen.dart
+```
+
+#### 2. Características de la Pantalla de Perfil
+- Visualización de datos del usuario:
+  - Nombre completo
+  - Correo electrónico
+  - Teléfono (si está verificado)
+  - Rol del usuario
+  - Estado de verificación
+  - Cantidad de predios favoritos
+- Diseño moderno con tarjetas informativas
+- Botón de cierre de sesión
+- Acceso a verificación de teléfono
+
+#### 3. Mejoras en la Experiencia de Usuario
+- Interfaz limpia y organizada
+- Información agrupada por categorías
+- Indicadores visuales de estado
+- Navegación intuitiva
+
+### Commits Realizados:
+1. "feat: implementación de la pantalla de perfil"
+
+### Próximos Pasos:
+1. Implementar navegación basada en rol
+2. Configurar rutas protegidas
+3. Implementar edición de perfil
+
+### Notas para Desarrolladores:
+- La pantalla utiliza el estado global del AuthController
+- Los datos se actualizan automáticamente al cambiar el estado
+- Se mantiene consistencia en el diseño con el resto de la aplicación
+- Se implementaron validaciones para datos opcionales 
