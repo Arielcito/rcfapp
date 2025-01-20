@@ -3,7 +3,7 @@ import '../../models/user/user_model.dart';
 import '../../services/auth/auth_service.dart';
 
 class AuthController extends ChangeNotifier {
-  final AuthService _authService = AuthService();
+  final _authService = AuthService();
   UserModel? _currentUser;
   bool _isLoading = false;
   String? _error;
@@ -13,6 +13,13 @@ class AuthController extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get isAuthenticated => _currentUser != null;
+
+  AuthController() {
+    _authService.authStateChanges.listen((user) {
+      _currentUser = user;
+      notifyListeners();
+    });
+  }
 
   void _setLoading(bool value) {
     _isLoading = value;
@@ -32,12 +39,11 @@ class AuthController extends ChangeNotifier {
     try {
       _setLoading(true);
       _setError(null);
-      _currentUser = await _authService.registerWithEmail(
+      await _authService.registerWithEmail(
         email: email,
         password: password,
         name: name,
       );
-      notifyListeners();
     } catch (e) {
       _setError(e.toString());
     } finally {
@@ -52,11 +58,10 @@ class AuthController extends ChangeNotifier {
     try {
       _setLoading(true);
       _setError(null);
-      _currentUser = await _authService.loginWithEmail(
+      await _authService.loginWithEmail(
         email: email,
         password: password,
       );
-      notifyListeners();
     } catch (e) {
       _setError(e.toString());
     } finally {
@@ -68,8 +73,7 @@ class AuthController extends ChangeNotifier {
     try {
       _setLoading(true);
       _setError(null);
-      _currentUser = await _authService.signInWithGoogle();
-      notifyListeners();
+      await _authService.signInWithGoogle();
     } catch (e) {
       _setError(e.toString());
     } finally {
@@ -81,16 +85,7 @@ class AuthController extends ChangeNotifier {
     try {
       _setLoading(true);
       _setError(null);
-      await _authService.verifyPhone(
-        phoneNumber: phoneNumber,
-        onCodeSent: (String verificationId) {
-          _verificationId = verificationId;
-          notifyListeners();
-        },
-        onError: (String error) {
-          _setError(error);
-        },
-      );
+      _verificationId = await _authService.verifyPhone(phoneNumber);
     } catch (e) {
       _setError(e.toString());
     } finally {
@@ -107,12 +102,7 @@ class AuthController extends ChangeNotifier {
     try {
       _setLoading(true);
       _setError(null);
-      await _authService.verifySmsCode(
-        smsCode: smsCode,
-        verificationId: _verificationId!,
-      );
-      _verificationId = null;
-      notifyListeners();
+      await _authService.verifySmsCode(_verificationId!, smsCode);
     } catch (e) {
       _setError(e.toString());
     } finally {
@@ -125,8 +115,6 @@ class AuthController extends ChangeNotifier {
       _setLoading(true);
       _setError(null);
       await _authService.signOut();
-      _currentUser = null;
-      notifyListeners();
     } catch (e) {
       _setError(e.toString());
     } finally {
