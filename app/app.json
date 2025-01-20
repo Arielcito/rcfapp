@@ -31,12 +31,15 @@
         "expo-build-properties",
         {
           "ios": {
-            "deploymentTarget": "15.1",
+            "deploymentTarget": "16.0",
             "useFrameworks": "static",
             "flipper": false,
             "pods": {
               "GoogleMaps": {
                 "modular_headers": true
+              },
+              "BoringSSL-GRPC": {
+                "compiler-flags": "-fno-objc-msgsend-selector-stubs"
               }
             }
           },
@@ -100,7 +103,10 @@
         "NSLocationWhenInUseUsageDescription": "La aplicación necesita acceso a tu ubicación para mostrar lugares cercanos",
         "NSLocationAlwaysUsageDescription": "La aplicación necesita acceso a tu ubicación para funcionalidades en segundo plano",
         "NSCameraUsageDescription": "La aplicación necesita acceso a la cámara para tomar fotos",
-        "UIBackgroundModes": ["location", "fetch"]
+        "UIBackgroundModes": [
+          "location",
+          "fetch"
+        ]
       },
       "supportsTablet": true,
       "requireFullScreen": true

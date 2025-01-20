@@ -33,22 +33,15 @@
       "autoIncrement": true,
       "ios": {
         "resourceClass": "m-medium",
-        "distribution": "store"
+        "distribution": "store",
+        "buildConfiguration": "Release",
+        "credentialsSource": "remote"
       },
       "android": {
         "buildType": "app-bundle"
       },
       "env": {
         "APP_ENV": "production"
-      }
-    }
-  },
-  "submit": {
-    "production": {
-      "ios": {
-        "appleId": "tu-apple-id@email.com",
-        "ascAppId": "tu-app-store-connect-id",
-        "appleTeamId": "tu-team-id"
       }
     }
   }
