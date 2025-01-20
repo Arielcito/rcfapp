@@ -28,7 +28,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
   Future<void> _verifyPhone() async {
     if (_formKey.currentState?.validate() ?? false) {
       await context.read<AuthController>().verifyPhone(
-            phoneNumber: _phoneController.text.trim(),
+            _phoneController.text.trim(),
           );
       setState(() {
         _codeSent = true;
@@ -39,7 +39,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
   Future<void> _verifyCode() async {
     if (_formKey.currentState?.validate() ?? false) {
       await context.read<AuthController>().verifySmsCode(
-            smsCode: _codeController.text.trim(),
+            _codeController.text.trim(),
           );
     }
   }
