@@ -192,3 +192,118 @@ UserModel {
 - La verificación de teléfono es obligatoria después del registro
 - Los roles disponibles son 'user' y 'owner'
 - Todos los errores de autenticación son manejados y expuestos a través del controlador 
+
+## Paso 4: Implementación de la Interfaz de Inicio de Sesión ✅
+
+### Fecha: [19/01/2024]
+
+### Completado:
+- ✅ Creación de widgets comunes reutilizables
+- ✅ Implementación de la pantalla de inicio de sesión
+- ✅ Integración con Provider para gestión de estado
+- ✅ Build verificado exitosamente
+
+### Detalles:
+
+#### 1. Estructura de Archivos Creada
+```
+lib/
+  ├── views/
+  │   ├── widgets/
+  │   │   ├── custom_button.dart
+  │   │   └── custom_text_field.dart
+  │   └── auth/
+  │       └── login_screen.dart
+```
+
+#### 2. Widgets Comunes Implementados
+- `CustomButton`: Botón personalizado con soporte para:
+  - Estado de carga
+  - Iconos
+  - Personalización de colores
+  - Ancho personalizable
+- `CustomTextField`: Campo de texto personalizado con:
+  - Validación
+  - Iconos prefijo/sufijo
+  - Etiquetas
+  - Estilos personalizados
+
+#### 3. Características de la Pantalla de Login
+- Formulario con validación
+- Inicio de sesión con email y contraseña
+- Inicio de sesión con Google
+- Manejo de errores
+- Indicadores de carga
+- Navegación a registro (pendiente)
+
+#### 4. Integración con Provider
+```dart
+MultiProvider(
+  providers: [
+    ChangeNotifierProvider(create: (_) => AuthController()),
+  ],
+  child: MaterialApp(...)
+)
+```
+
+### Commits Realizados:
+1. "feat: implementación de la interfaz de inicio de sesión"
+
+### Próximos Pasos:
+1. Implementar pantalla de registro
+2. Implementar verificación de teléfono
+3. Crear pantalla de perfil de usuario
+
+### Notas para Desarrolladores:
+- Los widgets comunes están diseñados para ser reutilizables en toda la aplicación
+- La validación de formularios se realiza en tiempo real
+- Los mensajes de error de Firebase se muestran en la interfaz
+- El diseño sigue la guía de Material Design y los colores del tema 
+
+## Paso 5: Implementación de la Pantalla de Registro ✅
+
+### Fecha: [19/01/2024]
+
+### Completado:
+- ✅ Creación de la pantalla de registro
+- ✅ Validación de formularios
+- ✅ Integración con AuthController
+- ✅ Navegación entre login y registro
+- ✅ Build verificado exitosamente
+
+### Detalles:
+
+#### 1. Estructura de Archivos Actualizada
+```
+lib/
+  └── views/
+      └── auth/
+          ├── login_screen.dart
+          └── register_screen.dart
+```
+
+#### 2. Características de la Pantalla de Registro
+- Formulario con validación completa
+  - Nombre completo
+  - Correo electrónico
+  - Contraseña
+  - Confirmación de contraseña
+- Registro con email y contraseña
+- Registro con Google
+- Manejo de errores
+- Indicadores de carga
+- Navegación entre pantallas
+
+### Commits Realizados:
+1. "feat: implementación de la pantalla de registro"
+
+### Próximos Pasos:
+1. Implementar verificación de teléfono
+2. Crear pantalla de perfil de usuario
+3. Implementar navegación basada en rol
+
+### Notas para Desarrolladores:
+- La validación de contraseñas incluye coincidencia entre campos
+- Los mensajes de error son claros y específicos
+- La navegación entre pantallas mantiene el estado del AuthController
+- Se mantiene consistencia en el diseño con la pantalla de login 

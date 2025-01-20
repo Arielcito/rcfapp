@@ -3,25 +3,29 @@ import 'package:provider/provider.dart';
 import '../../controllers/auth/auth_controller.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
-import 'register_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -31,16 +35,23 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
-  Future<void> _login() async {
+  void _toggleConfirmPasswordVisibility() {
+    setState(() {
+      _obscureConfirmPassword = !_obscureConfirmPassword;
+    });
+  }
+
+  Future<void> _register() async {
     if (_formKey.currentState?.validate() ?? false) {
-      await context.read<AuthController>().loginWithEmail(
+      await context.read<AuthController>().registerWithEmail(
             email: _emailController.text.trim(),
             password: _passwordController.text,
+            name: _nameController.text.trim(),
           );
     }
   }
 
-  Future<void> _loginWithGoogle() async {
+  Future<void> _registerWithGoogle() async {
     await context.read<AuthController>().signInWithGoogle();
   }
 
@@ -49,6 +60,12 @@ class _LoginScreenState extends State<LoginScreen> {
     final authController = context.watch<AuthController>();
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Registro'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Colors.black87,
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -57,9 +74,9 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 40),
+                const SizedBox(height: 20),
                 Text(
-                  'Bienvenido',
+                  'Crea tu cuenta',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -67,13 +84,25 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Inicia sesión para continuar',
+                  'Completa tus datos para registrarte',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: Colors.grey,
                       ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 40),
+                CustomTextField(
+                  label: 'Nombre completo',
+                  hint: 'Juan Pérez',
+                  controller: _nameController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor ingresa tu nombre';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
                 CustomTextField(
                   label: 'Correo electrónico',
                   hint: 'ejemplo@correo.com',
@@ -112,6 +141,30 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
+                CustomTextField(
+                  label: 'Confirmar contraseña',
+                  hint: '********',
+                  controller: _confirmPasswordController,
+                  obscureText: _obscureConfirmPassword,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor confirma tu contraseña';
+                    }
+                    if (value != _passwordController.text) {
+                      return 'Las contraseñas no coinciden';
+                    }
+                    return null;
+                  },
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirmPassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                    ),
+                    onPressed: _toggleConfirmPasswordVisibility,
+                  ),
+                ),
+                const SizedBox(height: 20),
                 if (authController.error != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 20),
@@ -125,13 +178,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 CustomButton(
-                  text: 'Iniciar Sesión',
-                  onPressed: _login,
+                  text: 'Registrarse',
+                  onPressed: _register,
                   isLoading: authController.isLoading,
                 ),
                 const SizedBox(height: 20),
                 const Text(
-                  'O continúa con',
+                  'O regístrate con',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.grey,
@@ -140,7 +193,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 20),
                 CustomButton(
                   text: 'Google',
-                  onPressed: _loginWithGoogle,
+                  onPressed: _registerWithGoogle,
                   backgroundColor: Colors.white,
                   textColor: Colors.black87,
                   icon: Icons.g_mobiledata,
@@ -149,17 +202,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('¿No tienes una cuenta?'),
+                    const Text('¿Ya tienes una cuenta?'),
                     TextButton(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const RegisterScreen(),
-                          ),
-                        );
+                        Navigator.pop(context);
                       },
-                      child: const Text('Regístrate'),
+                      child: const Text('Inicia sesión'),
                     ),
                   ],
                 ),
