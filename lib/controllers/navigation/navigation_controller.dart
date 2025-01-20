@@ -3,72 +3,58 @@ import 'package:provider/provider.dart';
 import '../auth/auth_controller.dart';
 
 class NavigationController extends ChangeNotifier {
-  int _currentIndex = 0;
+  final BuildContext context;
   
-  int get currentIndex => _currentIndex;
-
-  void setIndex(int index) {
-    _currentIndex = index;
-    notifyListeners();
+  NavigationController(this.context) {
+    _initializeNavigation();
   }
 
-  List<BottomNavigationBarItem> getNavigationItems(String role) {
-    if (role == 'owner') {
-      return [
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Inicio',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.business),
-          label: 'Mis Predios',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.message),
-          label: 'Mensajes',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Perfil',
-        ),
-      ];
+  void _initializeNavigation() {
+    final authController = Provider.of<AuthController>(context, listen: false);
+    authController.addListener(_handleAuthStateChange);
+  }
+
+  void _handleAuthStateChange() {
+    final authController = Provider.of<AuthController>(context, listen: false);
+    final user = authController.currentUser;
+
+    if (user == null) {
+      _navigateToLogin();
+      return;
+    }
+
+    if (!user.isPhoneVerified) {
+      _navigateToPhoneVerification();
+      return;
+    }
+
+    if (user.role == 'owner') {
+      _navigateToOwnerHome();
     } else {
-      return [
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Inicio',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.search),
-          label: 'Buscar',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.favorite),
-          label: 'Favoritos',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Perfil',
-        ),
-      ];
+      _navigateToUserHome();
     }
   }
 
-  List<Widget> getScreens(String role) {
-    if (role == 'owner') {
-      return [
-        const Center(child: Text('Pantalla de Inicio - Dueño')),
-        const Center(child: Text('Mis Predios')),
-        const Center(child: Text('Mensajes')),
-        const Center(child: Text('Perfil')),
-      ];
-    } else {
-      return [
-        const Center(child: Text('Pantalla de Inicio - Usuario')),
-        const Center(child: Text('Buscar Predios')),
-        const Center(child: Text('Predios Favoritos')),
-        const Center(child: Text('Perfil')),
-      ];
-    }
+  void _navigateToLogin() {
+    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+  }
+
+  void _navigateToPhoneVerification() {
+    Navigator.pushNamedAndRemoveUntil(context, '/phone-verification', (route) => false);
+  }
+
+  void _navigateToUserHome() {
+    Navigator.pushNamedAndRemoveUntil(context, '/user-home', (route) => false);
+  }
+
+  void _navigateToOwnerHome() {
+    Navigator.pushNamedAndRemoveUntil(context, '/owner-home', (route) => false);
+  }
+
+  @override
+  void dispose() {
+    final authController = Provider.of<AuthController>(context, listen: false);
+    authController.removeListener(_handleAuthStateChange);
+    super.dispose();
   }
 } 
