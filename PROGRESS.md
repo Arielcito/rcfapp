@@ -4,8 +4,9 @@
 
 ### Completado:
 - ✅ Creación del controlador de navegación
-- ✅ Implementación de la pantalla principal (HomeScreen)
-- ✅ Navegación diferenciada por roles
+- ✅ Implementación de pantalla principal para usuarios
+- ✅ Implementación de pantalla principal para propietarios
+- ✅ Configuración de rutas protegidas
 - ✅ Build verificado exitosamente
 
 ### Detalles:
@@ -18,41 +19,38 @@ lib/
   │       └── navigation_controller.dart
   └── views/
       └── home/
-          └── home_screen.dart
+          ├── user_home_screen.dart
+          └── owner_home_screen.dart
 ```
 
-#### 2. Características del Sistema de Navegación
-- Navegación específica por rol:
-  - Usuario regular:
-    - Inicio
-    - Buscar
-    - Favoritos
-    - Perfil
-  - Dueño de predios:
-    - Inicio
-    - Mis Predios
-    - Mensajes
-    - Perfil
-- Barra de navegación inferior personalizada
-- Transiciones suaves entre pantallas
-- Estado persistente por pestaña
+#### 2. Características de la Navegación
+- Control de acceso basado en roles
+- Redirección automática según el estado de autenticación
+- Verificación de número telefónico obligatoria
+- Rutas protegidas para cada tipo de usuario
+- Navegación fluida entre pantallas
 
-#### 3. Mejoras en la Arquitectura
-- Separación clara de responsabilidades
-- Gestión de estado con Provider
-- Integración con AuthController
-- Sistema escalable para nuevas rutas
+#### 3. Pantallas Implementadas
+- Pantalla principal de usuario:
+  - Búsqueda de predios
+  - Acceso a favoritos
+  - Perfil de usuario
+- Pantalla principal de propietario:
+  - Gestión de predios
+  - Agregar nuevo predio
+  - Estadísticas
+  - Perfil de propietario
 
 ### Commits Realizados:
 1. "feat: implementación de navegación basada en roles"
 
 ### Próximos Pasos:
-1. Implementar las pantallas específicas para cada rol
-2. Agregar animaciones de transición
-3. Implementar gestión de estado por pantalla
+1. Implementar la búsqueda de predios
+2. Crear la pantalla de detalles del predio
+3. Implementar el sistema de favoritos
 
 ### Notas para Desarrolladores:
-- La navegación utiliza IndexedStack para mantener el estado
-- Los roles se verifican automáticamente desde AuthController
-- Las rutas están preparadas para expansión futura
-- Se mantiene consistencia en el diseño entre roles 
+- El NavigationController maneja toda la lógica de redirección
+- Las rutas están protegidas según el rol del usuario
+- Se mantiene el estado de autenticación en toda la aplicación
+- La navegación es consistente con el diseño Material 

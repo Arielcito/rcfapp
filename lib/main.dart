@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'controllers/auth/auth_controller.dart';
 import 'controllers/navigation/navigation_controller.dart';
 import 'views/auth/login_screen.dart';
-import 'views/home/home_screen.dart';
+import 'views/auth/register_screen.dart';
+import 'views/auth/phone_verification_screen.dart';
+import 'views/home/user_home_screen.dart';
+import 'views/home/owner_home_screen.dart';
+import 'views/profile/profile_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,14 +20,14 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthController()),
-        ChangeNotifierProvider(create: (_) => NavigationController()),
+        ChangeNotifierProvider(create: (context) => NavigationController(context)),
       ],
       child: MaterialApp(
         title: 'RCF App',
@@ -35,13 +39,15 @@ class MyApp extends StatelessWidget {
           ),
           fontFamily: 'Poppins',
         ),
-        home: Consumer<AuthController>(
-          builder: (context, authController, _) {
-            return authController.isAuthenticated
-                ? const HomeScreen()
-                : const LoginScreen();
-          },
-        ),
+        initialRoute: '/login',
+        routes: {
+          '/login': (context) => const LoginScreen(),
+          '/register': (context) => const RegisterScreen(),
+          '/phone-verification': (context) => const PhoneVerificationScreen(),
+          '/user-home': (context) => const UserHomeScreen(),
+          '/owner-home': (context) => const OwnerHomeScreen(),
+          '/profile': (context) => const ProfileScreen(),
+        },
       ),
     );
   }
