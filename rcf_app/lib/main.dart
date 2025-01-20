@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
+import 'controllers/auth/auth_controller.dart';
+import 'views/auth/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,20 +18,21 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'RCF App',
-      theme: ThemeData(
-        primaryColor: const Color(0xFF00CC44),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF00CC44),
-          secondary: const Color(0xFF003366),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthController()),
+      ],
+      child: MaterialApp(
+        title: 'RCF App',
+        theme: ThemeData(
+          primaryColor: const Color(0xFF00CC44),
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF00CC44),
+            secondary: const Color(0xFF003366),
+          ),
+          fontFamily: 'Poppins',
         ),
-        fontFamily: 'Poppins',
-      ),
-      home: const Scaffold(
-        body: Center(
-          child: Text('RCF App - Inicio'),
-        ),
+        home: const LoginScreen(),
       ),
     );
   }
