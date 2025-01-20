@@ -126,3 +126,69 @@ await Firebase.initializeApp(
 - Los servicios de Authentication y Firestore están habilitados pero no implementados
 - Asegúrate de tener las variables de entorno correctas para cada plataforma
 - Para desarrollo local, usa los emuladores de Firebase cuando sea posible 
+
+## Paso 3: Implementación de Autenticación ✅
+
+### Fecha: [19/01/2024]
+
+### Completado:
+- ✅ Creación del modelo de usuario
+- ✅ Implementación del servicio de autenticación
+- ✅ Implementación del controlador de autenticación
+- ✅ Build verificado exitosamente
+
+### Detalles:
+
+#### 1. Estructura de Archivos Creada
+```
+lib/
+  ├── models/
+  │   └── user/
+  │       └── user_model.dart
+  ├── services/
+  │   └── auth/
+  │       └── auth_service.dart
+  └── controllers/
+      └── auth/
+          └── auth_controller.dart
+```
+
+#### 2. Funcionalidades Implementadas
+- Registro con email y contraseña
+- Login con email y contraseña
+- Login con Google
+- Verificación de número telefónico por SMS
+- Manejo de sesión
+- Sistema de roles (usuario/dueño)
+
+#### 3. Archivos Clave Creados:
+- `user_model.dart`: Modelo de datos del usuario
+- `auth_service.dart`: Servicios de autenticación con Firebase
+- `auth_controller.dart`: Controlador de estado de autenticación
+
+#### 4. Características del Modelo de Usuario
+```dart
+UserModel {
+  id: String
+  email: String
+  name: String
+  phoneNumber: String?
+  role: String
+  prediosFavoritos: List<String>
+  isPhoneVerified: bool
+}
+```
+
+### Commits Realizados:
+1. "feat: implementación del sistema de autenticación"
+
+### Próximos Pasos:
+1. Crear interfaces de usuario para autenticación
+2. Implementar navegación basada en rol
+3. Crear pantallas de perfil de usuario
+
+### Notas para Desarrolladores:
+- El sistema de autenticación utiliza Provider para la gestión de estado
+- La verificación de teléfono es obligatoria después del registro
+- Los roles disponibles son 'user' y 'owner'
+- Todos los errores de autenticación son manejados y expuestos a través del controlador 
