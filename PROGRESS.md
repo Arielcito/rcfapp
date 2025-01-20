@@ -54,3 +54,63 @@ lib/
 - Las rutas están protegidas según el rol del usuario
 - Se mantiene el estado de autenticación en toda la aplicación
 - La navegación es consistente con el diseño Material 
+
+## Paso 9: Implementación de Búsqueda de Predios ✅
+
+### Fecha: [19/01/2024]
+
+### Completado:
+- ✅ Creación del modelo de predio (PropertyModel)
+- ✅ Implementación del servicio de predios (PropertyService)
+- ✅ Implementación del controlador de predios (PropertyController)
+- ✅ Creación de la pantalla de búsqueda
+- ✅ Integración con Firestore
+
+### Detalles:
+
+#### 1. Estructura de Archivos Actualizada
+```
+lib/
+  ├── models/
+  │   └── property/
+  │       └── property_model.dart
+  ├── services/
+  │   └── property/
+  │       └── property_service.dart
+  ├── controllers/
+  │   └── property/
+  │       └── property_controller.dart
+  └── views/
+      └── property/
+          └── property_search_screen.dart
+```
+
+#### 2. Características del Modelo de Predio
+- Información básica (título, descripción, dirección)
+- Detalles de precio y área
+- Soporte para múltiples imágenes
+- Ubicación geográfica
+- Estado de disponibilidad
+- Características personalizables
+- Timestamps de creación y actualización
+
+#### 3. Funcionalidades Implementadas
+- Búsqueda por título y dirección
+- Filtrado de resultados en tiempo real
+- Vista previa de imágenes
+- Información detallada de cada predio
+- Integración con navegación basada en roles
+
+### Commits Realizados:
+1. "feat: implementación del sistema de búsqueda de predios"
+
+### Próximos Pasos:
+1. Implementar la pantalla de detalles del predio
+2. Crear el sistema de favoritos
+3. Implementar filtros avanzados de búsqueda
+
+### Notas para Desarrolladores:
+- El PropertyService maneja todas las operaciones con Firestore
+- La búsqueda se realiza en tiempo real usando streams
+- Las imágenes se cargan de forma optimizada
+- Se implementó manejo de errores y estados de carga 
