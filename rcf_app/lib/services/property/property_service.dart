@@ -6,32 +6,42 @@ class PropertyService {
   final String _collection = 'properties';
 
   // Obtener todos los predios
-  Stream<List<PropertyModel>> getProperties() {
+  Stream<List<PropertyModel>> getAllProperties() {
+    return _firestore
+        .collection(_collection)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => PropertyModel.fromFirestore(doc))
+          .toList();
+    });
+  }
+
+  // Obtener predios disponibles
+  Stream<List<PropertyModel>> getAvailableProperties() {
     return _firestore
         .collection(_collection)
         .where('isAvailable', isEqualTo: true)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
-          .map((doc) => PropertyModel.fromMap(doc.data(), doc.id))
+          .map((doc) => PropertyModel.fromFirestore(doc))
           .toList();
     });
   }
 
   // Buscar predios por título o dirección
-  Stream<List<PropertyModel>> searchProperties(String query) {
-    return _firestore
-        .collection(_collection)
-        .where('isAvailable', isEqualTo: true)
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => PropertyModel.fromMap(doc.data(), doc.id))
-          .where((property) =>
-              property.title.toLowerCase().contains(query.toLowerCase()) ||
-              property.address.toLowerCase().contains(query.toLowerCase()))
-          .toList();
-    });
+  Future<List<PropertyModel>> searchProperties(String query) async {
+    query = query.toLowerCase();
+    final snapshot = await _firestore.collection(_collection).get();
+    
+    return snapshot.docs
+        .map((doc) => PropertyModel.fromFirestore(doc))
+        .where((property) =>
+            property.name.toLowerCase().contains(query) ||
+            property.address.toLowerCase().contains(query))
+        .toList();
   }
 
   // Obtener predios por propietario
@@ -39,19 +49,27 @@ class PropertyService {
     return _firestore
         .collection(_collection)
         .where('ownerId', isEqualTo: ownerId)
+        .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
-          .map((doc) => PropertyModel.fromMap(doc.data(), doc.id))
+          .map((doc) => PropertyModel.fromFirestore(doc))
           .toList();
     });
   }
 
-  // Obtener un predio específico
-  Future<PropertyModel?> getProperty(String id) async {
-    final doc = await _firestore.collection(_collection).doc(id).get();
-    if (!doc.exists) return null;
-    return PropertyModel.fromMap(doc.data()!, doc.id);
+  // Obtener un predio específico por ID
+  Future<PropertyModel?> getPropertyById(String id) async {
+    try {
+      final doc = await _firestore.collection(_collection).doc(id).get();
+      if (doc.exists) {
+        return PropertyModel.fromFirestore(doc);
+      }
+      return null;
+    } catch (e) {
+      print('Error al obtener el predio: $e');
+      return null;
+    }
   }
 
   // Crear un nuevo predio
@@ -79,70 +97,5 @@ class PropertyService {
         .collection(_collection)
         .doc(id)
         .update({'isAvailable': false});
-  }
-
-  Future<PropertyModel?> getPropertyById(String id) async {
-    try {
-      final doc = await _firestore.collection(_collection).doc(id).get();
-      if (doc.exists) {
-        return PropertyModel.fromFirestore(doc);
-      }
-      return null;
-    } catch (e) {
-      print('Error al obtener el predio: $e');
-      return null;
-    }
-  }
-
-  Stream<List<PropertyModel>> getAllProperties() {
-    return _firestore
-        .collection(_collection)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => PropertyModel.fromFirestore(doc))
-          .toList();
-    });
-  }
-
-  Stream<List<PropertyModel>> getPropertiesByOwner(String ownerId) {
-    return _firestore
-        .collection(_collection)
-        .where('ownerId', isEqualTo: ownerId)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => PropertyModel.fromFirestore(doc))
-          .toList();
-    });
-  }
-
-  Future<void> createProperty(PropertyModel property) async {
-    await _firestore.collection(_collection).add(property.toMap());
-  }
-
-  Future<void> updateProperty(PropertyModel property) async {
-    await _firestore
-        .collection(_collection)
-        .doc(property.id)
-        .update(property.toMap());
-  }
-
-  Future<void> deleteProperty(String id) async {
-    await _firestore.collection(_collection).doc(id).delete();
-  }
-
-  Future<List<PropertyModel>> searchProperties(String query) async {
-    query = query.toLowerCase();
-    final snapshot = await _firestore.collection(_collection).get();
-    
-    return snapshot.docs
-        .map((doc) => PropertyModel.fromFirestore(doc))
-        .where((property) =>
-            property.name.toLowerCase().contains(query) ||
-            property.address.toLowerCase().contains(query))
-        .toList();
   }
 } 
