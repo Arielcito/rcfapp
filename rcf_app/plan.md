@@ -208,3 +208,44 @@ Usuario {
 - Implementar sistema de reportes de errores
 - Commit de cambios
 - Verificar build en ambas plataformas
+
+13. Migración a Backend Propio
+- Diseñar arquitectura del backend (Node.js/Express)
+- Crear estructura de base de datos PostgreSQL
+- Implementar endpoints REST:
+  - Autenticación y autorización
+  - Gestión de usuarios
+  - Gestión de predios y canchas
+  - Sistema de reservas
+  - Gestión de pagos
+  - Sistema de notificaciones
+- Migrar datos desde Firestore
+- Actualizar servicios en la app:
+  - Crear nuevos servicios para API REST
+  - Remover dependencias de Firestore
+  - Implementar manejo de tokens JWT
+  - Actualizar manejo de caché
+- Implementar sistema de logs y monitoreo
+- Configurar CI/CD para backend
+- Commit de cambios
+- Verificar build en ambas plataformas
+
+14. Implementación de Variables de Entorno Remotas
+- Crear servicio de configuración remota
+- Implementar sistema de fetch de variables:
+  - Al inicio de la app
+  - Actualización periódica
+  - Caché local
+- Migrar variables locales a remotas:
+  - URLs de API
+  - Configuraciones de servicios
+  - Feature flags
+  - Textos dinámicos
+- Implementar sistema de rollback
+- Crear panel de administración
+- Commit de cambios
+- Verificar build en ambas plataformas
+
+- Implementar sistema de reportes de errores
+- Commit de cambios
+- Verificar build en ambas plataformas 
