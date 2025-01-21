@@ -1,32 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:get/get.dart';
 import '../../controllers/property/property_controller.dart';
 import '../../models/property/property_model.dart';
 
-class PropertySearchScreen extends StatefulWidget {
-  const PropertySearchScreen({Key? key}) : super(key: key);
+class PropertySearchScreen extends GetView<PropertyController> {
+  PropertySearchScreen({Key? key}) : super(key: key) {
+    controller.loadProperties();
+  }
 
-  @override
-  State<PropertySearchScreen> createState() => _PropertySearchScreenState();
-}
-
-class _PropertySearchScreenState extends State<PropertySearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
-
-  @override
-  void initState() {
-    super.initState();
-    // Cargar todos los predios al inicio
-    Provider.of<PropertyController>(context, listen: false).loadProperties();
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _searchFocus.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,77 +25,70 @@ class _PropertySearchScreenState extends State<PropertySearchScreen> {
               controller: _searchController,
               focusNode: _searchFocus,
               decoration: InputDecoration(
-                hintText: 'Buscar por título o dirección',
+                hintText: 'Buscar por nombre o dirección',
                 prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
+                suffixIcon: Obx(() => _searchController.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
                         onPressed: () {
                           _searchController.clear();
                           _searchFocus.unfocus();
-                          Provider.of<PropertyController>(context, listen: false)
-                              .searchProperties('');
+                          controller.searchProperties('');
                         },
                       )
-                    : null,
+                    : const SizedBox.shrink()),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              onChanged: (value) {
-                Provider.of<PropertyController>(context, listen: false)
-                    .searchProperties(value);
-              },
+              onChanged: (value) => controller.searchProperties(value),
             ),
           ),
           Expanded(
-            child: Consumer<PropertyController>(
-              builder: (context, controller, child) {
-                if (controller.isLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+            child: Obx(() {
+              if (controller.isLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-                if (controller.error != null) {
-                  return Center(
-                    child: Text(
-                      controller.error!,
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  );
-                }
-
-                final properties = _searchController.text.isEmpty
-                    ? controller.properties
-                    : controller.searchResults;
-
-                if (properties.isEmpty) {
-                  return const Center(
-                    child: Text('No se encontraron predios'),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16.0),
-                  itemCount: properties.length,
-                  itemBuilder: (context, index) {
-                    return _buildPropertyCard(properties[index]);
-                  },
+              if (controller.error.isNotEmpty) {
+                return Center(
+                  child: Text(
+                    controller.error,
+                    style: const TextStyle(color: Colors.red),
+                  ),
                 );
-              },
-            ),
+              }
+
+              final properties = _searchController.text.isEmpty
+                  ? controller.properties
+                  : controller.searchResults;
+
+              if (properties.isEmpty) {
+                return const Center(
+                  child: Text('No se encontraron predios'),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(16.0),
+                itemCount: properties.length,
+                itemBuilder: (context, index) {
+                  return _buildPropertyCard(context, properties[index]);
+                },
+              );
+            }),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPropertyCard(PropertyModel property) {
+  Widget _buildPropertyCard(BuildContext context, PropertyModel property) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16.0),
       child: InkWell(
         onTap: () {
-          Navigator.pushNamed(
-            context,
+          Get.toNamed(
             '/property-details',
             arguments: property.id,
           );
@@ -120,9 +96,9 @@ class _PropertySearchScreenState extends State<PropertySearchScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (property.images.isNotEmpty)
+            if (property.imagenUrl != null)
               Image.network(
-                property.images.first,
+                property.imagenUrl!,
                 height: 200,
                 width: double.infinity,
                 fit: BoxFit.cover,
@@ -133,32 +109,32 @@ class _PropertySearchScreenState extends State<PropertySearchScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    property.title,
+                    property.nombre,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    property.address,
+                    property.direccion,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
                       Icon(
-                        Icons.square_foot,
+                        Icons.local_parking,
                         size: 20,
                         color: Theme.of(context).colorScheme.secondary,
                       ),
                       const SizedBox(width: 4),
-                      Text('${property.area} m²'),
+                      Text('${property.capacidadEstacionamiento} lugares'),
                       const SizedBox(width: 16),
                       Icon(
-                        Icons.attach_money,
+                        Icons.access_time,
                         size: 20,
                         color: Theme.of(context).colorScheme.secondary,
                       ),
                       const SizedBox(width: 4),
-                      Text('\$${property.price.toStringAsFixed(2)}'),
+                      Text('${property.horarioApertura} - ${property.horarioCierre}'),
                     ],
                   ),
                 ],

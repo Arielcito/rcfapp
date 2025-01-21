@@ -1,3 +1,76 @@
+# Progreso del Proyecto
+
+## Base Configuration ✅
+- ✅ Configuración del proyecto Flutter
+- ✅ Configuración de GetX
+- ✅ Configuración de ApiClient
+- ✅ Configuración del sistema de caché
+- ✅ Configuración de rutas y navegación
+
+## Service Migration Progress
+
+### AuthService ✅
+- ✅ Crear nuevo AuthService con API REST
+- ✅ Actualizar AuthModel
+- ✅ Migrar AuthController a GetX
+- ✅ Implementar caché con Hive
+- ✅ Actualizar vistas de autenticación a GetX
+
+### PropertyService ✅
+- ✅ Crear nuevo PropertyService con API REST
+- ✅ Actualizar PropertyModel
+- ✅ Migrar PropertyController a GetX
+- ✅ Implementar caché con Hive
+- ✅ Actualizar vistas de propiedades a GetX
+- ✅ Configurar bindings y rutas para propiedades
+
+### CourtService 🔄
+- ⬜ Crear nuevo CourtService con API REST
+- ⬜ Actualizar CourtModel
+- ⬜ Migrar CourtController a GetX
+- ⬜ Implementar caché con Hive
+- ⬜ Actualizar vistas de canchas a GetX
+
+### BookingService 🔄
+- ⬜ Crear nuevo BookingService con API REST
+- ⬜ Actualizar BookingModel
+- ⬜ Migrar BookingController a GetX
+- ⬜ Implementar caché con Hive
+- ⬜ Actualizar vistas de reservas a GetX
+
+## Cache System
+- ✅ Configuración de Hive
+- ✅ Implementación de caché para autenticación
+- ✅ Implementación de caché para propiedades
+- ⬜ Implementación de caché para canchas
+- ⬜ Implementación de caché para reservas
+
+## Testing and Verification
+- ✅ Pruebas de AuthService
+- ✅ Pruebas de PropertyService
+- ⬜ Pruebas de CourtService
+- ⬜ Pruebas de BookingService
+
+## Progress Notes
+
+### 2024-03-19
+- Completada la migración del AuthService
+- Actualizadas las pantallas de autenticación a GetX
+- Corregido el ApiClient con interceptor y caché
+
+### 2024-03-20
+- Completada la migración del PropertyService
+- Actualizado el PropertyModel con nuevos campos
+- Migrado el PropertyController a GetX
+- Actualizadas las vistas de propiedades a GetX
+- Implementado el manejo de campos opcionales en las vistas
+- Configurados los bindings y rutas para las vistas de propiedades
+
+## Next Steps
+1. Implementar CourtService
+2. Actualizar vistas de canchas
+3. Implementar sistema de caché para canchas
+
 ## Paso 8: Implementación de Navegación Basada en Roles ✅
 
 ### Fecha: [19/01/2024]
@@ -448,3 +521,80 @@ test/
 - [ ] Preparar builds para tiendas
 - [ ] Escribir documentación completa
 - [ ] Configurar monitoreo de errores 
+
+# Progreso de Migración RCF App
+
+## Migración a Backend Propio
+
+### 1. Configuración Base ✅
+- [x] Crear ApiClient base con Dio
+- [x] Implementar interceptores:
+  - [x] Auth Interceptor (Bearer token)
+  - [x] Error Interceptor (manejo global)
+  - [x] Retry Interceptor (reintentos automáticos)
+  - [x] Cache Interceptor (optimización)
+- [x] Configurar variables de entorno (.env)
+
+### 2. Migración de Servicios
+
+#### AuthService ✅
+- [x] Crear nuevo AuthService con API REST
+- [x] Migrar pantallas de autenticación a GetX
+- [x] Implementar manejo de tokens JWT
+- [x] Actualizar AuthController
+- [x] Verificar funcionamiento de:
+  - [x] Login con email
+  - [x] Registro con email
+  - [x] Login con Google
+  - [x] Verificación de teléfono
+
+#### PropertyService 🚧
+- [x] Crear nuevo PropertyService con API REST
+- [x] Actualizar PropertyModel según backend
+- [x] Migrar PropertyController a GetX
+- [x] Implementar caché con Hive
+- [ ] Verificar funcionamiento de:
+  - [ ] Listado de propiedades
+  - [ ] Búsqueda y filtros
+  - [ ] Detalles de propiedad
+  - [ ] Sistema de favoritos
+
+#### Próximos Servicios
+- [ ] BookingService
+- [ ] CourtService
+- [ ] FavoriteService
+- [ ] UserService
+- [ ] ReviewService
+
+### 3. Sistema de Caché
+- [x] Configurar Hive
+- [x] Implementar caché para:
+  - [x] Token de autenticación
+  - [x] Datos de usuario
+  - [x] Propiedades frecuentes
+  - [ ] Reservas activas
+
+### 4. Testing y Verificación
+- [x] Pruebas de AuthService
+- [ ] Pruebas de PropertyService
+- [ ] Pruebas de integración
+- [ ] Verificación de builds iOS/Android
+
+### Notas de Progreso
+
+#### 2024-03-19
+- Implementación inicial de ApiClient con interceptores
+- Migración de AuthService completada
+- Actualización de pantallas de auth a GetX
+- Corrección de errores en ApiClient y manejo de tokens
+
+#### 2024-03-20
+- Migración de PropertyService a API REST
+- Actualización del modelo de propiedad
+- Migración de PropertyController a GetX
+- Implementación de caché para propiedades
+
+#### Próximos Pasos
+1. Verificar funcionamiento del PropertyService
+2. Actualizar vistas de propiedades para usar GetX
+3. Implementar sistema de caché para reservas 
