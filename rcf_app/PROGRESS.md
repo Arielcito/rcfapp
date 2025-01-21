@@ -32,9 +32,9 @@
 - ⬜ Actualizar vistas de canchas a GetX
 
 ### BookingService 🔄
-- ⬜ Crear nuevo BookingService con API REST
-- ⬜ Actualizar BookingModel
-- ⬜ Migrar BookingController a GetX
+- ✅ Crear nuevo BookingService con API REST
+- ✅ Actualizar BookingModel
+- ✅ Migrar BookingController a GetX
 - ⬜ Implementar caché con Hive
 - ⬜ Actualizar vistas de reservas a GetX
 
@@ -287,6 +287,16 @@ lib/
   - Vista detallada de cancha
   - Formulario de creación/edición
   - Validaciones y manejo de errores
+
+#### 2024-03-22
+- Se implementó el BookingService con API REST
+- Se actualizó el BookingModel para usar JSON
+- Se migró el BookingController a GetX
+- Se agregaron métodos para:
+  - Gestión de reservas (CRUD)
+  - Verificación de disponibilidad
+  - Manejo de estados de reserva
+  - Caché de datos con Hive
 
 ## Paso 11: Implementación del Sistema de Reservas ⏳
 
