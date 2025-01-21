@@ -338,4 +338,187 @@ Implementar formato estándar de respuesta:
 
 - Implementar sistema de reportes de errores
 - Commit de cambios
+- Verificar build en ambas plataformas
+
+15. Implementación del Servicio de Mercado Pago en Backend
+
+### Estructura del Servicio
+```typescript
+interface PaymentService {
+  createPreference(booking: Booking): Promise<PreferenceResponse>
+  getPaymentStatus(paymentId: string): Promise<PaymentStatus>
+  processWebhook(data: WebhookData): Promise<void>
+}
+```
+
+### Pasos de Implementación
+1. Configuración Inicial:
+   - Instalar SDK de Mercado Pago
+   - Configurar credenciales (ACCESS_TOKEN, PUBLIC_KEY)
+   - Crear estructura base del servicio
+
+2. Endpoints a Implementar:
+   - POST /api/payments/create-preference
+   - GET /api/payments/status/:paymentId
+   - POST /api/payments/webhook
+
+3. Funcionalidades:
+   - Crear preferencia de pago
+   - Procesar pagos (completos y señas)
+   - Manejar webhooks de Mercado Pago
+   - Actualizar estado de reservas
+   - Notificar a usuarios sobre pagos
+
+4. Manejo de Estados de Pago:
+   ```typescript
+   enum PaymentStatus {
+     PENDING = 'pending',
+     APPROVED = 'approved',
+     REJECTED = 'rejected',
+     REFUNDED = 'refunded'
+   }
+   ```
+
+5. Sistema de Notificaciones:
+   - Notificar pagos exitosos
+   - Alertar sobre pagos rechazados
+   - Confirmar reembolsos
+   - Enviar recordatorios de pago pendiente
+
+6. Seguridad:
+   - Validación de webhooks
+   - Encriptación de datos sensibles
+   - Rate limiting
+   - Logs de transacciones
+
+7. Testing:
+   - Pruebas unitarias
+   - Pruebas de integración
+   - Simulación de webhooks
+   - Pruebas de carga
+
+8. Documentación:
+   - API endpoints
+   - Flujos de pago
+   - Manejo de errores
+   - Guía de integración
+
+### Estructura de Respuesta API
+Implementar formato estándar de respuesta:
+```dart
+{
+  success: boolean,
+  data: any,
+  error?: string,
+  statusCode: number,
+  message?: string
+}
+```
+
+### Configuración Base App
+1. Crear ApiClient base:
+   - Implementar Dio con interceptores
+   - Configurar baseUrl desde variables de ambiente
+   - Implementar manejo de timeout
+   - Configurar retry automático
+
+2. Implementar interceptores:
+   - Auth Interceptor (Bearer token)
+   - Error Interceptor (manejo global)
+   - Retry Interceptor (reintentos automáticos)
+   - Cache Interceptor (optimización)
+
+3. Sistema de renovación de token:
+   - Almacenamiento seguro de refresh token
+   - Renovación automática
+   - Cola de requests durante renovación
+   - Manejo de sesión expirada
+
+### Migración de Servicios (orden)
+1. AuthService:
+   - Login/Registro
+   - Verificación SMS
+   - Manejo de roles
+   - Refresh token
+
+2. PropertyService:
+   - CRUD predios
+   - Búsqueda y filtros
+   - Gestión de imágenes
+
+3. BookingService:
+   - Gestión de reservas
+   - Verificación disponibilidad
+   - Cancelaciones
+
+4. FavoriteService:
+   - Gestión de favoritos
+   - Sincronización
+
+5. UserService:
+   - Perfil
+   - Preferencias
+   - Historial
+
+6. ReviewService:
+   - Gestión de reseñas
+   - Calificaciones
+
+### Sistema de Caché con Hive
+1. Datos a cachear:
+   - Información de usuario
+   - Predios frecuentes
+   - Reservas activas
+   - Configuraciones
+   - Token y refresh token
+
+2. Estrategias de caché:
+   - Cache-first: datos no críticos
+   - Network-first: datos críticos
+   - Tiempo de expiración configurable
+   - Invalidación automática
+
+### Manejo de Errores
+1. Tipos de errores:
+   - Red (sin conexión, timeout)
+   - Servidor (500, 503)
+   - Autenticación (401, 403)
+   - Validación (400)
+   - Negocio (422)
+
+2. Estrategias de recuperación:
+   - Retry automático
+   - Fallback a caché
+   - Modo offline
+   - Sincronización posterior
+
+- Migrar datos desde Firestore
+- Actualizar servicios en la app:
+  - Crear nuevos servicios para API REST
+  - Remover dependencias de Firestore
+  - Implementar manejo de tokens JWT
+  - Actualizar manejo de caché
+- Implementar sistema de logs y monitoreo
+- Configurar CI/CD para backend
+- Commit de cambios
+- Verificar build en ambas plataformas
+
+16. Implementación de Variables de Entorno Remotas
+- Crear servicio de configuración remota
+- Implementar sistema de fetch de variables:
+  - Al inicio de la app
+  - Actualización periódica
+  - Caché local
+- Migrar variables locales a remotas:
+  - URLs de API
+  - Configuraciones de servicios
+  - Feature flags
+  - Textos dinámicos
+- Implementar sistema de rollback
+- Crear panel de administración
+- Commit de cambios
+- Verificar build en ambas plataformas
+
+- Implementar sistema de reportes de errores
+- Commit de cambios
 - Verificar build en ambas plataformas 

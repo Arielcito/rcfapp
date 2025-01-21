@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rcf_app/models/booking/booking_model.dart';
 import 'package:rcf_app/services/booking/booking_service.dart';
@@ -10,7 +11,9 @@ class BookingController extends GetxController {
     'TU_CLIENT_ID',
   ); // TODO: Mover a variables de entorno
 
+  final RxList<BookingModel> userBookings = <BookingModel>[].obs;
   final RxBool isLoading = false.obs;
+  final RxString error = ''.obs;
   final RxBool isProcessingPayment = false.obs;
   final Rx<DateTime> selectedDate = DateTime.now().obs;
   final Rx<DateTime> selectedTime = DateTime.now().obs;
@@ -46,33 +49,53 @@ class BookingController extends GetxController {
     }
   }
 
-  Future<String> createBooking({
+  Future<void> createBooking({
     required String userId,
-    required String propertyId,
-    required String courtId,
-    required double price,
+    required String canchaId,
+    required DateTime fecha,
+    required String hora,
   }) async {
     try {
       isLoading.value = true;
+      error.value = '';
+
+      final isAvailable = await _bookingService.checkAvailability(
+        canchaId,
+        fecha,
+        hora,
+      );
+
+      if (!isAvailable) {
+        throw Exception('El horario seleccionado no está disponible');
+      }
 
       final booking = BookingModel(
         id: '',
         userId: userId,
-        propertyId: propertyId,
-        courtId: courtId,
-        date: selectedDate.value,
-        startTime: selectedTime.value,
-        endTime: selectedTime.value.add(Duration(hours: 1)),
-        totalAmount: price,
-        paidAmount: 0,
-        status: BookingStatus.pending,
-        paymentMethod: PaymentMethod.mercadoPago,
-        paymentStatus: PaymentStatus.pending,
+        canchaId: canchaId,
+        fecha: fecha,
+        hora: hora,
+        duracion: 1, // 1 hora por defecto
+        estadoPago: 'pendiente',
+        metodoPago: 'pendiente',
         createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
       );
 
-      return await _bookingService.createBooking(booking);
+      await _bookingService.createBooking(booking);
+      Get.snackbar(
+        'Éxito',
+        'Reserva creada correctamente',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      error.value = e.toString();
+      Get.snackbar(
+        'Error',
+        error.value,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     } finally {
       isLoading.value = false;
     }
@@ -166,19 +189,23 @@ class BookingController extends GetxController {
   Future<void> cancelBooking(String bookingId) async {
     try {
       isLoading.value = true;
+      error.value = '';
+
       await _bookingService.cancelBooking(bookingId);
       Get.snackbar(
         'Éxito',
         'Reserva cancelada correctamente',
-        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
       );
     } catch (e) {
+      error.value = e.toString();
       Get.snackbar(
         'Error',
-        e.toString(),
-        snackPosition: SnackPosition.BOTTOM,
+        error.value,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
-      rethrow;
     } finally {
       isLoading.value = false;
     }
@@ -197,5 +224,69 @@ class BookingController extends GetxController {
     totalAmount.value = isPartialPayment.value
         ? totalAmount.value * 0.5
         : totalAmount.value * 2;
+  }
+
+  void loadUserBookings(String userId) {
+    try {
+      isLoading.value = true;
+      error.value = '';
+
+      _bookingService.getUserBookings(userId).listen(
+        (bookings) {
+          userBookings.value = bookings;
+        },
+        onError: (e) {
+          error.value = e.toString();
+          Get.snackbar(
+            'Error',
+            error.value,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+        },
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> rescheduleBooking({
+    required String bookingId,
+    required DateTime newFecha,
+    required String newHora,
+    required String canchaId,
+  }) async {
+    try {
+      isLoading.value = true;
+      error.value = '';
+
+      final isAvailable = await _bookingService.checkAvailability(
+        canchaId,
+        newFecha,
+        newHora,
+      );
+
+      if (!isAvailable) {
+        throw Exception('El nuevo horario seleccionado no está disponible');
+      }
+
+      await _bookingService.rescheduleBooking(bookingId, newFecha, newHora);
+      Get.snackbar(
+        'Éxito',
+        'Reserva reprogramada correctamente',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      error.value = e.toString();
+      Get.snackbar(
+        'Error',
+        error.value,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      isLoading.value = false;
+    }
   }
 } 
