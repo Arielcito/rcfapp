@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:rcf_app/controllers/booking/booking_controller.dart';
+import '../controllers/booking/booking_controller.dart';
 
 class BookingBinding extends Bindings {
   @override

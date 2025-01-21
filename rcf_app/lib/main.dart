@@ -7,10 +7,21 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'firebase_options.dart';
 import 'controllers/auth/auth_controller.dart';
 import 'views/auth/login_screen.dart';
+import 'package:flutter/foundation.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // Configurar logs
+  if (kDebugMode) {
+    debugPrint = (String? message, {int? wrapWidth}) {
+      if (message == null) return;
+      if (!message.startsWith('flutter.')) return;
+      if (!message.contains('print')) return;
+      print(message.split('flutter.')[1]);
+    };
+  }
+
   // Inicializar servicios
   await Future.wait([
     dotenv.load(fileName: '.env'),

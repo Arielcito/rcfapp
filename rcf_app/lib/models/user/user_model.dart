@@ -4,16 +4,19 @@ class UserModel {
   final String name;
   final String role;
   final bool emailVerified;
+  final String phoneNumber;
   final String? image;
   final String? predioTrabajo;
   final DateTime createdAt;
-
+  final bool isPhoneVerified;
   UserModel({
     required this.id,
     required this.email,
     required this.name,
     required this.role,
     required this.emailVerified,
+    required this.phoneNumber,
+    required this.isPhoneVerified,
     this.image,
     this.predioTrabajo,
     required this.createdAt,
@@ -26,6 +29,8 @@ class UserModel {
       name: map['name'] ?? '',
       role: map['role'] ?? 'USER',
       emailVerified: map['emailVerified'] ?? false,
+      phoneNumber: map['phoneNumber'] ?? '',
+      isPhoneVerified: map['isPhoneVerified'] ?? false,
       image: map['image'],
       predioTrabajo: map['predioTrabajo'],
       createdAt: map['createdAt'] != null 
@@ -41,6 +46,8 @@ class UserModel {
       'name': name,
       'role': role,
       'emailVerified': emailVerified,
+      'phoneNumber': phoneNumber,
+      'isPhoneVerified': isPhoneVerified,
       'image': image,
       'predioTrabajo': predioTrabajo,
       'createdAt': createdAt.toIso8601String(),
@@ -54,6 +61,8 @@ class UserModel {
     String? role,
     bool? emailVerified,
     String? image,
+    String? phoneNumber,
+    bool? isPhoneVerified,
     String? predioTrabajo,
     DateTime? createdAt,
   }) {
@@ -64,6 +73,8 @@ class UserModel {
       role: role ?? this.role,
       emailVerified: emailVerified ?? this.emailVerified,
       image: image ?? this.image,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      isPhoneVerified: isPhoneVerified ?? this.isPhoneVerified,
       predioTrabajo: predioTrabajo ?? this.predioTrabajo,
       createdAt: createdAt ?? this.createdAt,
     );

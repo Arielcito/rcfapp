@@ -1,17 +1,20 @@
 import 'package:get/get.dart';
-import 'package:rcf_app/bindings/auth_binding.dart';
-import 'package:rcf_app/bindings/property_binding.dart';
-import 'package:rcf_app/bindings/court_binding.dart';
-import 'package:rcf_app/views/auth/login_screen.dart';
-import 'package:rcf_app/views/auth/register_screen.dart';
-import 'package:rcf_app/views/property/property_search_screen.dart';
-import 'package:rcf_app/views/property/property_details_screen.dart';
-import 'package:rcf_app/views/property/favorites_screen.dart';
-import 'package:rcf_app/views/booking/booking_screen.dart';
-import 'package:rcf_app/views/booking/booking_confirmation_screen.dart';
-import 'package:rcf_app/views/court/court_list_screen.dart';
-import 'package:rcf_app/views/court/court_details_screen.dart';
-import 'package:rcf_app/views/court/court_form_screen.dart';
+import '../bindings/auth_binding.dart';
+import '../bindings/property_binding.dart';
+import '../bindings/court_binding.dart';
+import '../bindings/booking_binding.dart';
+import '../views/auth/login_screen.dart';
+import '../views/auth/register_screen.dart';
+import '../views/home/home_screen.dart';
+import '../views/profile/profile_screen.dart';
+import '../views/property/property_search_screen.dart';
+import '../views/property/property_details_screen.dart';
+import '../views/property/favorites_screen.dart';
+import '../views/booking/booking_screen.dart';
+import '../views/booking/booking_confirmation_screen.dart';
+import '../views/court/court_list_screen.dart';
+import '../views/court/court_details_screen.dart';
+import '../views/court/court_form_screen.dart';
 
 class AppRoutes {
   static const String login = '/login';
@@ -22,7 +25,9 @@ class AppRoutes {
   static const String courtDetails = '/courts/:id';
   static const String courtCreate = '/courts/create';
   static const String courtEdit = '/courts/:id/edit';
-
+  static const String courtDetail = '/court/:id';
+  static const String home = '/home';
+  static const String profile = '/profile';
   static final routes = [
     GetPage(
       name: login,
@@ -81,6 +86,14 @@ class AppRoutes {
       name: courtEdit,
       page: () => CourtFormScreen(isEditing: true),
       binding: CourtBinding(),
+    ),
+    GetPage(
+      name: '/home',
+      page: () => HomeScreen(),
+    ),
+    GetPage(
+      name: '/profile',
+      page: () => const ProfileScreen(),
     ),
   ];
 } 

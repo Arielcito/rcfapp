@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:rcf_app/models/booking/booking_model.dart';
-import 'package:rcf_app/services/booking/booking_service.dart';
-import 'package:rcf_app/services/payment/payment_service.dart';
+import '../../models/booking/booking_model.dart';
+import '../../services/booking/booking_service.dart';
+import '../../services/payment/payment_service.dart';
 
 class BookingController extends GetxController {
   final BookingService _bookingService = BookingService();
@@ -22,38 +22,46 @@ class BookingController extends GetxController {
   bool get isLoading => _isLoading.value;
   String get error => _error.value;
 
-  Stream<List<BookingModel>> getUserBookings(String userId) {
-    return _bookingService.getUserBookings(userId);
-  }
-
-  Stream<List<BookingModel>> getPropertyBookings(String propertyId) {
-    return _bookingService.getPropertyBookings(propertyId);
-  }
-
-  Future<bool> checkAvailability(
-    String propertyId,
-    String courtId,
-    DateTime date,
-    DateTime startTime,
-    DateTime endTime,
-  ) async {
+  Future<List<BookingModel>> getUserBookings(String userId) async {
     try {
       _isLoading.value = true;
-      final isAvailable = await _bookingService.checkAvailability(
-        propertyId,
-        courtId,
-        date,
-        startTime,
-        endTime,
-      );
-      _error.value = '';
-      return isAvailable;
+      return await _bookingService.getBookingsByUser(userId);
     } finally {
       _isLoading.value = false;
     }
   }
 
-  Future<String> createBooking({
+  Future<List<BookingModel>> getPropertyBookings(String propertyId) async {
+    try {
+      _isLoading.value = true;
+      return await _bookingService.getBookingsByProperty(propertyId);
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+
+  Future<bool> checkAvailability({
+    required String propertyId,
+    required String courtId,
+    required DateTime date,
+    required DateTime startTime,
+    required DateTime endTime,
+  }) async {
+    try {
+      _isLoading.value = true;
+      return await _bookingService.checkAvailability(
+        propertyId: propertyId,
+        courtId: courtId,
+        date: date,
+        startTime: startTime,
+        endTime: endTime,
+      );
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+
+  Future<BookingModel> createBooking({
     required String userId,
     required String propertyId,
     required String courtId,
@@ -64,11 +72,11 @@ class BookingController extends GetxController {
       _error.value = '';
 
       final isAvailable = await checkAvailability(
-        propertyId,
-        courtId,
-        selectedDate.value,
-        selectedTime.value,
-        selectedTime.value.add(Duration(hours: 1)),
+        propertyId: propertyId,
+        courtId: courtId,
+        date: selectedDate.value,
+        startTime: selectedTime.value,
+        endTime: selectedTime.value.add(Duration(hours: 1)),
       );
 
       if (!isAvailable) {
@@ -93,8 +101,9 @@ class BookingController extends GetxController {
         updatedAt: DateTime.now(),
       );
 
-      final bookingId = await _bookingService.createBooking(booking);
-      return bookingId;
+      final newBooking = await _bookingService.createBooking(booking);
+      _bookings.add(newBooking);
+      return newBooking;
     } finally {
       _isLoading.value = false;
     }
@@ -135,7 +144,7 @@ class BookingController extends GetxController {
             ? BookingStatus.partial
             : BookingStatus.confirmed;
 
-        final booking = await _bookingService.getBooking(bookingId);
+        final booking = await _bookingService.getBookingById(bookingId);
         if (booking != null) {
           final updatedBooking = booking.copyWith(
             status: bookingStatus,
@@ -144,7 +153,7 @@ class BookingController extends GetxController {
             paymentId: paymentId,
             updatedAt: DateTime.now(),
           );
-          await _bookingService.updateBooking(updatedBooking);
+          await _bookingService.updateBooking(bookingId, updatedBooking);
         }
 
         Get.snackbar(
@@ -219,25 +228,42 @@ class BookingController extends GetxController {
 
   Future<void> rescheduleBooking({
     required String bookingId,
-    required DateTime newFecha,
-    required String newHora,
-    required String canchaId,
+    required DateTime newDate,
+    required DateTime newStartTime,
+    required DateTime newEndTime,
+    required String propertyId,
+    required String courtId,
   }) async {
     try {
       _isLoading.value = true;
       _error.value = '';
 
-      final isAvailable = await _bookingService.checkAvailability(
-        canchaId,
-        newFecha,
-        newHora,
+      final isAvailable = await checkAvailability(
+        propertyId: propertyId,
+        courtId: courtId,
+        date: newDate,
+        startTime: newStartTime,
+        endTime: newEndTime,
       );
 
       if (!isAvailable) {
         throw Exception('El nuevo horario seleccionado no está disponible');
       }
 
-      await _bookingService.rescheduleBooking(bookingId, newFecha, newHora);
+      final booking = await _bookingService.getBookingById(bookingId);
+      if (booking == null) {
+        throw Exception('No se encontró la reserva');
+      }
+
+      final updatedBooking = booking.copyWith(
+        date: newDate,
+        startTime: newStartTime,
+        endTime: newEndTime,
+        updatedAt: DateTime.now(),
+      );
+
+      await _bookingService.updateBooking(bookingId, updatedBooking);
+      
       Get.snackbar(
         'Éxito',
         'Reserva reprogramada correctamente',
@@ -283,7 +309,7 @@ class BookingController extends GetxController {
     }
   }
 
-  Future<BookingModel?> getBooking(String id) async {
+  Future<BookingModel?> getBookingById(String id) async {
     try {
       _isLoading.value = true;
       final booking = await _bookingService.getBookingById(id);
@@ -297,56 +323,29 @@ class BookingController extends GetxController {
     }
   }
 
-  Future<BookingModel?> createBooking(BookingModel booking) async {
+  Future<void> completeBooking(String id) async {
     try {
       _isLoading.value = true;
-      final newBooking = await _bookingService.createBooking(booking);
-      _bookings.add(newBooking);
-      _error.value = '';
-      return newBooking;
-    } catch (error) {
-      _error.value = 'Error al crear la reserva: $error';
-      return null;
-    } finally {
-      _isLoading.value = false;
-    }
-  }
+      final booking = await _bookingService.getBookingById(id);
+      if (booking == null) {
+        throw Exception('No se encontró la reserva');
+      }
 
-  Future<BookingModel?> updateBooking(String id, BookingModel booking) async {
-    try {
-      _isLoading.value = true;
-      final updatedBooking = await _bookingService.updateBooking(id, booking);
+      final updatedBooking = booking.copyWith(
+        status: BookingStatus.completed,
+        updatedAt: DateTime.now(),
+      );
+
+      await _bookingService.updateBooking(id, updatedBooking);
+      
       final index = _bookings.indexWhere((b) => b.id == id);
       if (index != -1) {
         _bookings[index] = updatedBooking;
       }
+      
       _error.value = '';
-      return updatedBooking;
-    } catch (error) {
-      _error.value = 'Error al actualizar la reserva: $error';
-      return null;
-    } finally {
-      _isLoading.value = false;
-    }
-  }
-
-  Future<bool> completeBooking(String id) async {
-    try {
-      _isLoading.value = true;
-      await _bookingService.completeBooking(id);
-      final index = _bookings.indexWhere((b) => b.id == id);
-      if (index != -1) {
-        final booking = _bookings[index];
-        _bookings[index] = booking.copyWith(
-          status: BookingStatus.completed,
-          updatedAt: DateTime.now(),
-        );
-      }
-      _error.value = '';
-      return true;
     } catch (error) {
       _error.value = 'Error al completar la reserva: $error';
-      return false;
     } finally {
       _isLoading.value = false;
     }

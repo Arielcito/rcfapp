@@ -75,6 +75,56 @@ class ApiClient {
       queryParameters: queryParameters,
     );
   }
+
+  Future<T> patch<T>(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    CancelToken? cancelToken,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    try {
+      final response = await _dio.patch<T>(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+        cancelToken: cancelToken,
+        onSendProgress: onSendProgress,
+        onReceiveProgress: onReceiveProgress,
+      );
+      return response.data as T;
+    } catch (error) {
+      throw _handleError(error);
+    }
+  }
+
+  Exception _handleError(dynamic error) {
+    if (error is DioException) {
+      switch (error.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.receiveTimeout:
+          return Exception('Error de conexión. Por favor, verifica tu conexión a internet.');
+        case DioExceptionType.badResponse:
+          final statusCode = error.response?.statusCode;
+          final message = error.response?.data?['message'];
+          if (statusCode == 401) {
+            return Exception(message ?? 'No autorizado');
+          } else if (statusCode == 404) {
+            return Exception(message ?? 'Recurso no encontrado');
+          }
+          return Exception(message ?? 'Error en la solicitud');
+        case DioExceptionType.connectionError:
+          return Exception('No se pudo conectar al servidor. Por favor, intenta más tarde.');
+        default:
+          return Exception('Error inesperado. Por favor, intenta más tarde.');
+      }
+    }
+    return Exception(error.toString());
+  }
 }
 
 class _AuthInterceptor extends Interceptor {
