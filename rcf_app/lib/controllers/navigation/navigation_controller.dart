@@ -11,7 +11,7 @@ class NavigationController extends GetxController {
   }
 
   void _initializeNavigation() {
-    ever(_authController.currentUser, _handleAuthStateChange);
+    ever(_authController.user, _handleAuthStateChange);
   }
 
   void _handleAuthStateChange(dynamic user) {

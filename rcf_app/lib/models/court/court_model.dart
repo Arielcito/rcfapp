@@ -1,7 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'package:get/get.dart';
 
-part './court_model.g.dart';
+part 'court_model.g.dart';
 
 @JsonSerializable(
   explicitToJson: true,

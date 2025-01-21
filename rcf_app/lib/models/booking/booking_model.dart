@@ -1,4 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:json_annotation/json_annotation.dart';
+
+part 'booking_model.g.dart';
 
 enum BookingStatus {
   pending,    // Reserva pendiente de pago
@@ -20,11 +23,16 @@ enum PaymentStatus {
   refunded    // Pago reembolsado
 }
 
+@JsonSerializable(
+  explicitToJson: true,
+  fieldRename: FieldRename.snake,
+  includeIfNull: false,
+)
 class BookingModel {
   final String id;
   final String userId;
-  final String propertyId;
   final String courtId;
+  final String propertyId;
   final DateTime date;
   final DateTime startTime;
   final DateTime endTime;
@@ -41,8 +49,8 @@ class BookingModel {
   BookingModel({
     required this.id,
     required this.userId,
-    required this.propertyId,
     required this.courtId,
+    required this.propertyId,
     required this.date,
     required this.startTime,
     required this.endTime,
@@ -57,42 +65,49 @@ class BookingModel {
     required this.updatedAt,
   });
 
-  factory BookingModel.fromJson(Map<String, dynamic> json) {
+  factory BookingModel.fromJson(Map<String, dynamic> json) => _$BookingModelFromJson(json);
+
+  Map<String, dynamic> toJson() => _$BookingModelToJson(this);
+
+  factory BookingModel.fromMap(Map<String, dynamic> map) {
     return BookingModel(
-      id: json['id'] as String,
-      userId: json['userId'] as String,
-      propertyId: json['propertyId'] as String,
-      courtId: json['courtId'] as String,
-      date: (json['date'] as Timestamp).toDate(),
-      startTime: (json['startTime'] as Timestamp).toDate(),
-      endTime: (json['endTime'] as Timestamp).toDate(),
-      duration: json['duration'] as int,
+      id: map['id'] ?? '',
+      userId: map['userId'] ?? '',
+      courtId: map['courtId'] ?? '',
+      propertyId: map['propertyId'] ?? '',
+      date: DateTime.parse(map['date']),
+      startTime: DateTime.parse(map['startTime']),
+      endTime: DateTime.parse(map['endTime']),
+      duration: map['duration'] ?? 0,
       status: BookingStatus.values.firstWhere(
-        (e) => e.toString() == 'BookingStatus.${json['status']}',
+        (e) => e.toString() == 'BookingStatus.${map['status']}',
+        orElse: () => BookingStatus.pending,
       ),
       paymentStatus: PaymentStatus.values.firstWhere(
-        (e) => e.toString() == 'PaymentStatus.${json['paymentStatus']}',
+        (e) => e.toString() == 'PaymentStatus.${map['paymentStatus']}',
+        orElse: () => PaymentStatus.pending,
       ),
       paymentMethod: PaymentMethod.values.firstWhere(
-        (e) => e.toString() == 'PaymentMethod.${json['paymentMethod']}',
+        (e) => e.toString() == 'PaymentMethod.${map['paymentMethod']}',
+        orElse: () => PaymentMethod.mercadoPago,
       ),
-      totalAmount: (json['totalAmount'] as num).toDouble(),
-      paidAmount: (json['paidAmount'] as num).toDouble(),
-      paymentId: json['paymentId'] as String?,
-      createdAt: (json['createdAt'] as Timestamp).toDate(),
-      updatedAt: (json['updatedAt'] as Timestamp).toDate(),
+      totalAmount: (map['totalAmount'] ?? 0.0).toDouble(),
+      paidAmount: (map['paidAmount'] ?? 0.0).toDouble(),
+      paymentId: map['paymentId'],
+      createdAt: DateTime.parse(map['createdAt']),
+      updatedAt: DateTime.parse(map['updatedAt'] ?? DateTime.now().toIso8601String()),
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toMap() {
     return {
       'id': id,
       'userId': userId,
-      'propertyId': propertyId,
       'courtId': courtId,
-      'date': Timestamp.fromDate(date),
-      'startTime': Timestamp.fromDate(startTime),
-      'endTime': Timestamp.fromDate(endTime),
+      'propertyId': propertyId,
+      'date': date.toIso8601String(),
+      'startTime': startTime.toIso8601String(),
+      'endTime': endTime.toIso8601String(),
       'duration': duration,
       'status': status.toString().split('.').last,
       'paymentStatus': paymentStatus.toString().split('.').last,
@@ -100,16 +115,16 @@ class BookingModel {
       'totalAmount': totalAmount,
       'paidAmount': paidAmount,
       'paymentId': paymentId,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': Timestamp.fromDate(updatedAt),
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
     };
   }
 
   BookingModel copyWith({
     String? id,
     String? userId,
-    String? propertyId,
     String? courtId,
+    String? propertyId,
     DateTime? date,
     DateTime? startTime,
     DateTime? endTime,
@@ -126,8 +141,8 @@ class BookingModel {
     return BookingModel(
       id: id ?? this.id,
       userId: userId ?? this.userId,
-      propertyId: propertyId ?? this.propertyId,
       courtId: courtId ?? this.courtId,
+      propertyId: propertyId ?? this.propertyId,
       date: date ?? this.date,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,

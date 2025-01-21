@@ -13,19 +13,19 @@ class FavoriteController extends GetxController {
     super.onInit();
   }
 
-  Stream<List<FavoriteModel>> getFavorites() {
-    final currentUser = _authService.currentUser;
-    if (currentUser.data == null) {
-      return Stream.value([]);
+  Stream<List<FavoriteModel>> getFavorites() async* {
+    final currentUser = await _authService.getCurrentUser();
+    if (currentUser == null) {
+      yield [];
     }
-    return _favoriteService.getUserFavorites(currentUser.data!.id);
+    yield* _favoriteService.getUserFavorites(currentUser!.id);
   }
 
   Future<void> toggleFavorite(String propertyId) async {
     try {
       isLoading.value = true;
-      final currentUser = _authService.currentUser;
-      if (currentUser.data == null) {
+      final currentUser = await _authService.getCurrentUser();
+      if (currentUser == null) {
         Get.snackbar(
           'Error',
           'Debes iniciar sesión para agregar favoritos',
@@ -34,7 +34,7 @@ class FavoriteController extends GetxController {
         return;
       }
 
-      final userId = currentUser.data!.id;
+      final userId = currentUser.id!;
       final isFavorite = await _favoriteService.isFavorite(userId, propertyId);
 
       if (isFavorite) {
@@ -65,11 +65,11 @@ class FavoriteController extends GetxController {
 
   Future<bool> checkIsFavorite(String propertyId) async {
     try {
-      final currentUser = _authService.currentUser;
-      if (currentUser.data == null) {
+      final currentUser = await _authService.getCurrentUser();
+      if (currentUser == null) {
         return false;
       }
-      return await _favoriteService.isFavorite(currentUser.data!.id, propertyId);
+      return await _favoriteService.isFavorite(currentUser.id!, propertyId);
     } catch (e) {
       return false;
     }
