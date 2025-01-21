@@ -39,56 +39,66 @@ class CourtDetailsScreen extends GetView<CourtController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (court.imagenUrl != null)
+                if (court.imageUrl != null)
                   Container(
                     height: 200,
                     width: double.infinity,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
                       image: DecorationImage(
-                        image: NetworkImage(court.imagenUrl!),
+                        image: NetworkImage(court.imageUrl!),
                         fit: BoxFit.cover,
                       ),
                     ),
                   ),
                 SizedBox(height: 16),
                 Text(
-                  court.nombre,
+                  court.name,
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 SizedBox(height: 8),
-                if (court.tipo != null) ...[
+                if (court.sport != null) ...[
                   Text(
                     'Tipo',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  Text(court.tipo!),
+                  Text(court.sport!),
                   SizedBox(height: 8),
                 ],
-                if (court.capacidadJugadores != null) ...[
+                if (court.description != null) ...[
                   Text(
-                    'Capacidad',
+                    'Descripción',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  Text('${court.capacidadJugadores} jugadores'),
+                  Text(court.description!),
                   SizedBox(height: 8),
                 ],
-                if (court.precioPorHora != null) ...[
+                if (court.pricePerHour != null) ...[
                   Text(
                     'Precio por Hora',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  Text('\$${court.precioPorHora!.toStringAsFixed(2)}'),
+                  Text('\$${court.pricePerHour!.toStringAsFixed(2)}'),
                   SizedBox(height: 8),
                 ],
-                if (court.tipoSuperficie != null) ...[
-                  Text(
-                    'Superficie',
-                    style: Theme.of(context).textTheme.titleMedium,
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (court.isIndoor)
+                        ListTile(
+                          leading: Icon(Icons.home),
+                          title: Text('Cancha Techada'),
+                        ),
+                      if (!court.isIndoor)
+                        ListTile(
+                          leading: Icon(Icons.wb_sunny),
+                          title: Text('Cancha al Aire Libre'),
+                        ),
+                    ],
                   ),
-                  Text(court.tipoSuperficie!),
-                  SizedBox(height: 8),
-                ],
+                ),
                 Text(
                   'Características',
                   style: Theme.of(context).textTheme.titleMedium,
@@ -98,12 +108,12 @@ class CourtDetailsScreen extends GetView<CourtController> {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    if (court.tieneIluminacion == true)
+                    if (court.hasLighting)
                       Chip(
                         label: Text('Iluminación'),
                         avatar: Icon(Icons.lightbulb),
                       ),
-                    if (court.esTechada == true)
+                    if (court.isRoofed)
                       Chip(
                         label: Text('Techada'),
                         avatar: Icon(Icons.house),
@@ -111,20 +121,20 @@ class CourtDetailsScreen extends GetView<CourtController> {
                   ],
                 ),
                 SizedBox(height: 16),
-                if (court.equipamientoIncluido != null) ...[
+                if (court.includedEquipment != null) ...[
                   Text(
                     'Equipamiento Incluido',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  Text(court.equipamientoIncluido!),
+                  Text(court.includedEquipment!),
                   SizedBox(height: 8),
                 ],
-                if (court.requiereSeña) ...[
+                if (court.requiresDeposit && court.depositAmount != null) ...[
                   Text(
                     'Seña Requerida',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  Text('\$${court.montoSeña.toStringAsFixed(2)}'),
+                  Text('\$${court.depositAmount!.toStringAsFixed(2)}'),
                   SizedBox(height: 8),
                 ],
               ],

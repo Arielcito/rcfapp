@@ -1,18 +1,40 @@
 import 'package:get/get.dart';
 import 'package:rcf_app/models/property/favorite_model.dart';
 import 'package:rcf_app/services/property/favorite_service.dart';
+import 'package:rcf_app/services/auth/auth_service.dart';
 
 class FavoriteController extends GetxController {
   final FavoriteService _favoriteService = FavoriteService();
+  final AuthService _authService = AuthService();
   final RxBool isLoading = false.obs;
 
-  Stream<List<FavoriteModel>> getFavorites(String userId) {
-    return _favoriteService.getUserFavorites(userId);
+  @override
+  void onInit() {
+    super.onInit();
   }
 
-  Future<void> toggleFavorite(String userId, String propertyId) async {
+  Stream<List<FavoriteModel>> getFavorites() {
+    final currentUser = _authService.currentUser;
+    if (currentUser.data == null) {
+      return Stream.value([]);
+    }
+    return _favoriteService.getUserFavorites(currentUser.data!.id);
+  }
+
+  Future<void> toggleFavorite(String propertyId) async {
     try {
       isLoading.value = true;
+      final currentUser = _authService.currentUser;
+      if (currentUser.data == null) {
+        Get.snackbar(
+          'Error',
+          'Debes iniciar sesión para agregar favoritos',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+
+      final userId = currentUser.data!.id;
       final isFavorite = await _favoriteService.isFavorite(userId, propertyId);
 
       if (isFavorite) {
@@ -41,9 +63,13 @@ class FavoriteController extends GetxController {
     }
   }
 
-  Future<bool> checkIsFavorite(String userId, String propertyId) async {
+  Future<bool> checkIsFavorite(String propertyId) async {
     try {
-      return await _favoriteService.isFavorite(userId, propertyId);
+      final currentUser = _authService.currentUser;
+      if (currentUser.data == null) {
+        return false;
+      }
+      return await _favoriteService.isFavorite(currentUser.data!.id, propertyId);
     } catch (e) {
       return false;
     }

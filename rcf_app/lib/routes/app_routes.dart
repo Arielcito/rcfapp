@@ -3,6 +3,8 @@ import '../bindings/auth_binding.dart';
 import '../bindings/property_binding.dart';
 import '../bindings/court_binding.dart';
 import '../bindings/booking_binding.dart';
+import '../bindings/home_binding.dart';
+import '../bindings/favorite_binding.dart';
 import '../views/auth/login_screen.dart';
 import '../views/auth/register_screen.dart';
 import '../views/home/home_screen.dart';
@@ -52,7 +54,7 @@ class AppRoutes {
     GetPage(
       name: '/property/favorites',
       page: () => FavoritesScreen(),
-      binding: PropertyBinding(),
+      binding: FavoriteBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
@@ -88,11 +90,13 @@ class AppRoutes {
       binding: CourtBinding(),
     ),
     GetPage(
-      name: '/home',
+      name: home,
       page: () => HomeScreen(),
+      binding: HomeBinding(),
+      transition: Transition.fadeIn,
     ),
     GetPage(
-      name: '/profile',
+      name: profile,
       page: () => const ProfileScreen(),
     ),
   ];

@@ -128,7 +128,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 20),
                     child: Text(
-                      authController.error!,
+                      authController.error.value,
                       style: const TextStyle(
                         color: Colors.red,
                         fontSize: 14,
@@ -139,7 +139,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                 CustomButton(
                   text: _codeSent ? 'Verificar código' : 'Enviar código',
                   onPressed: _codeSent ? _verifyCode : _verifyPhone,
-                  isLoading: authController.isLoading,
+                  isLoading: authController.isLoading.value,
                 ),
                 if (_codeSent) ...[
                   const SizedBox(height: 20),

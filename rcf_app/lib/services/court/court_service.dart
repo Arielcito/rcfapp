@@ -78,7 +78,7 @@ class CourtService extends GetxService {
       final newCourt = CourtModel.fromJson(response.data);
 
       await _cacheService.delete(_cacheKey);
-      await _cacheService.delete('${_cacheKey}_property_${court.predioId}');
+      await _cacheService.delete('${_cacheKey}_property_${court.propertyId}');
 
       return newCourt;
     } catch (e) {
@@ -93,7 +93,7 @@ class CourtService extends GetxService {
 
       await _cacheService.delete(_cacheKey);
       await _cacheService.delete('${_cacheKey}_$id');
-      await _cacheService.delete('${_cacheKey}_property_${court.predioId}');
+      await _cacheService.delete('${_cacheKey}_property_${court.propertyId}');
 
       return updatedCourt;
     } catch (e) {

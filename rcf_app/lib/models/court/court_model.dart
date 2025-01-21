@@ -19,6 +19,11 @@ class CourtModel {
   final String? imageUrl;
   final bool isActive;
   final List<String> availableHours;
+  final bool hasLighting;
+  final bool isRoofed;
+  final String? includedEquipment;
+  final bool requiresDeposit;
+  final double? depositAmount;
 
   CourtModel({
     required this.id,
@@ -31,6 +36,11 @@ class CourtModel {
     this.imageUrl,
     required this.isActive,
     required this.availableHours,
+    this.hasLighting = false,
+    this.isRoofed = false,
+    this.includedEquipment,
+    this.requiresDeposit = false,
+    this.depositAmount,
   });
 
   factory CourtModel.fromJson(Map<String, dynamic> json) => _$CourtModelFromJson(json);
@@ -48,6 +58,11 @@ class CourtModel {
     String? imageUrl,
     bool? isActive,
     List<String>? availableHours,
+    bool? hasLighting,
+    bool? isRoofed,
+    String? includedEquipment,
+    bool? requiresDeposit,
+    double? depositAmount,
   }) {
     return CourtModel(
       id: id ?? this.id,
@@ -60,6 +75,11 @@ class CourtModel {
       imageUrl: imageUrl ?? this.imageUrl,
       isActive: isActive ?? this.isActive,
       availableHours: availableHours ?? this.availableHours,
+      hasLighting: hasLighting ?? this.hasLighting,
+      isRoofed: isRoofed ?? this.isRoofed,
+      includedEquipment: includedEquipment ?? this.includedEquipment,
+      requiresDeposit: requiresDeposit ?? this.requiresDeposit,
+      depositAmount: depositAmount ?? this.depositAmount,
     );
   }
 
@@ -75,6 +95,11 @@ class CourtModel {
       imageUrl: map['imageUrl'],
       isActive: map['isActive'] ?? true,
       availableHours: List<String>.from(map['availableHours'] ?? []),
+      hasLighting: map['hasLighting'] ?? false,
+      isRoofed: map['isRoofed'] ?? false,
+      includedEquipment: map['includedEquipment'],
+      requiresDeposit: map['requiresDeposit'] ?? false,
+      depositAmount: map['depositAmount'],
     );
   }
 
@@ -90,6 +115,11 @@ class CourtModel {
       'imageUrl': imageUrl,
       'isActive': isActive,
       'availableHours': availableHours,
+      'hasLighting': hasLighting,
+      'isRoofed': isRoofed,
+      'includedEquipment': includedEquipment,
+      'requiresDeposit': requiresDeposit,
+      'depositAmount': depositAmount,
     };
   }
 } 
