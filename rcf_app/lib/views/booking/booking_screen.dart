@@ -2,11 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rcf_app/controllers/booking/booking_controller.dart';
 import 'package:rcf_app/models/property/property_model.dart';
+import 'package:rcf_app/models/court/court_model.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:rcf_app/controllers/auth/auth_controller.dart';
 
-class BookingScreen extends GetView<BookingController> {
+class BookingScreen extends StatelessWidget {
   final PropertyModel property = Get.arguments;
+  final BookingController controller = Get.find<BookingController>();
+
+  BookingScreen({Key? key}) : super(key: key) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.loadCourts(property.id);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +29,8 @@ class BookingScreen extends GetView<BookingController> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildPropertyInfo(),
+            SizedBox(height: 24),
+            _buildCourtSelection(),
             SizedBox(height: 24),
             _buildDateSelection(),
             SizedBox(height: 24),
@@ -42,25 +53,72 @@ class BookingScreen extends GetView<BookingController> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              property.name,
+              property.nombre,
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
             SizedBox(height: 8),
-            Text(property.address),
-            SizedBox(height: 8),
-            Text(
-              'Precio por hora: \$${property.pricePerHour}',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            Text(property.direccion),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCourtSelection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Seleccionar Cancha',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: 8),
+        Obx(() {
+          if (controller.isLoading) {
+            return Center(child: CircularProgressIndicator());
+          }
+          
+          if (controller.courts.isEmpty) {
+            return Text('No hay canchas disponibles');
+          }
+
+          return ListView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            itemCount: controller.courts.length,
+            itemBuilder: (context, index) {
+              final court = controller.courts[index];
+              return Card(
+                child: ListTile(
+                  leading: court.imageUrl != null
+                      ? CircleAvatar(
+                          backgroundImage: NetworkImage(court.imageUrl!),
+                        )
+                      : CircleAvatar(
+                          child: Icon(Icons.sports),
+                        ),
+                  title: Text(court.name),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Deporte: ${court.sport}'),
+                      Text('Precio por hora: \$${court.pricePerHour}'),
+                    ],
+                  ),
+                  selected: controller.selectedCourt?.id == court.id,
+                  onTap: () => controller.setSelectedCourt(court),
+                ),
+              );
+            },
+          );
+        }),
+      ],
     );
   }
 
@@ -179,7 +237,7 @@ class BookingScreen extends GetView<BookingController> {
               onChanged: (value) => controller.togglePartialPayment(),
             )),
         Obx(() => Text(
-              'Total a pagar: \$${controller.isPartialPayment.value ? property.pricePerHour * 0.5 : property.pricePerHour}',
+              'Total a pagar: \$${controller.selectedCourt?.pricePerHour != null ? (controller.selectedCourt!.pricePerHour * (controller.isPartialPayment.value ? 0.5 : 1.0)) : 0}',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -193,10 +251,10 @@ class BookingScreen extends GetView<BookingController> {
     return SizedBox(
       width: double.infinity,
       child: Obx(() => ElevatedButton(
-            onPressed: controller.isLoading.value
+            onPressed: controller.isLoading || controller.isProcessingPayment.value
                 ? null
                 : () => _processBooking(),
-            child: controller.isLoading.value
+            child: controller.isLoading || controller.isProcessingPayment.value
                 ? CircularProgressIndicator()
                 : Text('Confirmar Reserva'),
             style: ElevatedButton.styleFrom(
@@ -207,14 +265,23 @@ class BookingScreen extends GetView<BookingController> {
   }
 
   Future<void> _processBooking() async {
+    if (controller.selectedCourt == null) {
+      Get.snackbar(
+        'Error',
+        'Por favor selecciona una cancha',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
     try {
       // Verificar disponibilidad
       final isAvailable = await controller.checkAvailability(
-        property.id,
-        'default', // TODO: Implementar selección de cancha
-        controller.selectedDate.value,
-        controller.selectedTime.value,
-        controller.selectedTime.value.add(Duration(hours: 1)),
+        propertyId: property.id,
+        courtId: controller.selectedCourt!.id,
+        date: controller.selectedDate.value,
+        startTime: controller.selectedTime.value,
+        endTime: controller.selectedTime.value.add(Duration(hours: 1)),
       );
 
       if (!isAvailable) {
@@ -227,18 +294,29 @@ class BookingScreen extends GetView<BookingController> {
       }
 
       // Crear la reserva
-      final bookingId = await controller.createBooking(
-        userId: Get.find<String>('userId'),
+      final authController = Get.find<AuthController>();
+      final userId = authController.currentUser.value?.id;
+      if (userId == null) {
+        Get.snackbar(
+          'Error',
+          'No se pudo obtener el usuario actual',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+
+      final booking = await controller.createBooking(
+        userId: userId,
         propertyId: property.id,
-        courtId: 'default', // TODO: Implementar selección de cancha
-        price: property.pricePerHour,
+        courtId: controller.selectedCourt!.id,
+        price: controller.selectedCourt!.pricePerHour,
       );
 
       // Crear preferencia de pago
       final preference = await controller.createPaymentPreference(
-        bookingId,
-        property.pricePerHour,
-        'Reserva en ${property.name}',
+        booking.id,
+        controller.selectedCourt!.pricePerHour * (controller.isPartialPayment.value ? 0.5 : 1.0),
+        'Reserva en ${property.nombre} - ${controller.selectedCourt!.name}',
       );
 
       // Abrir URL de pago

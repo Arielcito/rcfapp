@@ -6,19 +6,12 @@ import 'package:rcf_app/models/court/court_model.dart';
 class CourtFormScreen extends GetView<CourtController> {
   final bool isEditing;
   final _formKey = GlobalKey<FormState>();
-  final _nombreController = TextEditingController();
-  final _tipoController = TextEditingController();
-  final _capacidadController = TextEditingController();
-  final _longitudController = TextEditingController();
-  final _anchoController = TextEditingController();
-  final _superficieController = TextEditingController();
-  final _precioController = TextEditingController();
-  final _equipamientoController = TextEditingController();
-  final _imagenUrlController = TextEditingController();
-  final _montosenaController = TextEditingController();
-  final _tieneIluminacion = false.obs;
-  final _esTechada = false.obs;
-  final _requiereSeña = false.obs;
+  final _nameController = TextEditingController();
+  final _sportController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _priceController = TextEditingController();
+  final _imageUrlController = TextEditingController();
+  final _isIndoor = false.obs;
 
   CourtFormScreen({this.isEditing = false});
 
@@ -42,7 +35,7 @@ class CourtFormScreen extends GetView<CourtController> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               TextFormField(
-                controller: _nombreController,
+                controller: _nameController,
                 decoration: InputDecoration(labelText: 'Nombre'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -53,41 +46,18 @@ class CourtFormScreen extends GetView<CourtController> {
               ),
               SizedBox(height: 16),
               TextFormField(
-                controller: _tipoController,
+                controller: _sportController,
                 decoration: InputDecoration(labelText: 'Tipo'),
               ),
               SizedBox(height: 16),
               TextFormField(
-                controller: _capacidadController,
-                decoration: InputDecoration(labelText: 'Capacidad de Jugadores'),
-                keyboardType: TextInputType.number,
-              ),
-              SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _longitudController,
-                      decoration: InputDecoration(labelText: 'Longitud'),
-                    ),
-                  ),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _anchoController,
-                      decoration: InputDecoration(labelText: 'Ancho'),
-                    ),
-                  ),
-                ],
+                controller: _descriptionController,
+                decoration: InputDecoration(labelText: 'Descripción'),
+                maxLines: 3,
               ),
               SizedBox(height: 16),
               TextFormField(
-                controller: _superficieController,
-                decoration: InputDecoration(labelText: 'Tipo de Superficie'),
-              ),
-              SizedBox(height: 16),
-              TextFormField(
-                controller: _precioController,
+                controller: _priceController,
                 decoration: InputDecoration(labelText: 'Precio por Hora'),
                 keyboardType: TextInputType.number,
                 validator: (value) {
@@ -99,45 +69,15 @@ class CourtFormScreen extends GetView<CourtController> {
               ),
               SizedBox(height: 16),
               TextFormField(
-                controller: _equipamientoController,
-                decoration: InputDecoration(labelText: 'Equipamiento Incluido'),
-                maxLines: 3,
-              ),
-              SizedBox(height: 16),
-              TextFormField(
-                controller: _imagenUrlController,
+                controller: _imageUrlController,
                 decoration: InputDecoration(labelText: 'URL de la Imagen'),
               ),
               SizedBox(height: 16),
               Obx(() => CheckboxListTile(
-                    title: Text('Tiene Iluminación'),
-                    value: _tieneIluminacion.value,
-                    onChanged: (value) => _tieneIluminacion.value = value ?? false,
+                    title: Text('Es Interior'),
+                    value: _isIndoor.value,
+                    onChanged: (value) => _isIndoor.value = value ?? false,
                   )),
-              Obx(() => CheckboxListTile(
-                    title: Text('Es Techada'),
-                    value: _esTechada.value,
-                    onChanged: (value) => _esTechada.value = value ?? false,
-                  )),
-              Obx(() => CheckboxListTile(
-                    title: Text('Requiere Seña'),
-                    value: _requiereSeña.value,
-                    onChanged: (value) => _requiereSeña.value = value ?? false,
-                  )),
-              if (_requiereSeña.value) ...[
-                SizedBox(height: 16),
-                TextFormField(
-                  controller: _montosenaController,
-                  decoration: InputDecoration(labelText: 'Monto de Seña'),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (_requiereSeña.value && (value == null || value.isEmpty)) {
-                      return 'Por favor ingrese el monto de la seña';
-                    }
-                    return null;
-                  },
-                ),
-              ],
               SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
@@ -156,19 +96,12 @@ class CourtFormScreen extends GetView<CourtController> {
   void _loadCourtData(String courtId) async {
     final court = await controller.getCourt(courtId);
     if (court != null) {
-      _nombreController.text = court.nombre;
-      _tipoController.text = court.tipo ?? '';
-      _capacidadController.text = court.capacidadJugadores?.toString() ?? '';
-      _longitudController.text = court.longitud ?? '';
-      _anchoController.text = court.ancho ?? '';
-      _superficieController.text = court.tipoSuperficie ?? '';
-      _precioController.text = court.precioPorHora?.toString() ?? '';
-      _equipamientoController.text = court.equipamientoIncluido ?? '';
-      _imagenUrlController.text = court.imagenUrl ?? '';
-      _tieneIluminacion.value = court.tieneIluminacion ?? false;
-      _esTechada.value = court.esTechada ?? false;
-      _requiereSeña.value = court.requiereSeña;
-      _montosenaController.text = court.montoSeña.toString();
+      _nameController.text = court.name;
+      _sportController.text = court.sport ?? '';
+      _descriptionController.text = court.description ?? '';
+      _priceController.text = court.pricePerHour.toString();
+      _imageUrlController.text = court.imageUrl ?? '';
+      _isIndoor.value = court.isIndoor;
     }
   }
 
@@ -177,21 +110,15 @@ class CourtFormScreen extends GetView<CourtController> {
 
     final court = CourtModel(
       id: isEditing ? Get.parameters['id']! : '',
-      predioId: Get.parameters['predioId'] ?? '',
-      nombre: _nombreController.text,
-      tipo: _tipoController.text.isEmpty ? null : _tipoController.text,
-      capacidadJugadores: int.tryParse(_capacidadController.text),
-      longitud: _longitudController.text.isEmpty ? null : _longitudController.text,
-      ancho: _anchoController.text.isEmpty ? null : _anchoController.text,
-      tipoSuperficie: _superficieController.text.isEmpty ? null : _superficieController.text,
-      tieneIluminacion: _tieneIluminacion.value,
-      esTechada: _esTechada.value,
-      precioPorHora: double.tryParse(_precioController.text),
-      estado: 'Disponible',
-      equipamientoIncluido: _equipamientoController.text.isEmpty ? null : _equipamientoController.text,
-      imagenUrl: _imagenUrlController.text.isEmpty ? null : _imagenUrlController.text,
-      requiereSeña: _requiereSeña.value,
-      montoSeña: double.tryParse(_montosenaController.text) ?? 0,
+      propertyId: Get.parameters['propertyId'] ?? '',
+      name: _nameController.text,
+      sport: _sportController.text,
+      description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
+      pricePerHour: double.tryParse(_priceController.text) ?? 0,
+      imageUrl: _imageUrlController.text.isEmpty ? null : _imageUrlController.text,
+      isIndoor: _isIndoor.value,
+      isActive: true,
+      availableHours: [],
     );
 
     try {

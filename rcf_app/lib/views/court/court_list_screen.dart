@@ -36,22 +36,20 @@ class CourtListScreen extends GetView<CourtController> {
     return Card(
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListTile(
-        leading: court.imagenUrl != null
+        leading: court.imageUrl != null
             ? CircleAvatar(
-                backgroundImage: NetworkImage(court.imagenUrl!),
-                backgroundColor: Colors.grey[200],
+                backgroundImage: NetworkImage(court.imageUrl!),
               )
             : CircleAvatar(
                 child: Icon(Icons.sports_soccer),
-                backgroundColor: Colors.grey[200],
               ),
-        title: Text(court.nombre),
+        title: Text(court.name),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (court.tipo != null) Text(court.tipo!),
-            if (court.precioPorHora != null)
-              Text('\$${court.precioPorHora!.toStringAsFixed(2)} por hora'),
+            if (court.sport != null) Text(court.sport),
+            if (court.pricePerHour != null)
+              Text('\$${court.pricePerHour.toStringAsFixed(2)} por hora'),
           ],
         ),
         trailing: Row(
@@ -86,7 +84,7 @@ class CourtListScreen extends GetView<CourtController> {
             child: Text('Eliminar'),
             onPressed: () async {
               Get.back();
-              final success = await controller.deleteCourt(court.id, court.predioId);
+              final success = await controller.deleteCourt(court.id, court.propertyId);
               if (success) {
                 Get.snackbar(
                   'Éxito',

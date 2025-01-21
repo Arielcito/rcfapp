@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../../models/user/user_model.dart';
 import '../../services/auth/new_auth_service.dart';
+import '../../routes/app_routes.dart';
 
 class AuthController extends GetxController {
   final AuthService _authService = AuthService();
@@ -49,7 +50,7 @@ class AuthController extends GetxController {
         password: password,
       );
       error.value = '';
-      Get.offAllNamed('/home');
+      Get.offAllNamed(AppRoutes.home);
     } catch (e) {
       error.value = e.toString();
     } finally {
@@ -63,7 +64,7 @@ class AuthController extends GetxController {
       error.value = '';
       await _authService.signInWithGoogle();
       error.value = '';
-      Get.offAllNamed('/home');
+      Get.offAllNamed(AppRoutes.home);
     } catch (e) {
       error.value = e.toString();
     } finally {

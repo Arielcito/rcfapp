@@ -15,7 +15,7 @@ class PropertyDetailScreen extends GetView<FavoriteController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(property.name),
+        title: Text(property.nombre),
         actions: [
           Obx(() => IconButton(
                 icon: Icon(
@@ -24,10 +24,7 @@ class PropertyDetailScreen extends GetView<FavoriteController> {
                       : Icons.favorite,
                   color: Colors.red,
                 ),
-                onPressed: () => controller.toggleFavorite(
-                  Get.find<String>('userId'),
-                  property.id,
-                ),
+                onPressed: () => controller.toggleFavorite(property.id),
               )),
         ],
       ),
@@ -35,7 +32,7 @@ class PropertyDetailScreen extends GetView<FavoriteController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildImageGallery(),
+            if (property.imagenUrl != null) _buildImage(),
             _buildPropertyInfo(),
             _buildLocationMap(),
             _buildContactInfo(),
@@ -53,21 +50,17 @@ class PropertyDetailScreen extends GetView<FavoriteController> {
     );
   }
 
-  Widget _buildImageGallery() {
+  Widget _buildImage() {
     return Container(
       height: 250,
-      child: PageView.builder(
-        itemCount: property.images.length,
-        itemBuilder: (context, index) {
-          return CachedNetworkImage(
-            imageUrl: property.images[index],
-            fit: BoxFit.cover,
-            placeholder: (context, url) => Center(
-              child: CircularProgressIndicator(),
-            ),
-            errorWidget: (context, url, error) => Icon(Icons.error),
-          );
-        },
+      width: double.infinity,
+      child: CachedNetworkImage(
+        imageUrl: property.imagenUrl!,
+        fit: BoxFit.cover,
+        placeholder: (context, url) => Center(
+          child: CircularProgressIndicator(),
+        ),
+        errorWidget: (context, url, error) => Icon(Icons.error),
       ),
     );
   }
@@ -79,21 +72,22 @@ class PropertyDetailScreen extends GetView<FavoriteController> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            property.name,
+            property.nombre,
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
           ),
-          SizedBox(height: 8),
-          Text(
-            property.description,
-            style: TextStyle(fontSize: 16),
-          ),
           SizedBox(height: 16),
-          _buildInfoRow(Icons.location_on, property.address),
-          _buildInfoRow(Icons.attach_money, 'Precio por hora: \$${property.pricePerHour}'),
-          _buildInfoRow(Icons.sports_soccer, 'Tipo: ${property.type}'),
+          _buildInfoRow(Icons.location_on, '${property.direccion}, ${property.ciudad}, ${property.provincia}'),
+          if (property.horarioApertura != null && property.horarioCierre != null)
+            _buildInfoRow(Icons.access_time, 'Horario: ${property.horarioApertura} - ${property.horarioCierre}'),
+          if (property.capacidadEstacionamiento != null)
+            _buildInfoRow(Icons.local_parking, 'Estacionamiento: ${property.capacidadEstacionamiento} lugares'),
+          if (property.tieneVestuarios == true)
+            _buildInfoRow(Icons.wc, 'Vestuarios disponibles'),
+          if (property.tieneCafeteria == true)
+            _buildInfoRow(Icons.restaurant, 'Cafetería disponible'),
         ],
       ),
     );
@@ -113,13 +107,17 @@ class PropertyDetailScreen extends GetView<FavoriteController> {
   }
 
   Widget _buildLocationMap() {
+    if (property.latitud == null || property.longitud == null) {
+      return SizedBox.shrink();
+    }
+
     return Container(
       height: 200,
       child: GoogleMap(
         initialCameraPosition: CameraPosition(
           target: LatLng(
-            property.latitude,
-            property.longitude,
+            property.latitud!,
+            property.longitud!,
           ),
           zoom: 15,
         ),
@@ -127,8 +125,8 @@ class PropertyDetailScreen extends GetView<FavoriteController> {
           Marker(
             markerId: MarkerId(property.id),
             position: LatLng(
-              property.latitude,
-              property.longitude,
+              property.latitud!,
+              property.longitud!,
             ),
           ),
         },
@@ -150,16 +148,24 @@ class PropertyDetailScreen extends GetView<FavoriteController> {
             ),
           ),
           SizedBox(height: 16),
-          _buildContactButton(
-            icon: Icons.phone,
-            text: 'Llamar',
-            onTap: () => _launchUrl('tel:${property.phone}'),
-          ),
-          _buildContactButton(
-            icon: FontAwesomeIcons.whatsapp,
-            text: 'WhatsApp',
-            onTap: () => _launchWhatsApp(property.phone),
-          ),
+          if (property.telefono != null)
+            _buildContactButton(
+              icon: Icons.phone,
+              text: 'Llamar',
+              onTap: () => _launchUrl('tel:${property.telefono}'),
+            ),
+          if (property.telefono != null)
+            _buildContactButton(
+              icon: FontAwesomeIcons.whatsapp,
+              text: 'WhatsApp',
+              onTap: () => _launchWhatsApp(property.telefono!),
+            ),
+          if (property.email != null)
+            _buildContactButton(
+              icon: Icons.email,
+              text: 'Enviar Email',
+              onTap: () => _launchUrl('mailto:${property.email}'),
+            ),
         ],
       ),
     );
@@ -187,7 +193,7 @@ class PropertyDetailScreen extends GetView<FavoriteController> {
     try {
       await WhatsAppUtils.launchWhatsApp(
         phone: phone,
-        message: WhatsAppUtils.getPropertyInquiryMessage(property.name),
+        message: WhatsAppUtils.getPropertyInquiryMessage(property.nombre),
       );
     } catch (e) {
       Get.snackbar(

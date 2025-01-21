@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../models/booking/booking_model.dart';
+import '../../models/court/court_model.dart';
 import '../../services/booking/booking_service.dart';
 import '../../services/payment/payment_service.dart';
 
@@ -9,6 +10,8 @@ class BookingController extends GetxController {
   final PaymentService _paymentService = PaymentService();
 
   final RxList<BookingModel> _bookings = <BookingModel>[].obs;
+  final RxList<CourtModel> _courts = <CourtModel>[].obs;
+  final Rx<CourtModel?> _selectedCourt = Rx<CourtModel?>(null);
   final RxBool _isLoading = false.obs;
   final RxString _error = ''.obs;
   final RxBool isProcessingPayment = false.obs;
@@ -19,6 +22,8 @@ class BookingController extends GetxController {
 
   // Getters
   List<BookingModel> get bookings => _bookings;
+  List<CourtModel> get courts => _courts;
+  CourtModel? get selectedCourt => _selectedCourt.value;
   bool get isLoading => _isLoading.value;
   String get error => _error.value;
 
@@ -349,5 +354,28 @@ class BookingController extends GetxController {
     } finally {
       _isLoading.value = false;
     }
+  }
+
+  Future<void> loadCourts(String propertyId) async {
+    try {
+      _isLoading.value = true;
+      _error.value = '';
+      final courts = await _bookingService.getCourtsByProperty(propertyId);
+      _courts.assignAll(courts);
+    } catch (error) {
+      _error.value = 'Error al cargar las canchas: $error';
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+
+  void setSelectedCourt(CourtModel court) {
+    _selectedCourt.value = court;
+    totalAmount.value = court.pricePerHour;
+  }
+
+  void clearSelectedCourt() {
+    _selectedCourt.value = null;
+    totalAmount.value = 0.0;
   }
 } 

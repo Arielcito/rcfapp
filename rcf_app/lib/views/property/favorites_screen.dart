@@ -7,7 +7,7 @@ import 'package:rcf_app/services/property/property_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class FavoritesScreen extends GetView<FavoriteController> {
-  final PropertyService _propertyService = PropertyService();
+  final _propertyService = PropertyService();
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +16,7 @@ class FavoritesScreen extends GetView<FavoriteController> {
         title: Text('Mis Favoritos'),
       ),
       body: StreamBuilder<List<FavoriteModel>>(
-        stream: controller.getFavorites(Get.find<String>('userId')),
+        stream: controller.getFavorites(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -81,7 +81,7 @@ class FavoritesScreen extends GetView<FavoriteController> {
             leading: ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: CachedNetworkImage(
-                imageUrl: property.images.first,
+                imageUrl: property.imagenUrl ?? '',
                 width: 60,
                 height: 60,
                 fit: BoxFit.cover,
@@ -92,14 +92,11 @@ class FavoritesScreen extends GetView<FavoriteController> {
                 errorWidget: (context, url, error) => Icon(Icons.error),
               ),
             ),
-            title: Text(property.name),
-            subtitle: Text(property.address),
+            title: Text(property.nombre),
+            subtitle: Text(property.direccion),
             trailing: IconButton(
               icon: Icon(Icons.favorite, color: Colors.red),
-              onPressed: () => controller.toggleFavorite(
-                Get.find<String>('userId'),
-                property.id,
-              ),
+              onPressed: () => controller.toggleFavorite(property.id),
             ),
             onTap: () => Get.toNamed(
               '/property/detail',

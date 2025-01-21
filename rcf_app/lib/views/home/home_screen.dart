@@ -4,10 +4,8 @@ import 'package:intl/intl.dart';
 import '../../controllers/home/home_controller.dart';
 import '../../models/court/court_model.dart';
 
-class HomeScreen extends StatelessWidget {
-  final HomeController controller = Get.put(HomeController());
-
-  HomeScreen({super.key});
+class HomeScreen extends GetView<HomeController> {
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

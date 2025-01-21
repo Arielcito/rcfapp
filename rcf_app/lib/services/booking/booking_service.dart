@@ -1,4 +1,5 @@
 import 'package:rcf_app/models/booking/booking_model.dart';
+import 'package:rcf_app/models/court/court_model.dart';
 import 'package:rcf_app/services/api/api_client.dart';
 import 'package:rcf_app/services/cache/cache_service.dart';
 
@@ -7,6 +8,7 @@ class BookingService {
   final CacheService _cacheService = CacheService();
   final String _endpoint = '/reservas';
   final String _cacheKey = 'bookings';
+  final String _courtsEndpoint = '/canchas';
 
   Future<List<BookingModel>> getAllBookings() async {
     try {
@@ -169,6 +171,28 @@ class BookingService {
       return response.data['available'] as bool;
     } catch (e) {
       throw Exception('Error al verificar la disponibilidad: $e');
+    }
+  }
+
+  Future<List<CourtModel>> getCourtsByProperty(String propertyId) async {
+    try {
+      final cacheKey = 'courts_property_$propertyId';
+      final cachedData = await _cacheService.get(cacheKey);
+      if (cachedData != null) {
+        return (cachedData as List)
+            .map((item) => CourtModel.fromJson(item))
+            .toList();
+      }
+
+      final response = await _apiClient.get('$_courtsEndpoint/predio/$propertyId');
+      final courts = (response.data as List)
+          .map((item) => CourtModel.fromJson(item))
+          .toList();
+
+      await _cacheService.set(cacheKey, courts);
+      return courts;
+    } catch (e) {
+      throw Exception('Error al obtener las canchas del predio: $e');
     }
   }
 } 
