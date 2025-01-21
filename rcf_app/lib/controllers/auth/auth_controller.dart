@@ -109,5 +109,6 @@ class AuthController extends GetxController {
   }
 
   bool get isAuthenticated => currentUser.value != null;
-  bool get isPhoneVerified => currentUser.value?.isPhoneVerified ?? false;
+  bool get isEmailVerified => currentUser.value?.emailVerified ?? false;
+  String get userRole => currentUser.value?.role ?? 'USER';
 } 
