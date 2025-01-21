@@ -19,6 +19,9 @@ class BookingController extends GetxController {
   final Rx<DateTime> selectedTime = DateTime.now().obs;
   final RxDouble totalAmount = 0.0.obs;
   final RxBool isPartialPayment = false.obs;
+  final Rx<DateTime> selectedStartTime = DateTime.now().obs;
+  final Rx<DateTime> selectedEndTime = DateTime.now().obs;
+  final Rx<int> selectedDuration = 1.obs;
 
   // Getters
   List<BookingModel> get bookings => _bookings;
@@ -66,49 +69,61 @@ class BookingController extends GetxController {
     }
   }
 
-  Future<BookingModel> createBooking({
-    required String userId,
-    required String propertyId,
-    required String courtId,
-    required double price,
-  }) async {
+  Future<BookingModel> createBooking() async {
     try {
       _isLoading.value = true;
-      _error.value = '';
-
-      final isAvailable = await checkAvailability(
-        propertyId: propertyId,
-        courtId: courtId,
-        date: selectedDate.value,
-        startTime: selectedTime.value,
-        endTime: selectedTime.value.add(Duration(hours: 1)),
-      );
-
-      if (!isAvailable) {
-        throw Exception('El horario seleccionado no está disponible');
-      }
 
       final booking = BookingModel(
         id: '',
-        userId: userId,
-        propertyId: propertyId,
-        courtId: courtId,
+        userId: Get.find<String>(tag: 'userId'),
+        courtId: selectedCourt!.id,
+        propertyId: selectedCourt!.propertyId,
         date: selectedDate.value,
-        startTime: selectedTime.value,
-        endTime: selectedTime.value.add(Duration(hours: 1)),
-        duration: 1,
+        startTime: selectedStartTime.value,
+        endTime: selectedEndTime.value,
+        duration: selectedDuration.value,
         status: BookingStatus.pending,
         paymentStatus: PaymentStatus.pending,
         paymentMethod: PaymentMethod.mercadoPago,
-        totalAmount: price,
-        paidAmount: 0,
+        totalAmount: totalAmount.value,
+        paidAmount: 0.0,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
 
       final newBooking = await _bookingService.createBooking(booking);
-      _bookings.add(newBooking);
+      Get.toNamed('/booking-confirmation', arguments: newBooking);
       return newBooking;
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Error al crear la reserva: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      rethrow;
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+
+  Future<void> updateBookingStatus(String bookingId, BookingStatus newStatus) async {
+    try {
+      _isLoading.value = true;
+      final booking = await _bookingService.getBookingById(bookingId);
+      
+      final updatedBooking = booking.copyWith(
+        status: newStatus,
+        updatedAt: DateTime.now(),
+      );
+
+      await _bookingService.updateBooking(bookingId, updatedBooking);
+      Get.back();
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Error al actualizar el estado de la reserva: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } finally {
       _isLoading.value = false;
     }
@@ -377,5 +392,17 @@ class BookingController extends GetxController {
   void clearSelectedCourt() {
     _selectedCourt.value = null;
     totalAmount.value = 0.0;
+  }
+
+  void setSelectedStartTime(DateTime time) {
+    selectedStartTime.value = time;
+  }
+
+  void setSelectedEndTime(DateTime time) {
+    selectedEndTime.value = time;
+  }
+
+  void setSelectedDuration(int duration) {
+    selectedDuration.value = duration;
   }
 } 

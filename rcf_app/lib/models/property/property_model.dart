@@ -1,5 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:json_annotation/json_annotation.dart';
 
+part 'property_model.g.dart';
+
+@JsonSerializable(
+  explicitToJson: true,
+  fieldRename: FieldRename.snake,
+  includeIfNull: false,
+)
 class PropertyModel {
   final String id;
   final String usuarioId;
@@ -20,6 +28,11 @@ class PropertyModel {
   final String? diasOperacion;
   final String? imagenUrl;
   final DateTime fechaRegistro;
+  final String phone;
+  final List<String> images;
+  final bool isActive;
+  final DateTime createdAt;
+  final DateTime? updatedAt;
 
   PropertyModel({
     required this.id,
@@ -41,7 +54,16 @@ class PropertyModel {
     this.diasOperacion,
     this.imagenUrl,
     required this.fechaRegistro,
+    required this.phone,
+    required this.images,
+    required this.isActive,
+    required this.createdAt,
+    this.updatedAt,
   });
+
+  factory PropertyModel.fromJson(Map<String, dynamic> json) => _$PropertyModelFromJson(json);
+
+  Map<String, dynamic> toJson() => _$PropertyModelToJson(this);
 
   Map<String, dynamic> toMap() {
     return {
@@ -64,6 +86,11 @@ class PropertyModel {
       'diasOperacion': diasOperacion,
       'imagenUrl': imagenUrl,
       'fechaRegistro': fechaRegistro.toIso8601String(),
+      'phone': phone,
+      'images': images,
+      'isActive': isActive,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
     };
   }
 
@@ -90,6 +117,11 @@ class PropertyModel {
       fechaRegistro: map['fechaRegistro'] != null 
           ? DateTime.parse(map['fechaRegistro']) 
           : DateTime.now(),
+      phone: map['phone'] ?? '',
+      images: List<String>.from(map['images'] ?? []),
+      isActive: map['isActive'] ?? true,
+      createdAt: DateTime.parse(map['createdAt']),
+      updatedAt: map['updatedAt'] != null ? DateTime.parse(map['updatedAt']) : null,
     );
   }
 
@@ -121,6 +153,11 @@ class PropertyModel {
     String? diasOperacion,
     String? imagenUrl,
     DateTime? fechaRegistro,
+    String? phone,
+    List<String>? images,
+    bool? isActive,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return PropertyModel(
       id: id ?? this.id,
@@ -142,6 +179,11 @@ class PropertyModel {
       diasOperacion: diasOperacion ?? this.diasOperacion,
       imagenUrl: imagenUrl ?? this.imagenUrl,
       fechaRegistro: fechaRegistro ?? this.fechaRegistro,
+      phone: phone ?? this.phone,
+      images: images ?? this.images,
+      isActive: isActive ?? this.isActive,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 } 

@@ -31,16 +31,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
-      await Get.find<AuthController>().loginWithEmail(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
+      await _authController.signIn(
+        _emailController.text.trim(),
+        _passwordController.text,
       );
     }
   }
 
-  Future<void> _loginWithGoogle() async {
-    await _authController.signInWithGoogle();
-  }
 
   @override
   Widget build(BuildContext context) {

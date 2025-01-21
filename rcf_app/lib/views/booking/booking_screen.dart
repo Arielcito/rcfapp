@@ -295,7 +295,7 @@ class BookingScreen extends StatelessWidget {
 
       // Crear la reserva
       final authController = Get.find<AuthController>();
-      final userId = authController.currentUser.value?.id;
+      final userId = authController.user.value?.id;
       if (userId == null) {
         Get.snackbar(
           'Error',
@@ -305,12 +305,7 @@ class BookingScreen extends StatelessWidget {
         return;
       }
 
-      final booking = await controller.createBooking(
-        userId: userId,
-        propertyId: property.id,
-        courtId: controller.selectedCourt!.id,
-        price: controller.selectedCourt!.pricePerHour,
-      );
+      final booking = await controller.createBooking();
 
       // Crear preferencia de pago
       final preference = await controller.createPaymentPreference(

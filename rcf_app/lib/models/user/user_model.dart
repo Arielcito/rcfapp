@@ -1,82 +1,88 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'user_model.g.dart';
+
+@JsonSerializable(
+  explicitToJson: true,
+  fieldRename: FieldRename.snake,
+  includeIfNull: false,
+)
 class UserModel {
   final String id;
-  final String email;
   final String name;
+  final String email;
+  final String? phoneNumber;
   final String role;
-  final bool emailVerified;
-  final String phoneNumber;
-  final String? image;
-  final String? predioTrabajo;
-  final DateTime createdAt;
   final bool isPhoneVerified;
+  final List<String> prediosFavoritos;
+  final DateTime createdAt;
+  final DateTime? updatedAt;
+
   UserModel({
     required this.id,
-    required this.email,
     required this.name,
+    required this.email,
+    this.phoneNumber,
     required this.role,
-    required this.emailVerified,
-    required this.phoneNumber,
-    required this.isPhoneVerified,
-    this.image,
-    this.predioTrabajo,
+    this.isPhoneVerified = false,
+    List<String>? prediosFavoritos,
     required this.createdAt,
-  });
+    this.updatedAt,
+  }) : prediosFavoritos = prediosFavoritos ?? [];
+
+  factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
+
+  Map<String, dynamic> toJson() => _$UserModelToJson(this);
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
       id: map['id'] ?? '',
-      email: map['email'] ?? '',
       name: map['name'] ?? '',
-      role: map['role'] ?? 'USER',
-      emailVerified: map['emailVerified'] ?? false,
-      phoneNumber: map['phoneNumber'] ?? '',
+      email: map['email'] ?? '',
+      phoneNumber: map['phoneNumber'],
+      role: map['role'] ?? 'user',
       isPhoneVerified: map['isPhoneVerified'] ?? false,
-      image: map['image'],
-      predioTrabajo: map['predioTrabajo'],
-      createdAt: map['createdAt'] != null 
-        ? DateTime.parse(map['createdAt']) 
-        : DateTime.now(),
+      prediosFavoritos: List<String>.from(map['prediosFavoritos'] ?? []),
+      createdAt: DateTime.parse(map['createdAt']),
+      updatedAt: map['updatedAt'] != null ? DateTime.parse(map['updatedAt']) : null,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'email': email,
       'name': name,
-      'role': role,
-      'emailVerified': emailVerified,
+      'email': email,
       'phoneNumber': phoneNumber,
+      'role': role,
       'isPhoneVerified': isPhoneVerified,
-      'image': image,
-      'predioTrabajo': predioTrabajo,
+      'prediosFavoritos': prediosFavoritos,
       'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
     };
   }
 
   UserModel copyWith({
     String? id,
-    String? email,
     String? name,
-    String? role,
-    bool? emailVerified,
-    String? image,
+    String? email,
     String? phoneNumber,
+    String? role,
     bool? isPhoneVerified,
-    String? predioTrabajo,
+    List<String>? prediosFavoritos,
     DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return UserModel(
       id: id ?? this.id,
-      email: email ?? this.email,
       name: name ?? this.name,
-      role: role ?? this.role,
-      emailVerified: emailVerified ?? this.emailVerified,
-      image: image ?? this.image,
+      email: email ?? this.email,
       phoneNumber: phoneNumber ?? this.phoneNumber,
+      role: role ?? this.role,
       isPhoneVerified: isPhoneVerified ?? this.isPhoneVerified,
-      predioTrabajo: predioTrabajo ?? this.predioTrabajo,
+      prediosFavoritos: prediosFavoritos ?? this.prediosFavoritos,
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 } 

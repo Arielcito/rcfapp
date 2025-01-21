@@ -44,16 +44,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _register() async {
     if (_formKey.currentState!.validate()) {
-      await Get.find<AuthController>().registerWithEmail(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        name: _nameController.text.trim(),
+      await _authController.register(
+        _emailController.text.trim(),
+        _passwordController.text,
+        _nameController.text.trim(),
       );
     }
-  }
-
-  Future<void> _registerWithGoogle() async {
-    await _authController.signInWithGoogle();
   }
 
   @override

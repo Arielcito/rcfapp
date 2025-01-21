@@ -5,6 +5,7 @@ import '../bindings/court_binding.dart';
 import '../bindings/booking_binding.dart';
 import '../bindings/home_binding.dart';
 import '../bindings/favorite_binding.dart';
+import '../bindings/profile_binding.dart';
 import '../views/auth/login_screen.dart';
 import '../views/auth/register_screen.dart';
 import '../views/home/home_screen.dart';
@@ -17,10 +18,15 @@ import '../views/booking/booking_confirmation_screen.dart';
 import '../views/court/court_list_screen.dart';
 import '../views/court/court_details_screen.dart';
 import '../views/court/court_form_screen.dart';
+import '../views/auth/phone_verification_screen.dart';
 
-class AppRoutes {
+abstract class AppRoutes {
+  static const String initial = '/';
   static const String login = '/login';
   static const String register = '/register';
+  static const String home = '/home';
+  static const String profile = '/profile';
+  static const String favorites = '/favorites';
   static const String propertySearch = '/properties/search';
   static const String propertyDetails = '/properties/:id';
   static const String courtList = '/courts';
@@ -28,18 +34,37 @@ class AppRoutes {
   static const String courtCreate = '/courts/create';
   static const String courtEdit = '/courts/:id/edit';
   static const String courtDetail = '/court/:id';
-  static const String home = '/home';
-  static const String profile = '/profile';
+
   static final routes = [
     GetPage(
+      name: initial,
+      page: () => const LoginScreen(),
+      binding: AuthBinding(),
+    ),
+    GetPage(
       name: login,
-      page: () => LoginScreen(),
+      page: () => const LoginScreen(),
       binding: AuthBinding(),
     ),
     GetPage(
       name: register,
-      page: () => RegisterScreen(),
+      page: () => const RegisterScreen(),
       binding: AuthBinding(),
+    ),
+    GetPage(
+      name: home,
+      page: () => const HomeScreen(),
+      binding: HomeBinding(),
+    ),
+    GetPage(
+      name: profile,
+      page: () => const ProfileScreen(),
+      binding: ProfileBinding(),
+    ),
+    GetPage(
+      name: favorites,
+      page: () => FavoritesScreen(),
+      binding: FavoriteBinding(),
     ),
     GetPage(
       name: propertySearch,
@@ -90,14 +115,8 @@ class AppRoutes {
       binding: CourtBinding(),
     ),
     GetPage(
-      name: home,
-      page: () => HomeScreen(),
-      binding: HomeBinding(),
-      transition: Transition.fadeIn,
-    ),
-    GetPage(
-      name: profile,
-      page: () => const ProfileScreen(),
+      name: '/phone-verification',
+      page: () => const PhoneVerificationScreen(),
     ),
   ];
 } 

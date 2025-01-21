@@ -2,19 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/auth/auth_controller.dart';
 import '../widgets/custom_button.dart';
+import 'package:get/get.dart';
 
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+class ProfileScreen extends GetView<AuthController> {
+  const ProfileScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final authController = context.watch<AuthController>();
-    final user = authController.currentUser;
-
-    if (user == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mi Perfil'),
@@ -25,92 +19,75 @@ class ProfileScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              await authController.signOut();
+              await controller.signOut();
             },
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const CircleAvatar(
-              radius: 50,
-              backgroundColor: Colors.grey,
-              child: Icon(
-                Icons.person,
-                size: 50,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              user.name,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+      body: Obx(() {
+        final user = controller.user;
+        if (user.value == null) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Colors.grey,
+                  child: Text(
+                    user.value!.name.substring(0, 1).toUpperCase(),
+                    style: const TextStyle(fontSize: 32),
                   ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 40),
-            _buildInfoCard(
-              context,
-              title: 'Información Personal',
-              items: [
-                _InfoItem(
-                  icon: Icons.email,
-                  title: 'Correo electrónico',
-                  value: user.email,
                 ),
-                if (user.phoneNumber != null)
-                  _InfoItem(
-                    icon: Icons.phone,
-                    title: 'Teléfono',
-                    value: user.phoneNumber!,
-                  ),
-                _InfoItem(
-                  icon: Icons.verified_user,
-                  title: 'Rol',
-                  value: user.role == 'owner' ? 'Propietario' : 'Usuario',
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            _buildInfoCard(
-              context,
-              title: 'Estado de la cuenta',
-              items: [
-                _InfoItem(
-                  icon: Icons.phone_android,
-                  title: 'Teléfono verificado',
-                  value: user.isPhoneVerified ? 'Sí' : 'No',
-                ),
-                _InfoItem(
-                  icon: Icons.favorite,
-                  title: 'Predios favoritos',
-                  value: user.prediosFavoritos.length.toString(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 40),
-            if (!user.isPhoneVerified)
-              CustomButton(
-                text: 'Verificar teléfono',
-                onPressed: () {
-                  // Navegar a la pantalla de verificación
-                },
               ),
-          ],
-        ),
-      ),
+              const SizedBox(height: 20),
+              Text(
+                user.value!.name,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 40),
+              _buildInfoCard([
+                _buildInfoRow('Correo electrónico', user.value!.email),
+                if (user.value!.phoneNumber != null)
+                  _buildInfoRow('Teléfono', user.value!.phoneNumber!),
+                _buildInfoRow(
+                  'Rol',
+                  user.value!.role == 'owner' ? 'Propietario' : 'Usuario',
+                ),
+              ]),
+              const SizedBox(height: 20),
+              _buildInfoCard([
+                _buildInfoRow(
+                  'Teléfono Verificado',
+                  user.value!.isPhoneVerified ? 'Sí' : 'No',
+                ),
+                _buildInfoRow(
+                  'Predios Favoritos',
+                  user.value!.prediosFavoritos.length.toString(),
+                ),
+              ]),
+              const SizedBox(height: 40),
+              if (!user.value!.isPhoneVerified)
+                CustomButton(
+                  text: 'Verificar teléfono',
+                  onPressed: () => controller.verifyPhoneNumber(),
+                ),
+            ],
+          ),
+        );
+      }),
     );
   }
 
-  Widget _buildInfoCard(
-    BuildContext context, {
-    required String title,
-    required List<_InfoItem> items,
-  }) {
+  Widget _buildInfoCard(List<Widget> children) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -120,65 +97,34 @@ class ProfileScreen extends StatelessWidget {
         padding: const EdgeInsets.all(15),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 15),
-            ...items.map((item) => _buildInfoRow(context, item)),
-          ],
+          children: children,
         ),
       ),
     );
   }
 
-  Widget _buildInfoRow(BuildContext context, _InfoItem item) {
+  Widget _buildInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Icon(
-            item.icon,
-            color: Theme.of(context).primaryColor,
-            size: 20,
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.grey,
+              fontSize: 12,
+            ),
           ),
           const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                item.title,
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 12,
-                ),
-              ),
-              Text(
-                item.value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
     );
   }
-}
-
-class _InfoItem {
-  final IconData icon;
-  final String title;
-  final String value;
-
-  const _InfoItem({
-    required this.icon,
-    required this.title,
-    required this.value,
-  });
 } 
