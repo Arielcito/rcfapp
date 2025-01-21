@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:get/get.dart';
 import '../../controllers/auth/auth_controller.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
@@ -17,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  final AuthController _authController = Get.find<AuthController>();
 
   @override
   void dispose() {
@@ -33,21 +34,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     if (_formKey.currentState?.validate() ?? false) {
-      await context.read<AuthController>().loginWithEmail(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-          );
+      await _authController.loginWithEmail(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
     }
   }
 
   Future<void> _loginWithGoogle() async {
-    await context.read<AuthController>().signInWithGoogle();
+    await _authController.signInWithGoogle();
   }
 
   @override
   Widget build(BuildContext context) {
-    final authController = context.watch<AuthController>();
-
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -112,23 +111,27 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                if (authController.error != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 20),
-                    child: Text(
-                      authController.error!,
-                      style: const TextStyle(
-                        color: Colors.red,
-                        fontSize: 14,
+                Obx(() {
+                  if (_authController.error.value.isNotEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      child: Text(
+                        _authController.error.value,
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                CustomButton(
-                  text: 'Iniciar Sesión',
-                  onPressed: _login,
-                  isLoading: authController.isLoading,
-                ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                }),
+                Obx(() => CustomButton(
+                      text: 'Iniciar Sesión',
+                      onPressed: _login,
+                      isLoading: _authController.isLoading.value,
+                    )),
                 const SizedBox(height: 20),
                 const Text(
                   'O continúa con',
@@ -152,12 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const Text('¿No tienes una cuenta?'),
                     TextButton(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const RegisterScreen(),
-                          ),
-                        );
+                        Get.to(() => const RegisterScreen());
                       },
                       child: const Text('Regístrate'),
                     ),
