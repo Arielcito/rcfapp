@@ -219,6 +219,96 @@ Usuario {
   - Sistema de reservas
   - Gestión de pagos
   - Sistema de notificaciones
+
+### Estructura de Respuesta API
+Implementar formato estándar de respuesta:
+```dart
+{
+  success: boolean,
+  data: any,
+  error?: string,
+  statusCode: number,
+  message?: string
+}
+```
+
+### Configuración Base App
+1. Crear ApiClient base:
+   - Implementar Dio con interceptores
+   - Configurar baseUrl desde variables de ambiente
+   - Implementar manejo de timeout
+   - Configurar retry automático
+
+2. Implementar interceptores:
+   - Auth Interceptor (Bearer token)
+   - Error Interceptor (manejo global)
+   - Retry Interceptor (reintentos automáticos)
+   - Cache Interceptor (optimización)
+
+3. Sistema de renovación de token:
+   - Almacenamiento seguro de refresh token
+   - Renovación automática
+   - Cola de requests durante renovación
+   - Manejo de sesión expirada
+
+### Migración de Servicios (orden)
+1. AuthService:
+   - Login/Registro
+   - Verificación SMS
+   - Manejo de roles
+   - Refresh token
+
+2. PropertyService:
+   - CRUD predios
+   - Búsqueda y filtros
+   - Gestión de imágenes
+
+3. BookingService:
+   - Gestión de reservas
+   - Verificación disponibilidad
+   - Cancelaciones
+
+4. FavoriteService:
+   - Gestión de favoritos
+   - Sincronización
+
+5. UserService:
+   - Perfil
+   - Preferencias
+   - Historial
+
+6. ReviewService:
+   - Gestión de reseñas
+   - Calificaciones
+
+### Sistema de Caché con Hive
+1. Datos a cachear:
+   - Información de usuario
+   - Predios frecuentes
+   - Reservas activas
+   - Configuraciones
+   - Token y refresh token
+
+2. Estrategias de caché:
+   - Cache-first: datos no críticos
+   - Network-first: datos críticos
+   - Tiempo de expiración configurable
+   - Invalidación automática
+
+### Manejo de Errores
+1. Tipos de errores:
+   - Red (sin conexión, timeout)
+   - Servidor (500, 503)
+   - Autenticación (401, 403)
+   - Validación (400)
+   - Negocio (422)
+
+2. Estrategias de recuperación:
+   - Retry automático
+   - Fallback a caché
+   - Modo offline
+   - Sincronización posterior
+
 - Migrar datos desde Firestore
 - Actualizar servicios en la app:
   - Crear nuevos servicios para API REST
