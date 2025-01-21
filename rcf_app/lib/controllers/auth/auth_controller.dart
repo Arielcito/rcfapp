@@ -29,9 +29,9 @@ class AuthController extends GetxController {
         password: password,
         name: name,
       );
+      error.value = '';
     } catch (e) {
       error.value = e.toString();
-      rethrow;
     } finally {
       isLoading.value = false;
     }
@@ -48,9 +48,9 @@ class AuthController extends GetxController {
         email: email,
         password: password,
       );
+      error.value = '';
     } catch (e) {
       error.value = e.toString();
-      rethrow;
     } finally {
       isLoading.value = false;
     }
@@ -61,9 +61,9 @@ class AuthController extends GetxController {
       isLoading.value = true;
       error.value = '';
       await _authService.signInWithGoogle();
+      error.value = '';
     } catch (e) {
       error.value = e.toString();
-      rethrow;
     } finally {
       isLoading.value = false;
     }

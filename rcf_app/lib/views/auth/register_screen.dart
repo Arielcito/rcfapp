@@ -43,8 +43,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _register() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      await _authController.registerWithEmail(
+    if (_formKey.currentState!.validate()) {
+      await Get.find<AuthController>().registerWithEmail(
         email: _emailController.text.trim(),
         password: _passwordController.text,
         name: _nameController.text.trim(),
@@ -58,164 +58,121 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authController = Get.find<AuthController>();
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Registro'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: Colors.black87,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 20),
-                Text(
-                  'Crea tu cuenta',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                  textAlign: TextAlign.center,
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Nombre',
+                  border: OutlineInputBorder(),
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  'Completa tus datos para registrarte',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.grey,
-                      ),
-                  textAlign: TextAlign.center,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor ingresa tu nombre';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
                 ),
-                const SizedBox(height: 40),
-                CustomTextField(
-                  label: 'Nombre completo',
-                  hint: 'Juan Pérez',
-                  controller: _nameController,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu nombre';
-                    }
-                    return null;
-                  },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor ingresa tu email';
+                  }
+                  if (!value.contains('@')) {
+                    return 'Por favor ingresa un email válido';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _passwordController,
+                decoration: const InputDecoration(
+                  labelText: 'Contraseña',
+                  border: OutlineInputBorder(),
                 ),
-                const SizedBox(height: 20),
-                CustomTextField(
-                  label: 'Correo electrónico',
-                  hint: 'ejemplo@correo.com',
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu correo';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Por favor ingresa un correo válido';
-                    }
-                    return null;
-                  },
+                obscureText: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor ingresa tu contraseña';
+                  }
+                  if (value.length < 6) {
+                    return 'La contraseña debe tener al menos 6 caracteres';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _confirmPasswordController,
+                decoration: const InputDecoration(
+                  labelText: 'Confirmar Contraseña',
+                  border: OutlineInputBorder(),
                 ),
-                const SizedBox(height: 20),
-                CustomTextField(
-                  label: 'Contraseña',
-                  hint: '********',
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu contraseña';
-                    }
-                    if (value.length < 6) {
-                      return 'La contraseña debe tener al menos 6 caracteres';
-                    }
-                    return null;
-                  },
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                obscureText: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor confirma tu contraseña';
+                  }
+                  if (value != _passwordController.text) {
+                    return 'Las contraseñas no coinciden';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
+              Obx(() {
+                if (authController.error.value.isNotEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Text(
+                      authController.error.value,
+                      style: const TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
                     ),
-                    onPressed: _togglePasswordVisibility,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                CustomTextField(
-                  label: 'Confirmar contraseña',
-                  hint: '********',
-                  controller: _confirmPasswordController,
-                  obscureText: _obscureConfirmPassword,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor confirma tu contraseña';
-                    }
-                    if (value != _passwordController.text) {
-                      return 'Las contraseñas no coinciden';
-                    }
-                    return null;
-                  },
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureConfirmPassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                    ),
-                    onPressed: _toggleConfirmPasswordVisibility,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Obx(() {
-                  if (_authController.error.value.isNotEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 20),
-                      child: Text(
-                        _authController.error.value,
-                        style: const TextStyle(
-                          color: Colors.red,
-                          fontSize: 14,
-                        ),
-                        textAlign: TextAlign.center,
+                  );
+                }
+                return const SizedBox.shrink();
+              }),
+              ElevatedButton(
+                onPressed: _register,
+                child: Obx(() {
+                  if (authController.isLoading.value) {
+                    return const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     );
                   }
-                  return const SizedBox.shrink();
+                  return const Text('Registrarse');
                 }),
-                Obx(() => CustomButton(
-                      text: 'Registrarse',
-                      onPressed: _register,
-                      isLoading: _authController.isLoading.value,
-                    )),
-                const SizedBox(height: 20),
-                const Text(
-                  'O regístrate con',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                CustomButton(
-                  text: 'Google',
-                  onPressed: _registerWithGoogle,
-                  backgroundColor: Colors.white,
-                  textColor: Colors.black87,
-                  icon: Icons.g_mobiledata,
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('¿Ya tienes una cuenta?'),
-                    TextButton(
-                      onPressed: () {
-                        Get.back();
-                      },
-                      child: const Text('Inicia sesión'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () => Get.back(),
+                child: const Text('¿Ya tienes una cuenta? Inicia Sesión'),
+              ),
+            ],
           ),
         ),
       ),
