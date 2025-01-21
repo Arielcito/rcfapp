@@ -188,20 +188,21 @@ lib/
 - Se implementó manejo de errores y estados de carga
 - Los mapas usan Google Maps en Android y Apple Maps en iOS 
 
-## Paso 11: Implementación del Sistema de Reservas 🚧
+## Paso 11: Implementación del Sistema de Reservas ⏳
 
-### Fecha: [20/01/2024]
+### Fecha: [23/01/2024]
 
-### En Progreso:
-- 🚧 Creación del modelo de reserva
-- 🚧 Implementación del servicio de reservas
-- 🚧 Implementación del controlador de reservas
-- 🚧 Creación de la pantalla de reserva
+### Completado:
+- ✅ Creación del modelo de reserva (BookingModel)
+- ✅ Implementación del servicio de reservas (BookingService)
+- ✅ Implementación del controlador de reservas (BookingController)
+- ✅ Creación de la pantalla de lista de reservas del usuario
+- 🚧 Creación de la pantalla de nueva reserva
 - 🚧 Integración con Mercado Pago
 
 ### Detalles:
 
-#### 1. Estructura de Archivos a Implementar
+#### 1. Estructura de Archivos Implementada
 ```
 lib/
   ├── models/
@@ -215,36 +216,49 @@ lib/
   │       └── booking_controller.dart
   └── views/
       └── booking/
-          ├── booking_screen.dart
-          └── booking_confirmation_screen.dart
+          └── user_bookings_screen.dart
 ```
 
-#### 2. Características del Sistema de Reservas
-- Selección de fecha y hora
-- Verificación de disponibilidad en tiempo real
-- Integración con Mercado Pago
-- Opción de pago parcial (seña 50%)
-- Confirmación visual de la reserva
-- Notificaciones al usuario y dueño
-- Sistema de cancelación (hasta 3 horas antes)
+#### 2. Características Implementadas
+- Modelo de reserva con:
+  - Información básica (fecha, hora, duración)
+  - Estados de pago y reserva
+  - Métodos de pago
+  - Timestamps de creación/actualización
+- Servicio de reservas con:
+  - CRUD completo de reservas
+  - Verificación de disponibilidad
+  - Sistema de reprogramación
+  - Manejo de cancelaciones
+- Controlador con:
+  - Gestión de estado con GetX
+  - Manejo de errores
+  - Notificaciones al usuario
+  - Lógica de negocio completa
+- Vista de lista de reservas:
+  - Diseño moderno y limpio
+  - Estado visual de las reservas
+  - Opciones de reprogramación y cancelación
+  - Manejo de estados de carga
 
-#### 3. Flujo de Reserva
-1. Selección de cancha y horario
-2. Verificación de disponibilidad
-3. Selección de método de pago
-4. Procesamiento del pago
-5. Confirmación y notificaciones
+### Commits Realizados:
+1. "feat: implementación base del sistema de reservas"
+2. "feat: creación de modelos y servicios de reserva"
+3. "feat: implementación del controlador de reservas"
+4. "feat: creación de la vista de lista de reservas"
 
 ### Próximos Pasos:
-1. Implementar el modelo de reserva
-2. Crear el servicio de reservas
-3. Desarrollar la interfaz de usuario
+1. Implementar la pantalla de nueva reserva
+2. Crear el calendario de selección de horarios
+3. Integrar Mercado Pago para pagos
+4. Implementar sistema de notificaciones
 
 ### Notas para Desarrolladores:
-- Las reservas se almacenarán en Firestore
-- Se implementará un sistema de bloqueo temporal durante la reserva
-- Las notificaciones usarán Firebase Cloud Messaging
-- Se implementará manejo de errores para pagos fallidos 
+- El sistema usa Firestore para persistencia
+- Se implementó manejo de errores completo
+- La UI sigue los lineamientos de Material Design
+- Se usa GetX para gestión de estado
+- Las fechas se manejan con el paquete intl
 
 ## Paso 9: Integración de WhatsApp 🚧
 

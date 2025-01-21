@@ -23,126 +23,81 @@ enum PaymentStatus {
 class BookingModel {
   final String id;
   final String userId;
-  final String propertyId;
-  final String courtId;
-  final DateTime date;
-  final DateTime startTime;
-  final DateTime endTime;
-  final double totalAmount;
-  final double paidAmount;
-  final BookingStatus status;
-  final PaymentMethod paymentMethod;
-  final PaymentStatus paymentStatus;
-  final String? paymentId;
+  final String canchaId;
+  final DateTime fecha;
+  final String hora;
+  final int duracion;
+  final String estadoPago;
+  final String metodoPago;
   final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime? updatedAt;
 
   BookingModel({
     required this.id,
     required this.userId,
-    required this.propertyId,
-    required this.courtId,
-    required this.date,
-    required this.startTime,
-    required this.endTime,
-    required this.totalAmount,
-    required this.paidAmount,
-    required this.status,
-    required this.paymentMethod,
-    required this.paymentStatus,
-    this.paymentId,
+    required this.canchaId,
+    required this.fecha,
+    required this.hora,
+    required this.duracion,
+    required this.estadoPago,
+    required this.metodoPago,
     required this.createdAt,
-    required this.updatedAt,
+    this.updatedAt,
   });
 
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'userId': userId,
-      'propertyId': propertyId,
-      'courtId': courtId,
-      'date': date,
-      'startTime': startTime,
-      'endTime': endTime,
-      'totalAmount': totalAmount,
-      'paidAmount': paidAmount,
-      'status': status.toString(),
-      'paymentMethod': paymentMethod.toString(),
-      'paymentStatus': paymentStatus.toString(),
-      'paymentId': paymentId,
-      'createdAt': createdAt,
-      'updatedAt': updatedAt,
-    };
-  }
-
-  factory BookingModel.fromMap(Map<String, dynamic> map) {
+  factory BookingModel.fromJson(Map<String, dynamic> json) {
     return BookingModel(
-      id: map['id'] ?? '',
-      userId: map['userId'] ?? '',
-      propertyId: map['propertyId'] ?? '',
-      courtId: map['courtId'] ?? '',
-      date: (map['date'] as Timestamp).toDate(),
-      startTime: (map['startTime'] as Timestamp).toDate(),
-      endTime: (map['endTime'] as Timestamp).toDate(),
-      totalAmount: (map['totalAmount'] ?? 0.0).toDouble(),
-      paidAmount: (map['paidAmount'] ?? 0.0).toDouble(),
-      status: BookingStatus.values.firstWhere(
-        (e) => e.toString() == map['status'],
-        orElse: () => BookingStatus.pending,
-      ),
-      paymentMethod: PaymentMethod.values.firstWhere(
-        (e) => e.toString() == map['paymentMethod'],
-        orElse: () => PaymentMethod.mercadoPago,
-      ),
-      paymentStatus: PaymentStatus.values.firstWhere(
-        (e) => e.toString() == map['paymentStatus'],
-        orElse: () => PaymentStatus.pending,
-      ),
-      paymentId: map['paymentId'],
-      createdAt: (map['createdAt'] as Timestamp).toDate(),
-      updatedAt: (map['updatedAt'] as Timestamp).toDate(),
+      id: json['id'] as String,
+      userId: json['userId'] as String,
+      canchaId: json['canchaId'] as String,
+      fecha: (json['fecha'] as Timestamp).toDate(),
+      hora: json['hora'] as String,
+      duracion: json['duracion'] as int,
+      estadoPago: json['estadoPago'] as String,
+      metodoPago: json['metodoPago'] as String,
+      createdAt: (json['createdAt'] as Timestamp).toDate(),
+      updatedAt: json['updatedAt'] != null 
+          ? (json['updatedAt'] as Timestamp).toDate()
+          : null,
     );
   }
 
-  factory BookingModel.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-    return BookingModel.fromMap({
-      'id': doc.id,
-      ...data,
-    });
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'userId': userId,
+      'canchaId': canchaId,
+      'fecha': Timestamp.fromDate(fecha),
+      'hora': hora,
+      'duracion': duracion,
+      'estadoPago': estadoPago,
+      'metodoPago': metodoPago,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
+    };
   }
 
   BookingModel copyWith({
     String? id,
     String? userId,
-    String? propertyId,
-    String? courtId,
-    DateTime? date,
-    DateTime? startTime,
-    DateTime? endTime,
-    double? totalAmount,
-    double? paidAmount,
-    BookingStatus? status,
-    PaymentMethod? paymentMethod,
-    PaymentStatus? paymentStatus,
-    String? paymentId,
+    String? canchaId,
+    DateTime? fecha,
+    String? hora,
+    int? duracion,
+    String? estadoPago,
+    String? metodoPago,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
     return BookingModel(
       id: id ?? this.id,
       userId: userId ?? this.userId,
-      propertyId: propertyId ?? this.propertyId,
-      courtId: courtId ?? this.courtId,
-      date: date ?? this.date,
-      startTime: startTime ?? this.startTime,
-      endTime: endTime ?? this.endTime,
-      totalAmount: totalAmount ?? this.totalAmount,
-      paidAmount: paidAmount ?? this.paidAmount,
-      status: status ?? this.status,
-      paymentMethod: paymentMethod ?? this.paymentMethod,
-      paymentStatus: paymentStatus ?? this.paymentStatus,
-      paymentId: paymentId ?? this.paymentId,
+      canchaId: canchaId ?? this.canchaId,
+      fecha: fecha ?? this.fecha,
+      hora: hora ?? this.hora,
+      duracion: duracion ?? this.duracion,
+      estadoPago: estadoPago ?? this.estadoPago,
+      metodoPago: metodoPago ?? this.metodoPago,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
