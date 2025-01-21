@@ -1,12 +1,15 @@
-import 'package:rcf_app/models/court/court_model.dart';
-import 'package:rcf_app/services/api/api_client.dart';
+import 'package:get/get.dart';
+import '../../models/court/court_model.dart';
+import '../api/api_client.dart';
 import 'package:rcf_app/services/cache/cache_service.dart';
 
-class CourtService {
-  final ApiClient _apiClient = ApiClient();
+class CourtService extends GetxService {
+  final ApiClient _api;
   final CacheService _cacheService = CacheService();
   final String _endpoint = '/canchas';
   final String _cacheKey = 'courts';
+  
+  CourtService({ApiClient? api}) : _api = api ?? ApiClient();
 
   Future<List<CourtModel>> getAllCourts() async {
     try {
@@ -17,7 +20,7 @@ class CourtService {
             .toList();
       }
 
-      final response = await _apiClient.get(_endpoint);
+      final response = await _api.get<List<dynamic>>(_endpoint);
       final courts = (response.data as List)
           .map((item) => CourtModel.fromJson(item))
           .toList();
@@ -37,7 +40,7 @@ class CourtService {
         return CourtModel.fromJson(cachedData);
       }
 
-      final response = await _apiClient.get('$_endpoint/$id');
+      final response = await _api.get<dynamic>('$_endpoint/$id');
       final court = CourtModel.fromJson(response.data);
 
       await _cacheService.set(cacheKey, court);
@@ -57,7 +60,7 @@ class CourtService {
             .toList();
       }
 
-      final response = await _apiClient.get('$_endpoint/predio/$propertyId');
+      final response = await _api.get<List<dynamic>>('$_endpoint/predio/$propertyId');
       final courts = (response.data as List)
           .map((item) => CourtModel.fromJson(item))
           .toList();
@@ -71,7 +74,7 @@ class CourtService {
 
   Future<CourtModel> createCourt(CourtModel court) async {
     try {
-      final response = await _apiClient.post(_endpoint, data: court.toJson());
+      final response = await _api.post(_endpoint, data: court.toJson());
       final newCourt = CourtModel.fromJson(response.data);
 
       await _cacheService.delete(_cacheKey);
@@ -85,7 +88,7 @@ class CourtService {
 
   Future<CourtModel> updateCourt(String id, CourtModel court) async {
     try {
-      final response = await _apiClient.put('$_endpoint/$id', data: court.toJson());
+      final response = await _api.put('$_endpoint/$id', data: court.toJson());
       final updatedCourt = CourtModel.fromJson(response.data);
 
       await _cacheService.delete(_cacheKey);
@@ -100,13 +103,49 @@ class CourtService {
 
   Future<void> deleteCourt(String id, String propertyId) async {
     try {
-      await _apiClient.delete('$_endpoint/$id');
+      await _api.delete('$_endpoint/$id');
 
       await _cacheService.delete(_cacheKey);
       await _cacheService.delete('${_cacheKey}_$id');
       await _cacheService.delete('${_cacheKey}_property_$propertyId');
     } catch (e) {
       throw Exception('Error al eliminar la cancha: $e');
+    }
+  }
+
+  Future<List<CourtModel>> getCourts({
+    required DateTime date,
+    String? startTime,
+    String? endTime,
+  }) async {
+    try {
+      final queryParams = {
+        'date': date.toIso8601String(),
+        if (startTime != null) 'startTime': startTime,
+        if (endTime != null) 'endTime': endTime,
+      };
+
+      final response = await _api.get<List<dynamic>>('/courts/available', queryParameters: queryParams);
+      
+      return response.data!.map((court) => CourtModel.fromMap(court as Map<String, dynamic>)).toList();
+    } catch (e) {
+      throw 'Error al obtener las canchas disponibles: $e';
+    }
+  }
+
+  Future<List<String>> getAvailableHours({
+    required String courtId,
+    required DateTime date,
+  }) async {
+    try {
+      final response = await _api.get<List<dynamic>>(
+        '/courts/$courtId/available-hours',
+        queryParameters: {'date': date.toIso8601String()},
+      );
+      
+      return response.data!.map((hour) => hour.toString()).toList();
+    } catch (e) {
+      throw 'Error al obtener los horarios disponibles: $e';
     }
   }
 } 

@@ -74,17 +74,19 @@ class AuthService extends GetxService {
         'password': password,
       });
 
-      final apiResponse = ApiResponse.fromJson(
-        response.data!,
-        (json) => json as Map<String, dynamic>,
-      );
-
-      if (!apiResponse.success) {
-        throw apiResponse.message ?? 'Error en el inicio de sesión';
+      if (response.data == null) {
+        throw 'Error en el inicio de sesión';
       }
 
-      _storage.write('token', apiResponse.data!['token']);
-      _storage.write('user', apiResponse.data!['user']);
+      final token = response.data!['token'];
+      final userData = response.data!['user'];
+
+      if (token == null || userData == null) {
+        throw 'Respuesta inválida del servidor';
+      }
+
+      _storage.write('token', token);
+      _storage.write('user', userData);
     } catch (e) {
       throw _handleAuthError(e);
     }

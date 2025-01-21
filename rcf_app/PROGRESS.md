@@ -289,14 +289,19 @@ lib/
   - Validaciones y manejo de errores
 
 #### 2024-03-22
-- Se implementó el BookingService con API REST
-- Se actualizó el BookingModel para usar JSON
-- Se migró el BookingController a GetX
-- Se agregaron métodos para:
-  - Gestión de reservas (CRUD)
-  - Verificación de disponibilidad
-  - Manejo de estados de reserva
-  - Caché de datos con Hive
+- [x] Implementar BookingService con API REST
+- [x] Actualizar BookingModel
+- [x] Migrar BookingController a GetX
+- [x] Corregir errores de linter en BookingController
+- [x] Agregar método patch a ApiClient
+- [x] Implementar manejo de errores en ApiClient
+
+### Próximos pasos
+- [ ] Implementar vistas de reservas
+- [ ] Integrar Mercado Pago
+- [ ] Implementar sistema de caché
+- [ ] Realizar pruebas de integración
+- [ ] Optimizar rendimiento
 
 ## Paso 11: Implementación del Sistema de Reservas ⏳
 

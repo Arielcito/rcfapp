@@ -1,47 +1,36 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:get/get.dart';
 
-part 'court_model.g.dart';
+part './court_model.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(
+  explicitToJson: true,
+  fieldRename: FieldRename.snake,
+  includeIfNull: false,
+)
 class CourtModel {
   final String id;
-  final String predioId;
-  final String nombre;
-  final String? tipo;
-  final int? capacidadJugadores;
-  final String? longitud;
-  final String? ancho;
-  final String? tipoSuperficie;
-  final bool? tieneIluminacion;
-  final bool? esTechada;
-  final double? precioPorHora;
-  final String? estado;
-  final DateTime? ultimoMantenimiento;
-  final String? equipamientoIncluido;
-  final String? imagenUrl;
-  final DateTime? createdAt;
-  final bool requiereSeña;
-  final double montoSeña;
+  final String propertyId;
+  final String name;
+  final String sport;
+  final double pricePerHour;
+  final bool isIndoor;
+  final String? description;
+  final String? imageUrl;
+  final bool isActive;
+  final List<String> availableHours;
 
   CourtModel({
     required this.id,
-    required this.predioId,
-    required this.nombre,
-    this.tipo,
-    this.capacidadJugadores,
-    this.longitud,
-    this.ancho,
-    this.tipoSuperficie,
-    this.tieneIluminacion,
-    this.esTechada,
-    this.precioPorHora,
-    this.estado,
-    this.ultimoMantenimiento,
-    this.equipamientoIncluido,
-    this.imagenUrl,
-    this.createdAt,
-    required this.requiereSeña,
-    required this.montoSeña,
+    required this.propertyId,
+    required this.name,
+    required this.sport,
+    required this.pricePerHour,
+    required this.isIndoor,
+    this.description,
+    this.imageUrl,
+    required this.isActive,
+    required this.availableHours,
   });
 
   factory CourtModel.fromJson(Map<String, dynamic> json) => _$CourtModelFromJson(json);
@@ -50,43 +39,57 @@ class CourtModel {
 
   CourtModel copyWith({
     String? id,
-    String? predioId,
-    String? nombre,
-    String? tipo,
-    int? capacidadJugadores,
-    String? longitud,
-    String? ancho,
-    String? tipoSuperficie,
-    bool? tieneIluminacion,
-    bool? esTechada,
-    double? precioPorHora,
-    String? estado,
-    DateTime? ultimoMantenimiento,
-    String? equipamientoIncluido,
-    String? imagenUrl,
-    DateTime? createdAt,
-    bool? requiereSeña,
-    double? montoSeña,
+    String? propertyId,
+    String? name,
+    String? sport,
+    double? pricePerHour,
+    bool? isIndoor,
+    String? description,
+    String? imageUrl,
+    bool? isActive,
+    List<String>? availableHours,
   }) {
     return CourtModel(
       id: id ?? this.id,
-      predioId: predioId ?? this.predioId,
-      nombre: nombre ?? this.nombre,
-      tipo: tipo ?? this.tipo,
-      capacidadJugadores: capacidadJugadores ?? this.capacidadJugadores,
-      longitud: longitud ?? this.longitud,
-      ancho: ancho ?? this.ancho,
-      tipoSuperficie: tipoSuperficie ?? this.tipoSuperficie,
-      tieneIluminacion: tieneIluminacion ?? this.tieneIluminacion,
-      esTechada: esTechada ?? this.esTechada,
-      precioPorHora: precioPorHora ?? this.precioPorHora,
-      estado: estado ?? this.estado,
-      ultimoMantenimiento: ultimoMantenimiento ?? this.ultimoMantenimiento,
-      equipamientoIncluido: equipamientoIncluido ?? this.equipamientoIncluido,
-      imagenUrl: imagenUrl ?? this.imagenUrl,
-      createdAt: createdAt ?? this.createdAt,
-      requiereSeña: requiereSeña ?? this.requiereSeña,
-      montoSeña: montoSeña ?? this.montoSeña,
+      propertyId: propertyId ?? this.propertyId,
+      name: name ?? this.name,
+      sport: sport ?? this.sport,
+      pricePerHour: pricePerHour ?? this.pricePerHour,
+      isIndoor: isIndoor ?? this.isIndoor,
+      description: description ?? this.description,
+      imageUrl: imageUrl ?? this.imageUrl,
+      isActive: isActive ?? this.isActive,
+      availableHours: availableHours ?? this.availableHours,
     );
+  }
+
+  factory CourtModel.fromMap(Map<String, dynamic> map) {
+    return CourtModel(
+      id: map['id'] ?? '',
+      propertyId: map['propertyId'] ?? '',
+      name: map['name'] ?? '',
+      sport: map['sport'] ?? '',
+      pricePerHour: (map['pricePerHour'] ?? 0.0).toDouble(),
+      isIndoor: map['isIndoor'] ?? false,
+      description: map['description'],
+      imageUrl: map['imageUrl'],
+      isActive: map['isActive'] ?? true,
+      availableHours: List<String>.from(map['availableHours'] ?? []),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'propertyId': propertyId,
+      'name': name,
+      'sport': sport,
+      'pricePerHour': pricePerHour,
+      'isIndoor': isIndoor,
+      'description': description,
+      'imageUrl': imageUrl,
+      'isActive': isActive,
+      'availableHours': availableHours,
+    };
   }
 } 

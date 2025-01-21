@@ -2,7 +2,30 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/user/user_model.dart';
+import '../../models/api/api_response.dart';
 import 'dart:async';
+import 'dart:convert';
+
+class AuthResponse {
+  final UserModel user;
+  final String token;
+
+  AuthResponse({required this.user, required this.token});
+
+  factory AuthResponse.fromJson(Map<String, dynamic> json) {
+    return AuthResponse(
+      user: UserModel.fromMap(json['user'] as Map<String, dynamic>),
+      token: json['token'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'user': user.toMap(),
+      'token': token,
+    };
+  }
+}
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -20,21 +43,44 @@ class AuthService {
   }
 
   // Obtener usuario actual
-  UserModel? get currentUser {
-    final user = _auth.currentUser;
-    if (user == null) return null;
-    return UserModel(
-      id: user.uid,
-      email: user.email ?? '',
-      name: user.displayName ?? '',
-      phoneNumber: user.phoneNumber,
-      role: 'user',
-      isPhoneVerified: user.phoneNumber != null,
-    );
+  ApiResponse<UserModel?> get currentUser {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        return ApiResponse(
+          success: false,
+          statusCode: 401,
+          message: 'No hay usuario autenticado',
+        );
+      }
+      
+      final userData = UserModel(
+        id: user.uid,
+        email: user.email ?? '',
+        name: user.displayName ?? '',
+        phoneNumber: '',
+        role: 'user',
+        isPhoneVerified: false,
+        emailVerified: user.emailVerified,
+        createdAt: DateTime.now(),
+      );
+
+      return ApiResponse(
+        success: true,
+        statusCode: 200,
+        data: userData,
+      );
+    } catch (e) {
+      return ApiResponse(
+        success: false,
+        statusCode: 500,
+        message: _handleAuthError(e),
+      );
+    }
   }
 
   // Registro con email y contraseña
-  Future<void> registerWithEmail({
+  Future<ApiResponse<AuthResponse>> registerWithEmail({
     required String email,
     required String password,
     required String name,
@@ -46,46 +92,80 @@ class AuthService {
       );
 
       await userCredential.user?.updateDisplayName(name);
+      final token = await userCredential.user?.getIdToken() ?? '';
 
       final user = UserModel(
         id: userCredential.user!.uid,
         email: email,
         name: name,
         role: 'user',
+        phoneNumber: '',
+        isPhoneVerified: false,
+        emailVerified: false,
+        createdAt: DateTime.now(),
       );
 
       await _firestore
           .collection('users')
           .doc(userCredential.user!.uid)
           .set(user.toMap());
+
+      return ApiResponse(
+        success: true,
+        statusCode: 201,
+        data: AuthResponse(user: user, token: token),
+      );
     } catch (e) {
-      throw _handleAuthError(e);
+      return ApiResponse(
+        success: false,
+        statusCode: 400,
+        message: _handleAuthError(e),
+      );
     }
   }
 
   // Login con email y contraseña
-  Future<void> loginWithEmail({
+  Future<ApiResponse<AuthResponse>> loginWithEmail({
     required String email,
     required String password,
   }) async {
     try {
-      await _auth.signInWithEmailAndPassword(
+      final userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+
+      final token = await userCredential.user?.getIdToken() ?? '';
+      final doc = await _firestore.collection('users').doc(userCredential.user!.uid).get();
+      final user = UserModel.fromMap(doc.data()!..['id'] = userCredential.user!.uid);
+
+      return ApiResponse(
+        success: true,
+        statusCode: 200,
+        data: AuthResponse(user: user, token: token),
+      );
     } catch (e) {
-      throw _handleAuthError(e);
+      return ApiResponse(
+        success: false,
+        statusCode: 401,
+        message: _handleAuthError(e),
+      );
     }
   }
 
   // Login con Google
-  Future<void> signInWithGoogle() async {
+  Future<ApiResponse<AuthResponse>> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) throw 'Inicio de sesión cancelado';
+      if (googleUser == null) {
+        return ApiResponse(
+          success: false,
+          statusCode: 400,
+          message: 'Inicio de sesión cancelado',
+        );
+      }
 
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
@@ -93,9 +173,9 @@ class AuthService {
       );
 
       final userCredential = await _auth.signInWithCredential(credential);
+      final token = await userCredential.user?.getIdToken() ?? '';
 
-      final userDoc =
-          await _firestore.collection('users').doc(userCredential.user!.uid).get();
+      final userDoc = await _firestore.collection('users').doc(userCredential.user!.uid).get();
 
       if (!userDoc.exists) {
         final user = UserModel(
@@ -103,20 +183,41 @@ class AuthService {
           email: userCredential.user!.email!,
           name: userCredential.user!.displayName!,
           role: 'user',
+          phoneNumber: '',
+          isPhoneVerified: false,
+          emailVerified: userCredential.user!.emailVerified,
+          createdAt: DateTime.now(),
         );
 
         await _firestore
             .collection('users')
             .doc(userCredential.user!.uid)
             .set(user.toMap());
+            
+        return ApiResponse(
+          success: true,
+          statusCode: 201,
+          data: AuthResponse(user: user, token: token),
+        );
       }
+
+      final user = UserModel.fromMap(userDoc.data()!..['id'] = userCredential.user!.uid);
+      return ApiResponse(
+        success: true,
+        statusCode: 200,
+        data: AuthResponse(user: user, token: token),
+      );
     } catch (e) {
-      throw _handleAuthError(e);
+      return ApiResponse(
+        success: false,
+        statusCode: 400,
+        message: _handleAuthError(e),
+      );
     }
   }
 
   // Verificación de número de teléfono
-  Future<String> verifyPhone(String phoneNumber) async {
+  Future<ApiResponse<String>> verifyPhone(String phoneNumber) async {
     try {
       Completer<String> completer = Completer<String>();
 
@@ -139,14 +240,24 @@ class AuthService {
         },
       );
 
-      return await completer.future;
+      final verificationId = await completer.future;
+      return ApiResponse(
+        success: true,
+        statusCode: 200,
+        data: verificationId,
+        message: 'Código enviado correctamente',
+      );
     } catch (e) {
-      throw _handleAuthError(e);
+      return ApiResponse(
+        success: false,
+        statusCode: 400,
+        message: _handleAuthError(e),
+      );
     }
   }
 
   // Verificar código SMS
-  Future<void> verifySmsCode(String verificationId, String smsCode) async {
+  Future<ApiResponse<void>> verifySmsCode(String verificationId, String smsCode) async {
     try {
       final PhoneAuthCredential credential = PhoneAuthProvider.credential(
         verificationId: verificationId,
@@ -155,8 +266,18 @@ class AuthService {
 
       await _auth.currentUser?.updatePhoneNumber(credential);
       await _updatePhoneVerificationStatus(true);
+
+      return ApiResponse(
+        success: true,
+        statusCode: 200,
+        message: 'Número de teléfono verificado correctamente',
+      );
     } catch (e) {
-      throw _handleAuthError(e);
+      return ApiResponse(
+        success: false,
+        statusCode: 400,
+        message: _handleAuthError(e),
+      );
     }
   }
 
@@ -164,22 +285,33 @@ class AuthService {
   Future<void> _updatePhoneVerificationStatus(bool isVerified) async {
     final user = _auth.currentUser;
     if (user != null) {
+      final phoneNumber = user.phoneNumber ?? '';
       await _firestore.collection('users').doc(user.uid).update({
         'isPhoneVerified': isVerified,
-        'phoneNumber': user.phoneNumber,
+        'phoneNumber': phoneNumber,
       });
     }
   }
 
   // Cerrar sesión
-  Future<void> signOut() async {
+  Future<ApiResponse<void>> signOut() async {
     try {
       await Future.wait([
         _auth.signOut(),
         _googleSignIn.signOut(),
       ]);
+
+      return ApiResponse(
+        success: true,
+        statusCode: 200,
+        message: 'Sesión cerrada correctamente',
+      );
     } catch (e) {
-      throw _handleAuthError(e);
+      return ApiResponse(
+        success: false,
+        statusCode: 500,
+        message: _handleAuthError(e),
+      );
     }
   }
 

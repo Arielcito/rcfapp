@@ -40,6 +40,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
     if (_formKey.currentState?.validate() ?? false) {
       await context.read<AuthController>().verifySmsCode(
             _codeController.text.trim(),
+            _phoneController.text.trim(),
           );
     }
   }

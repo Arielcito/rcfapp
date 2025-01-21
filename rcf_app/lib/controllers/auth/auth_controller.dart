@@ -49,6 +49,7 @@ class AuthController extends GetxController {
         password: password,
       );
       error.value = '';
+      Get.offAllNamed('/home');
     } catch (e) {
       error.value = e.toString();
     } finally {
@@ -62,6 +63,7 @@ class AuthController extends GetxController {
       error.value = '';
       await _authService.signInWithGoogle();
       error.value = '';
+      Get.offAllNamed('/home');
     } catch (e) {
       error.value = e.toString();
     } finally {

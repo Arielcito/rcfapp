@@ -150,20 +150,25 @@ class BookingService {
     }
   }
 
-  Future<bool> checkAvailability(String courtId, DateTime date, DateTime startTime, DateTime endTime) async {
+  Future<bool> checkAvailability({
+    required String propertyId,
+    required String courtId,
+    required DateTime date,
+    required DateTime startTime,
+    required DateTime endTime,
+  }) async {
     try {
-      final response = await _apiClient.get(
-        '$_endpoint/disponibilidad',
-        queryParameters: {
-          'canchaId': courtId,
-          'fecha': date.toIso8601String(),
-          'horaInicio': startTime.toIso8601String(),
-          'horaFin': endTime.toIso8601String(),
-        },
-      );
-      return response.data['disponible'] as bool;
+      final response = await _apiClient.post('$_endpoint/check-availability', data: {
+        'propertyId': propertyId,
+        'courtId': courtId,
+        'date': date.toIso8601String(),
+        'startTime': startTime.toIso8601String(),
+        'endTime': endTime.toIso8601String(),
+      });
+      
+      return response.data['available'] as bool;
     } catch (e) {
-      throw Exception('Error al verificar disponibilidad: $e');
+      throw Exception('Error al verificar la disponibilidad: $e');
     }
   }
 } 
