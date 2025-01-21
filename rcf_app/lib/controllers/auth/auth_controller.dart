@@ -1,34 +1,19 @@
-import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../models/user/user_model.dart';
-import '../../services/auth/auth_service.dart';
+import '../../services/auth/new_auth_service.dart';
 
-class AuthController extends ChangeNotifier {
-  final _authService = AuthService();
-  UserModel? _currentUser;
-  bool _isLoading = false;
-  String? _error;
-  String? _verificationId;
+class AuthController extends GetxController {
+  final AuthService _authService = AuthService();
+  final Rx<UserModel?> currentUser = Rx<UserModel?>(null);
+  final RxBool isLoading = false.obs;
+  final RxString error = ''.obs;
 
-  UserModel? get currentUser => _currentUser;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
-  bool get isAuthenticated => _currentUser != null;
-
-  AuthController() {
+  @override
+  void onInit() {
+    super.onInit();
     _authService.authStateChanges.listen((user) {
-      _currentUser = user;
-      notifyListeners();
+      currentUser.value = user;
     });
-  }
-
-  void _setLoading(bool value) {
-    _isLoading = value;
-    notifyListeners();
-  }
-
-  void _setError(String? value) {
-    _error = value;
-    notifyListeners();
   }
 
   Future<void> registerWithEmail({
@@ -37,17 +22,18 @@ class AuthController extends ChangeNotifier {
     required String name,
   }) async {
     try {
-      _setLoading(true);
-      _setError(null);
+      isLoading.value = true;
+      error.value = '';
       await _authService.registerWithEmail(
         email: email,
         password: password,
         name: name,
       );
     } catch (e) {
-      _setError(e.toString());
+      error.value = e.toString();
+      rethrow;
     } finally {
-      _setLoading(false);
+      isLoading.value = false;
     }
   }
 
@@ -56,74 +42,72 @@ class AuthController extends ChangeNotifier {
     required String password,
   }) async {
     try {
-      _setLoading(true);
-      _setError(null);
+      isLoading.value = true;
+      error.value = '';
       await _authService.loginWithEmail(
         email: email,
         password: password,
       );
     } catch (e) {
-      _setError(e.toString());
+      error.value = e.toString();
+      rethrow;
     } finally {
-      _setLoading(false);
+      isLoading.value = false;
     }
   }
 
   Future<void> signInWithGoogle() async {
     try {
-      _setLoading(true);
-      _setError(null);
+      isLoading.value = true;
+      error.value = '';
       await _authService.signInWithGoogle();
     } catch (e) {
-      _setError(e.toString());
+      error.value = e.toString();
+      rethrow;
     } finally {
-      _setLoading(false);
+      isLoading.value = false;
     }
   }
 
-  Future<void> verifyPhone(String phoneNumber) async {
+  Future<String> verifyPhone(String phoneNumber) async {
     try {
-      _setLoading(true);
-      _setError(null);
-      _verificationId = await _authService.verifyPhone(phoneNumber);
+      isLoading.value = true;
+      error.value = '';
+      return await _authService.verifyPhone(phoneNumber);
     } catch (e) {
-      _setError(e.toString());
+      error.value = e.toString();
+      rethrow;
     } finally {
-      _setLoading(false);
+      isLoading.value = false;
     }
   }
 
-  Future<void> verifySmsCode(String smsCode) async {
-    if (_verificationId == null) {
-      _setError('No hay un código de verificación pendiente');
-      return;
-    }
-
+  Future<void> verifySmsCode(String verificationId, String smsCode) async {
     try {
-      _setLoading(true);
-      _setError(null);
-      await _authService.verifySmsCode(_verificationId!, smsCode);
+      isLoading.value = true;
+      error.value = '';
+      await _authService.verifySmsCode(verificationId, smsCode);
     } catch (e) {
-      _setError(e.toString());
+      error.value = e.toString();
+      rethrow;
     } finally {
-      _setLoading(false);
+      isLoading.value = false;
     }
   }
 
   Future<void> signOut() async {
     try {
-      _setLoading(true);
-      _setError(null);
+      isLoading.value = true;
+      error.value = '';
       await _authService.signOut();
     } catch (e) {
-      _setError(e.toString());
+      error.value = e.toString();
+      rethrow;
     } finally {
-      _setLoading(false);
+      isLoading.value = false;
     }
   }
 
-  void clearError() {
-    _error = null;
-    notifyListeners();
-  }
+  bool get isAuthenticated => currentUser.value != null;
+  bool get isPhoneVerified => currentUser.value?.isPhoneVerified ?? false;
 } 

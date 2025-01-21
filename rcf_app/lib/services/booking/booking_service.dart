@@ -6,21 +6,21 @@ class BookingService {
   final String _collection = 'bookings';
 
   // Crear una nueva reserva
-  Future<BookingModel> createBooking(BookingModel booking) async {
+  Future<String> createBooking(BookingModel booking) async {
     try {
       final docRef = await _firestore.collection(_collection).add(booking.toJson());
-      return booking.copyWith(id: docRef.id);
+      return docRef.id;
     } catch (e) {
       throw Exception('Error al crear la reserva: $e');
     }
   }
 
   // Obtener una reserva por ID
-  Future<BookingModel> getBookingById(String id) async {
+  Future<BookingModel?> getBooking(String id) async {
     try {
       final doc = await _firestore.collection(_collection).doc(id).get();
       if (!doc.exists) {
-        throw Exception('Reserva no encontrada');
+        return null;
       }
       return BookingModel.fromJson({'id': doc.id, ...doc.data()!});
     } catch (e) {
@@ -34,7 +34,7 @@ class BookingService {
       return _firestore
           .collection(_collection)
           .where('userId', isEqualTo: userId)
-          .orderBy('fecha', descending: true)
+          .orderBy('date', descending: true)
           .snapshots()
           .map((snapshot) => snapshot.docs
               .map((doc) => BookingModel.fromJson({'id': doc.id, ...doc.data()}))
@@ -45,13 +45,21 @@ class BookingService {
   }
 
   // Verificar disponibilidad de una cancha
-  Future<bool> checkAvailability(String canchaId, DateTime fecha, String hora) async {
+  Future<bool> checkAvailability(
+    String propertyId,
+    String courtId,
+    DateTime date,
+    DateTime startTime,
+    DateTime endTime,
+  ) async {
     try {
       final querySnapshot = await _firestore
           .collection(_collection)
-          .where('canchaId', isEqualTo: canchaId)
-          .where('fecha', isEqualTo: Timestamp.fromDate(fecha))
-          .where('hora', isEqualTo: hora)
+          .where('propertyId', isEqualTo: propertyId)
+          .where('courtId', isEqualTo: courtId)
+          .where('date', isEqualTo: Timestamp.fromDate(date))
+          .where('startTime', isGreaterThanOrEqualTo: Timestamp.fromDate(startTime))
+          .where('startTime', isLessThan: Timestamp.fromDate(endTime))
           .get();
 
       return querySnapshot.docs.isEmpty;
@@ -61,12 +69,9 @@ class BookingService {
   }
 
   // Actualizar una reserva
-  Future<void> updateBooking(String id, Map<String, dynamic> changes) async {
+  Future<void> updateBooking(BookingModel booking) async {
     try {
-      await _firestore.collection(_collection).doc(id).update({
-        ...changes,
-        'updatedAt': Timestamp.now(),
-      });
+      await _firestore.collection(_collection).doc(booking.id).update(booking.toJson());
     } catch (e) {
       throw Exception('Error al actualizar la reserva: $e');
     }
@@ -75,13 +80,15 @@ class BookingService {
   // Reprogramar una reserva
   Future<void> rescheduleBooking(
     String bookingId, 
-    DateTime newFecha, 
-    String newHora
+    DateTime newDate,
+    DateTime newStartTime,
+    DateTime newEndTime,
   ) async {
     try {
       await _firestore.collection(_collection).doc(bookingId).update({
-        'fecha': Timestamp.fromDate(newFecha),
-        'hora': newHora,
+        'date': Timestamp.fromDate(newDate),
+        'startTime': Timestamp.fromDate(newStartTime),
+        'endTime': Timestamp.fromDate(newEndTime),
         'updatedAt': Timestamp.now(),
       });
     } catch (e) {
@@ -93,7 +100,7 @@ class BookingService {
   Future<void> cancelBooking(String id) async {
     try {
       await _firestore.collection(_collection).doc(id).update({
-        'estadoPago': 'cancelado',
+        'status': BookingStatus.cancelled.toString().split('.').last,
         'updatedAt': Timestamp.now(),
       });
     } catch (e) {
@@ -110,7 +117,7 @@ class BookingService {
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
-          .map((doc) => BookingModel.fromFirestore(doc))
+          .map((doc) => BookingModel.fromJson({'id': doc.id, ...doc.data()}))
           .toList();
     });
   }
@@ -118,8 +125,8 @@ class BookingService {
   // Marcar una reserva como completada
   Future<void> completeBooking(String bookingId) async {
     await _firestore.collection(_collection).doc(bookingId).update({
-      'status': BookingStatus.completed.toString(),
-      'updatedAt': DateTime.now(),
+      'status': BookingStatus.completed.toString().split('.').last,
+      'updatedAt': Timestamp.now(),
     });
   }
 

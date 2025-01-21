@@ -2,14 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rcf_app/models/booking/booking_model.dart';
 import 'package:rcf_app/services/booking/booking_service.dart';
-import 'package:mercadopago_sdk/mercadopago_sdk.dart';
+import 'package:rcf_app/services/payment/payment_service.dart';
 
 class BookingController extends GetxController {
   final BookingService _bookingService = BookingService();
-  final MP _mercadoPago = MP(
-    'TU_ACCESS_TOKEN',
-    'TU_CLIENT_ID',
-  ); // TODO: Mover a variables de entorno
+  final PaymentService _paymentService = PaymentService();
 
   final RxList<BookingModel> userBookings = <BookingModel>[].obs;
   final RxBool isLoading = false.obs;
@@ -49,20 +46,22 @@ class BookingController extends GetxController {
     }
   }
 
-  Future<void> createBooking({
+  Future<String> createBooking({
     required String userId,
-    required String canchaId,
-    required DateTime fecha,
-    required String hora,
+    required String propertyId,
+    required String courtId,
+    required double price,
   }) async {
     try {
       isLoading.value = true;
       error.value = '';
 
-      final isAvailable = await _bookingService.checkAvailability(
-        canchaId,
-        fecha,
-        hora,
+      final isAvailable = await checkAvailability(
+        propertyId,
+        courtId,
+        selectedDate.value,
+        selectedTime.value,
+        selectedTime.value.add(Duration(hours: 1)),
       );
 
       if (!isAvailable) {
@@ -72,30 +71,23 @@ class BookingController extends GetxController {
       final booking = BookingModel(
         id: '',
         userId: userId,
-        canchaId: canchaId,
-        fecha: fecha,
-        hora: hora,
-        duracion: 1, // 1 hora por defecto
-        estadoPago: 'pendiente',
-        metodoPago: 'pendiente',
+        propertyId: propertyId,
+        courtId: courtId,
+        date: selectedDate.value,
+        startTime: selectedTime.value,
+        endTime: selectedTime.value.add(Duration(hours: 1)),
+        duration: 1,
+        status: BookingStatus.pending,
+        paymentStatus: PaymentStatus.pending,
+        paymentMethod: PaymentMethod.mercadoPago,
+        totalAmount: price,
+        paidAmount: 0,
         createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       );
 
-      await _bookingService.createBooking(booking);
-      Get.snackbar(
-        'Éxito',
-        'Reserva creada correctamente',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
-    } catch (e) {
-      error.value = e.toString();
-      Get.snackbar(
-        'Error',
-        error.value,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      final bookingId = await _bookingService.createBooking(booking);
+      return bookingId;
     } finally {
       isLoading.value = false;
     }
@@ -108,27 +100,14 @@ class BookingController extends GetxController {
   ) async {
     try {
       isProcessingPayment.value = true;
+      final finalAmount = isPartialPayment.value ? amount * 0.5 : amount;
 
-      final preference = {
-        "items": [
-          {
-            "title": title,
-            "quantity": 1,
-            "currency_id": "ARS",
-            "unit_price": isPartialPayment.value ? amount * 0.5 : amount,
-          }
-        ],
-        "external_reference": bookingId,
-        "back_urls": {
-          "success": "rcfapp://payment/success",
-          "failure": "rcfapp://payment/failure",
-          "pending": "rcfapp://payment/pending",
-        },
-        "auto_return": "approved",
-      };
-
-      final result = await _mercadoPago.createPreference(preference);
-      return result;
+      return await _paymentService.createPaymentPreference(
+        title: title,
+        description: 'Reserva de cancha - ${isPartialPayment.value ? 'Seña' : 'Pago completo'}',
+        amount: finalAmount,
+        bookingId: bookingId,
+      );
     } finally {
       isProcessingPayment.value = false;
     }
@@ -142,38 +121,33 @@ class BookingController extends GetxController {
     try {
       isProcessingPayment.value = true;
 
-      final paymentStatus = isPartialPayment.value
-          ? PaymentStatus.partial
-          : PaymentStatus.completed;
+      final paymentStatus = await _paymentService.getPaymentStatus(paymentId);
+      
+      if (paymentStatus['status'] == 'approved') {
+        final bookingStatus = isPartialPayment.value
+            ? BookingStatus.partial
+            : BookingStatus.confirmed;
 
-      final bookingStatus = isPartialPayment.value
-          ? BookingStatus.partial
-          : BookingStatus.confirmed;
+        final booking = await _bookingService.getBooking(bookingId);
+        if (booking != null) {
+          final updatedBooking = booking.copyWith(
+            status: bookingStatus,
+            paymentStatus: isPartialPayment.value ? PaymentStatus.partial : PaymentStatus.completed,
+            paidAmount: amount,
+            paymentId: paymentId,
+            updatedAt: DateTime.now(),
+          );
+          await _bookingService.updateBooking(updatedBooking);
+        }
 
-      await _bookingService.updatePaymentStatus(
-        bookingId,
-        paymentStatus,
-        amount,
-        paymentId,
-      );
-
-      final booking = await _bookingService.getBooking(bookingId);
-      if (booking != null) {
-        final updatedBooking = booking.copyWith(
-          status: bookingStatus,
-          paymentStatus: paymentStatus,
-          paidAmount: amount,
-          paymentId: paymentId,
-          updatedAt: DateTime.now(),
+        Get.snackbar(
+          'Éxito',
+          'Pago procesado correctamente',
+          snackPosition: SnackPosition.BOTTOM,
         );
-        await _bookingService.updateBooking(updatedBooking);
+      } else {
+        throw Exception('El pago no fue aprobado');
       }
-
-      Get.snackbar(
-        'Éxito',
-        'Pago procesado correctamente',
-        snackPosition: SnackPosition.BOTTOM,
-      );
     } catch (e) {
       Get.snackbar(
         'Error',
@@ -221,9 +195,6 @@ class BookingController extends GetxController {
 
   void togglePartialPayment() {
     isPartialPayment.value = !isPartialPayment.value;
-    totalAmount.value = isPartialPayment.value
-        ? totalAmount.value * 0.5
-        : totalAmount.value * 2;
   }
 
   void loadUserBookings(String userId) {
