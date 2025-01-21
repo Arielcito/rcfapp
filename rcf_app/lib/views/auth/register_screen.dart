@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:get/get.dart';
 import '../../controllers/auth/auth_controller.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
@@ -19,6 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  final AuthController _authController = Get.find<AuthController>();
 
   @override
   void dispose() {
@@ -43,22 +44,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _register() async {
     if (_formKey.currentState?.validate() ?? false) {
-      await context.read<AuthController>().registerWithEmail(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-            name: _nameController.text.trim(),
-          );
+      await _authController.registerWithEmail(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        name: _nameController.text.trim(),
+      );
     }
   }
 
   Future<void> _registerWithGoogle() async {
-    await context.read<AuthController>().signInWithGoogle();
+    await _authController.signInWithGoogle();
   }
 
   @override
   Widget build(BuildContext context) {
-    final authController = context.watch<AuthController>();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Registro'),
@@ -165,23 +164,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                if (authController.error != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 20),
-                    child: Text(
-                      authController.error!,
-                      style: const TextStyle(
-                        color: Colors.red,
-                        fontSize: 14,
+                Obx(() {
+                  if (_authController.error.value.isNotEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      child: Text(
+                        _authController.error.value,
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                CustomButton(
-                  text: 'Registrarse',
-                  onPressed: _register,
-                  isLoading: authController.isLoading,
-                ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                }),
+                Obx(() => CustomButton(
+                      text: 'Registrarse',
+                      onPressed: _register,
+                      isLoading: _authController.isLoading.value,
+                    )),
                 const SizedBox(height: 20),
                 const Text(
                   'O regístrate con',
@@ -205,7 +208,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const Text('¿Ya tienes una cuenta?'),
                     TextButton(
                       onPressed: () {
-                        Navigator.pop(context);
+                        Get.back();
                       },
                       child: const Text('Inicia sesión'),
                     ),
