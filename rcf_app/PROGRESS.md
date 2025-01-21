@@ -200,6 +200,10 @@ lib/
 - ✅ Creación de la pantalla de favoritos
 - ✅ Integración con GetX para gestión de estado
 - ✅ Build verificado exitosamente
+- ✅ Migración de AuthService a API REST
+- ✅ Migración de PropertyService a API REST
+- ✅ Implementación de CourtService con API REST
+- ✅ Implementación de vistas para gestión de canchas
 
 ### Detalles:
 
@@ -207,24 +211,35 @@ lib/
 ```
 lib/
   ├── models/
-  │   └── property/
-  │       ├── property_model.dart
-  │       └── favorite_model.dart
+  │   ├── property/
+  │   │   ├── property_model.dart
+  │   │   └── favorite_model.dart
+  │   └── court/
+  │       └── court_model.dart
   ├── services/
-  │   └── property/
-  │       ├── property_service.dart
-  │       └── favorite_service.dart
+  │   ├── property/
+  │   │   ├── property_service.dart
+  │   │   └── favorite_service.dart
+  │   ├── court/
+  │   │   └── court_service.dart
+  │   └── cache/
+  │       └── cache_service.dart
   ├── controllers/
-  │   └── property/
-  │       └── favorite_controller.dart
+  │   ├── property/
+  │   │   └── property_controller.dart
+  │   └── court/
+  │       └── court_controller.dart
   ├── views/
-  │   └── property/
-  │       ├── property_detail_screen.dart
-  │       └── favorites_screen.dart
-  ├── bindings/
-  │   └── property_binding.dart
-  └── routes/
-      └── app_routes.dart
+  │   ├── property/
+  │   │   ├── property_detail_screen.dart
+  │   │   └── favorites_screen.dart
+  │   └── court/
+  │       ├── court_list_screen.dart
+  │       ├── court_details_screen.dart
+  │       └── court_form_screen.dart
+  └── bindings/
+      ├── property_binding.dart
+      └── court_binding.dart
 ```
 
 #### 2. Características Implementadas
@@ -235,31 +250,43 @@ lib/
 - Integración con WhatsApp y llamadas
 - Navegación fluida entre pantallas
 - Gestión de estado con GetX
-
-#### 3. Funcionalidades del Sistema de Favoritos
-- Agregar/remover predios de favoritos
-- Lista de predios favoritos en tiempo real
-- Persistencia en Firestore
-- Notificaciones de éxito/error
-- Caché de imágenes
-- Interfaz intuitiva
+- Caché de datos con Hive
+- Integración con API REST
+- CRUD completo de canchas
+- Validación de formularios
+- Manejo de estados de carga y errores
 
 ### Commits Realizados:
 1. "feat: implementación del sistema de favoritos"
 2. "feat: creación de pantalla de detalles del predio"
 3. "feat: integración con GetX"
+4. "refactor: migrar auth screens a GetX y corregir api_client"
+5. "refactor: migrar vistas de propiedades a GetX y configurar rutas"
+6. "feat: implementar CourtService con API REST"
+7. "feat: implementar vistas de gestión de canchas"
 
 ### Próximos Pasos:
-1. Implementar el sistema de reservas
-2. Crear la pantalla de calendario
-3. Integrar Mercado Pago
+1. Migrar BookingService a API REST
+2. Actualizar sistema de reservas
+3. Implementar integración con Mercado Pago
+4. Verificar y probar la integración completa
 
-### Notas para Desarrolladores:
-- El sistema de favoritos usa Firestore para persistencia
-- Las imágenes se cachean para mejor rendimiento
-- La navegación está basada en GetX
-- Se implementó manejo de errores y estados de carga
-- Los mapas usan Google Maps en Android y Apple Maps en iOS 
+### Notas de Progreso:
+#### 2024-03-20
+- Se completó la migración del PropertyService a API REST
+- Se actualizaron las vistas de propiedades para usar GetX
+- Se configuraron las rutas y bindings para propiedades
+
+#### 2024-03-21
+- Se implementó el CourtService con API REST
+- Se creó el modelo CourtModel
+- Se implementó el sistema de caché con Hive
+- Se creó el controlador CourtController con GetX
+- Se implementaron las vistas para gestión de canchas:
+  - Lista de canchas con búsqueda y filtros
+  - Vista detallada de cancha
+  - Formulario de creación/edición
+  - Validaciones y manejo de errores
 
 ## Paso 11: Implementación del Sistema de Reservas ⏳
 
