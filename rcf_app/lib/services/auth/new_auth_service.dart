@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../../models/user/user_model.dart';
 import '../../models/api/api_response.dart';
 import '../api/api_client.dart';
+import 'package:dio/dio.dart';
 
 class AuthService extends GetxService {
   final ApiClient _api;
@@ -176,14 +177,27 @@ class AuthService extends GetxService {
   }
 
   String _handleAuthError(dynamic error) {
-    if (error is ApiResponse) {
-      return error.message ?? 'Error de autenticación';
+    if (error is DioException) {
+      switch (error.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.receiveTimeout:
+          return 'Error de conexión. Por favor, verifica tu conexión a internet.';
+        case DioExceptionType.badResponse:
+          final statusCode = error.response?.statusCode;
+          final message = error.response?.data?['message'];
+          if (statusCode == 401) {
+            return message ?? 'Credenciales inválidas';
+          } else if (statusCode == 404) {
+            return message ?? 'Usuario no encontrado';
+          }
+          return message ?? 'Error en la autenticación';
+        case DioExceptionType.connectionError:
+          return 'No se pudo conectar al servidor. Por favor, intenta más tarde.';
+        default:
+          return 'Error inesperado. Por favor, intenta más tarde.';
+      }
     }
-    
-    if (error is String) {
-      return error;
-    }
-
-    return 'Error de autenticación';
+    return error.toString();
   }
 } 
