@@ -1,105 +1,135 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:get/get.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../controllers/property/property_controller.dart';
 import '../../models/property/property_model.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-class PropertyDetailsScreen extends StatefulWidget {
-  const PropertyDetailsScreen({Key? key}) : super(key: key);
-
-  @override
-  State<PropertyDetailsScreen> createState() => _PropertyDetailsScreenState();
-}
-
-class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
-  late String propertyId;
-  PropertyModel? property;
-  bool isLoading = true;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    propertyId = ModalRoute.of(context)!.settings.arguments as String;
-    _loadProperty();
+class PropertyDetailsScreen extends GetView<PropertyController> {
+  PropertyDetailsScreen({Key? key}) : super(key: key) {
+    final String propertyId = Get.arguments;
+    _loadProperty(propertyId);
   }
 
-  Future<void> _loadProperty() async {
-    final propertyController = Provider.of<PropertyController>(context, listen: false);
-    final loadedProperty = await propertyController.getProperty(propertyId);
+  final RxBool _isLoading = true.obs;
+  final Rx<PropertyModel?> _property = Rx<PropertyModel?>(null);
+
+  Future<void> _loadProperty(String id) async {
+    try {
+      final loadedProperty = await controller.getProperty(id);
+      _property.value = loadedProperty;
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'No se pudo cargar el predio',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+
+  Future<void> _launchUrl(String? url) async {
+    if (url == null) return;
     
-    if (mounted) {
-      setState(() {
-        property = loadedProperty;
-        isLoading = false;
-      });
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      Get.snackbar(
+        'Error',
+        'No se pudo abrir el enlace',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  Future<void> _launchWhatsApp(String phone, String message) async {
+    final whatsappUrl = "whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}";
+    if (await canLaunch(whatsappUrl)) {
+      await launch(whatsappUrl);
+    } else {
+      Get.snackbar(
+        'Error',
+        'No se pudo abrir WhatsApp',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (property == null) {
-      return Scaffold(
-        appBar: AppBar(),
-        body: const Center(
-          child: Text('No se encontró el predio'),
-        ),
-      );
-    }
-
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 300,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(property!.title),
-              background: property!.images.isNotEmpty
-                  ? PageView.builder(
-                      itemCount: property!.images.length,
-                      itemBuilder: (context, index) {
-                        return Image.network(
-                          property!.images[index],
-                          fit: BoxFit.cover,
-                        );
-                      },
-                    )
-                  : Container(
-                      color: Theme.of(context).primaryColor.withOpacity(0.1),
-                      child: const Icon(Icons.home, size: 100),
-                    ),
+      body: Obx(() {
+        if (_isLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final property = _property.value;
+        if (property == null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('No se encontró el predio'),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => Get.back(),
+                  child: const Text('Volver'),
+                ),
+              ],
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildPriceAndArea(),
-                  const SizedBox(height: 16),
-                  _buildDescription(),
-                  const SizedBox(height: 16),
-                  _buildLocation(),
-                  const SizedBox(height: 16),
-                  _buildFeatures(),
-                  const SizedBox(height: 16),
-                  _buildMap(),
-                ],
+          );
+        }
+
+        return CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 300,
+              pinned: true,
+              flexibleSpace: FlexibleSpaceBar(
+                title: Text(property.nombre),
+                background: property.imagenUrl != null
+                    ? Image.network(
+                        property.imagenUrl!,
+                        fit: BoxFit.cover,
+                      )
+                    : Container(
+                        color: Theme.of(context).primaryColor.withOpacity(0.1),
+                        child: const Icon(Icons.home, size: 100),
+                      ),
               ),
             ),
-          ),
-        ],
-      ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildScheduleAndParking(property),
+                    const SizedBox(height: 16),
+                    _buildDescription(context, property),
+                    const SizedBox(height: 16),
+                    _buildLocation(context, property),
+                    const SizedBox(height: 16),
+                    _buildFeatures(context, property),
+                    const SizedBox(height: 16),
+                    _buildContactInfo(context, property),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      }),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          // TODO: Implementar lógica de reserva
+          if (_property.value != null) {
+            Get.toNamed(
+              '/booking/create',
+              arguments: _property.value,
+            );
+          }
         },
         icon: const Icon(Icons.calendar_today),
         label: const Text('Reservar'),
@@ -107,7 +137,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     );
   }
 
-  Widget _buildPriceAndArea() {
+  Widget _buildScheduleAndParking(PropertyModel property) {
     return Row(
       children: [
         Expanded(
@@ -116,13 +146,13 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  const Icon(Icons.attach_money, size: 32),
+                  const Icon(Icons.access_time, size: 32),
                   const SizedBox(height: 8),
                   Text(
-                    '\$${property!.price.toStringAsFixed(2)}',
-                    style: Theme.of(context).textTheme.titleLarge,
+                    '${property.horarioApertura} - ${property.horarioCierre}',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  Text('Precio por hora', style: Theme.of(context).textTheme.bodySmall),
+                  const Text('Horario', style: TextStyle(fontSize: 12)),
                 ],
               ),
             ),
@@ -134,13 +164,13 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  const Icon(Icons.square_foot, size: 32),
+                  const Icon(Icons.local_parking, size: 32),
                   const SizedBox(height: 8),
                   Text(
-                    '${property!.area} m²',
-                    style: Theme.of(context).textTheme.titleLarge,
+                    '${property.capacidadEstacionamiento}',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  Text('Área', style: Theme.of(context).textTheme.bodySmall),
+                  const Text('Estacionamientos', style: TextStyle(fontSize: 12)),
                 ],
               ),
             ),
@@ -150,18 +180,18 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     );
   }
 
-  Widget _buildDescription() {
+  Widget _buildDescription(BuildContext context, PropertyModel property) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Descripción', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
-        Text(property!.description),
+        Text(property.nombre),
       ],
     );
   }
 
-  Widget _buildLocation() {
+  Widget _buildLocation(BuildContext context, PropertyModel property) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -171,61 +201,113 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
           children: [
             const Icon(Icons.location_on),
             const SizedBox(width: 8),
-            Expanded(child: Text(property!.address)),
+            Expanded(
+              child: Text('${property.direccion}, ${property.ciudad}, ${property.provincia}'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        if (property.latitud != null && property.longitud != null)
+          SizedBox(
+            height: 200,
+            child: GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: LatLng(property.latitud!, property.longitud!),
+                zoom: 15,
+              ),
+              markers: {
+                Marker(
+                  markerId: MarkerId(property.id),
+                  position: LatLng(property.latitud!, property.longitud!),
+                  infoWindow: InfoWindow(title: property.nombre),
+                ),
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildFeatures(BuildContext context, PropertyModel property) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Características', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 16,
+          runSpacing: 16,
+          children: [
+            _buildFeatureItem(
+              Icons.shower,
+              'Vestuarios',
+              property.tieneVestuarios ?? false,
+            ),
+            _buildFeatureItem(
+              Icons.local_cafe,
+              'Cafetería',
+              property.tieneCafeteria ?? false,
+            ),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildFeatures() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Características', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: property!.features.entries.map((feature) {
-            return Chip(
-              label: Text('${feature.key}: ${feature.value}'),
-              backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
-            );
-          }).toList(),
-        ),
-      ],
+  Widget _buildFeatureItem(IconData icon, String text, bool available) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: available ? Colors.green.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 20,
+            color: available ? Colors.green : Colors.grey,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: TextStyle(
+              color: available ? Colors.green : Colors.grey,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildMap() {
+  Widget _buildContactInfo(BuildContext context, PropertyModel property) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Mapa', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 200,
-          child: GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: LatLng(
-                property!.location.latitude,
-                property!.location.longitude,
-              ),
-              zoom: 15,
-            ),
-            markers: {
-              Marker(
-                markerId: MarkerId(property!.id),
-                position: LatLng(
-                  property!.location.latitude,
-                  property!.location.longitude,
-                ),
-                infoWindow: InfoWindow(title: property!.title),
-              ),
-            },
+        Text('Contacto', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 16),
+        if (property.telefono != null && property.telefono!.isNotEmpty) ...[
+          ListTile(
+            leading: const Icon(Icons.phone),
+            title: const Text('Llamar'),
+            onTap: () => _launchUrl('tel:${property.telefono}'),
           ),
-        ),
+          ListTile(
+            leading: const Icon(FontAwesomeIcons.whatsapp),
+            title: const Text('WhatsApp'),
+            onTap: () => _launchWhatsApp(
+              property.telefono!,
+              'Hola, me interesa el predio ${property.nombre}',
+            ),
+          ),
+        ],
+        if (property.email != null && property.email!.isNotEmpty)
+          ListTile(
+            leading: const Icon(Icons.email),
+            title: Text('Correo: ${property.email}'),
+            onTap: () => _launchUrl('mailto:${property.email!}'),
+          ),
       ],
     );
   }
