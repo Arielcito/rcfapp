@@ -1,25 +1,48 @@
 import 'package:get/get.dart';
+import 'package:rcf_app/bindings/auth_binding.dart';
 import 'package:rcf_app/bindings/property_binding.dart';
-import 'package:rcf_app/bindings/booking_binding.dart';
+import 'package:rcf_app/bindings/court_binding.dart';
+import 'package:rcf_app/views/auth/login_screen.dart';
+import 'package:rcf_app/views/auth/register_screen.dart';
 import 'package:rcf_app/views/property/property_search_screen.dart';
 import 'package:rcf_app/views/property/property_details_screen.dart';
 import 'package:rcf_app/views/property/favorites_screen.dart';
 import 'package:rcf_app/views/booking/booking_screen.dart';
 import 'package:rcf_app/views/booking/booking_confirmation_screen.dart';
+import 'package:rcf_app/views/court/court_list_screen.dart';
+import 'package:rcf_app/views/court/court_details_screen.dart';
+import 'package:rcf_app/views/court/court_form_screen.dart';
 
 class AppRoutes {
+  static const String login = '/login';
+  static const String register = '/register';
+  static const String propertySearch = '/properties/search';
+  static const String propertyDetails = '/properties/:id';
+  static const String courtList = '/courts';
+  static const String courtDetails = '/courts/:id';
+  static const String courtCreate = '/courts/create';
+  static const String courtEdit = '/courts/:id/edit';
+
   static final routes = [
     GetPage(
-      name: '/property/search',
-      page: () => PropertySearchScreen(),
-      binding: PropertyBinding(),
-      transition: Transition.rightToLeft,
+      name: login,
+      page: () => LoginScreen(),
+      binding: AuthBinding(),
     ),
     GetPage(
-      name: '/property/details',
+      name: register,
+      page: () => RegisterScreen(),
+      binding: AuthBinding(),
+    ),
+    GetPage(
+      name: propertySearch,
+      page: () => PropertySearchScreen(),
+      binding: PropertyBinding(),
+    ),
+    GetPage(
+      name: propertyDetails,
       page: () => PropertyDetailsScreen(),
       binding: PropertyBinding(),
-      transition: Transition.rightToLeft,
     ),
     GetPage(
       name: '/property/favorites',
@@ -38,6 +61,26 @@ class AppRoutes {
       page: () => BookingConfirmationScreen(),
       binding: BookingBinding(),
       transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: courtList,
+      page: () => CourtListScreen(),
+      binding: CourtBinding(),
+    ),
+    GetPage(
+      name: courtDetails,
+      page: () => CourtDetailsScreen(),
+      binding: CourtBinding(),
+    ),
+    GetPage(
+      name: courtCreate,
+      page: () => CourtFormScreen(),
+      binding: CourtBinding(),
+    ),
+    GetPage(
+      name: courtEdit,
+      page: () => CourtFormScreen(isEditing: true),
+      binding: CourtBinding(),
     ),
   ];
 } 
