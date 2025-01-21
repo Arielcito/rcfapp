@@ -8,14 +8,19 @@ class BookingController extends GetxController {
   final BookingService _bookingService = BookingService();
   final PaymentService _paymentService = PaymentService();
 
-  final RxList<BookingModel> userBookings = <BookingModel>[].obs;
-  final RxBool isLoading = false.obs;
-  final RxString error = ''.obs;
+  final RxList<BookingModel> _bookings = <BookingModel>[].obs;
+  final RxBool _isLoading = false.obs;
+  final RxString _error = ''.obs;
   final RxBool isProcessingPayment = false.obs;
   final Rx<DateTime> selectedDate = DateTime.now().obs;
   final Rx<DateTime> selectedTime = DateTime.now().obs;
   final RxDouble totalAmount = 0.0.obs;
   final RxBool isPartialPayment = false.obs;
+
+  // Getters
+  List<BookingModel> get bookings => _bookings;
+  bool get isLoading => _isLoading.value;
+  String get error => _error.value;
 
   Stream<List<BookingModel>> getUserBookings(String userId) {
     return _bookingService.getUserBookings(userId);
@@ -33,16 +38,18 @@ class BookingController extends GetxController {
     DateTime endTime,
   ) async {
     try {
-      isLoading.value = true;
-      return await _bookingService.checkAvailability(
+      _isLoading.value = true;
+      final isAvailable = await _bookingService.checkAvailability(
         propertyId,
         courtId,
         date,
         startTime,
         endTime,
       );
+      _error.value = '';
+      return isAvailable;
     } finally {
-      isLoading.value = false;
+      _isLoading.value = false;
     }
   }
 
@@ -53,8 +60,8 @@ class BookingController extends GetxController {
     required double price,
   }) async {
     try {
-      isLoading.value = true;
-      error.value = '';
+      _isLoading.value = true;
+      _error.value = '';
 
       final isAvailable = await checkAvailability(
         propertyId,
@@ -89,7 +96,7 @@ class BookingController extends GetxController {
       final bookingId = await _bookingService.createBooking(booking);
       return bookingId;
     } finally {
-      isLoading.value = false;
+      _isLoading.value = false;
     }
   }
 
@@ -160,28 +167,27 @@ class BookingController extends GetxController {
     }
   }
 
-  Future<void> cancelBooking(String bookingId) async {
+  Future<bool> cancelBooking(String bookingId) async {
     try {
-      isLoading.value = true;
-      error.value = '';
-
+      _isLoading.value = true;
       await _bookingService.cancelBooking(bookingId);
-      Get.snackbar(
-        'Éxito',
-        'Reserva cancelada correctamente',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
+      final index = _bookings.indexWhere((b) => b.id == bookingId);
+      if (index != -1) {
+        _bookings.removeAt(index);
+      }
+      _error.value = '';
+      return true;
     } catch (e) {
-      error.value = e.toString();
+      _error.value = e.toString();
       Get.snackbar(
         'Error',
-        error.value,
+        _error.value,
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+      return false;
     } finally {
-      isLoading.value = false;
+      _isLoading.value = false;
     }
   }
 
@@ -197,27 +203,17 @@ class BookingController extends GetxController {
     isPartialPayment.value = !isPartialPayment.value;
   }
 
-  void loadUserBookings(String userId) {
+  Future<void> loadUserBookings(String userId) async {
     try {
-      isLoading.value = true;
-      error.value = '';
+      _isLoading.value = true;
+      _error.value = '';
 
-      _bookingService.getUserBookings(userId).listen(
-        (bookings) {
-          userBookings.value = bookings;
-        },
-        onError: (e) {
-          error.value = e.toString();
-          Get.snackbar(
-            'Error',
-            error.value,
-            backgroundColor: Colors.red,
-            colorText: Colors.white,
-          );
-        },
-      );
+      final bookings = await _bookingService.getBookingsByUser(userId);
+      _bookings.assignAll(bookings);
+    } catch (error) {
+      _error.value = 'Error al cargar las reservas del usuario: $error';
     } finally {
-      isLoading.value = false;
+      _isLoading.value = false;
     }
   }
 
@@ -228,8 +224,8 @@ class BookingController extends GetxController {
     required String canchaId,
   }) async {
     try {
-      isLoading.value = true;
-      error.value = '';
+      _isLoading.value = true;
+      _error.value = '';
 
       final isAvailable = await _bookingService.checkAvailability(
         canchaId,
@@ -249,15 +245,110 @@ class BookingController extends GetxController {
         colorText: Colors.white,
       );
     } catch (e) {
-      error.value = e.toString();
+      _error.value = e.toString();
       Get.snackbar(
         'Error',
-        error.value,
+        _error.value,
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
     } finally {
-      isLoading.value = false;
+      _isLoading.value = false;
+    }
+  }
+
+  Future<void> loadBookings() async {
+    try {
+      _isLoading.value = true;
+      final bookings = await _bookingService.getAllBookings();
+      _bookings.assignAll(bookings);
+      _error.value = '';
+    } catch (error) {
+      _error.value = 'Error al cargar las reservas: $error';
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+
+  Future<void> loadPropertyBookings(String propertyId) async {
+    try {
+      _isLoading.value = true;
+      final bookings = await _bookingService.getBookingsByProperty(propertyId);
+      _bookings.assignAll(bookings);
+      _error.value = '';
+    } catch (error) {
+      _error.value = 'Error al cargar las reservas del predio: $error';
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+
+  Future<BookingModel?> getBooking(String id) async {
+    try {
+      _isLoading.value = true;
+      final booking = await _bookingService.getBookingById(id);
+      _error.value = '';
+      return booking;
+    } catch (error) {
+      _error.value = 'Error al obtener la reserva: $error';
+      return null;
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+
+  Future<BookingModel?> createBooking(BookingModel booking) async {
+    try {
+      _isLoading.value = true;
+      final newBooking = await _bookingService.createBooking(booking);
+      _bookings.add(newBooking);
+      _error.value = '';
+      return newBooking;
+    } catch (error) {
+      _error.value = 'Error al crear la reserva: $error';
+      return null;
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+
+  Future<BookingModel?> updateBooking(String id, BookingModel booking) async {
+    try {
+      _isLoading.value = true;
+      final updatedBooking = await _bookingService.updateBooking(id, booking);
+      final index = _bookings.indexWhere((b) => b.id == id);
+      if (index != -1) {
+        _bookings[index] = updatedBooking;
+      }
+      _error.value = '';
+      return updatedBooking;
+    } catch (error) {
+      _error.value = 'Error al actualizar la reserva: $error';
+      return null;
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+
+  Future<bool> completeBooking(String id) async {
+    try {
+      _isLoading.value = true;
+      await _bookingService.completeBooking(id);
+      final index = _bookings.indexWhere((b) => b.id == id);
+      if (index != -1) {
+        final booking = _bookings[index];
+        _bookings[index] = booking.copyWith(
+          status: BookingStatus.completed,
+          updatedAt: DateTime.now(),
+        );
+      }
+      _error.value = '';
+      return true;
+    } catch (error) {
+      _error.value = 'Error al completar la reserva: $error';
+      return false;
+    } finally {
+      _isLoading.value = false;
     }
   }
 } 
