@@ -521,4 +521,205 @@ Implementar formato estándar de respuesta:
 
 - Implementar sistema de reportes de errores
 - Commit de cambios
-- Verificar build en ambas plataformas 
+- Verificar build en ambas plataformas
+
+### Migración de Firestore a Backend Propio
+
+1. Crear ApiClient Base
+```dart
+class ApiClient {
+  final Dio _dio;
+  final String baseUrl;
+  
+  ApiClient({required this.baseUrl}) : _dio = Dio() {
+    _dio.options.baseUrl = baseUrl;
+    _setupInterceptors();
+  }
+  
+  void _setupInterceptors() {
+    _dio.interceptors.add(AuthInterceptor());
+    _dio.interceptors.add(ErrorInterceptor());
+    _dio.interceptors.add(RetryInterceptor());
+    _dio.interceptors.add(CacheInterceptor());
+  }
+}
+```
+
+2. Migración de AuthService
+- Implementar endpoints:
+  - POST /api/users/register
+  - POST /api/users/login
+  - POST /api/users/logout
+  - GET /api/users/me
+  - POST /api/users/check-email
+- Actualizar AuthController para usar nuevos endpoints
+- Implementar manejo de JWT
+- Migrar datos de usuarios
+
+3. Migración de PropertyService
+- Implementar endpoints:
+  - GET /api/predios
+  - POST /api/predios
+  - GET /api/predios/:id
+  - PUT /api/predios/:id
+  - DELETE /api/predios/:id
+  - GET /api/predios/usuario/:id
+- Actualizar PropertyController
+- Migrar datos de predios
+- Implementar caché local con Hive
+
+4. Migración de BookingService
+- Implementar endpoints:
+  - GET /api/reservas
+  - POST /api/reservas
+  - GET /api/reservas/:id
+  - PUT /api/reservas/:id
+  - POST /api/reservas/check
+  - GET /api/reservas/user/bookings
+  - GET /api/reservas/owner/:id
+  - GET /api/reservas/owner/:date/:ownerId
+- Actualizar BookingController
+- Migrar datos de reservas
+- Implementar sincronización offline
+
+5. Migración de CourtService
+- Implementar endpoints:
+  - GET /api/canchas
+  - POST /api/canchas
+  - GET /api/canchas/:id
+  - PUT /api/canchas/:id
+  - DELETE /api/canchas/:id
+  - GET /api/canchas/predio/:predioId
+- Actualizar CourtController
+- Migrar datos de canchas
+
+6. Implementación de Interceptores
+```dart
+class AuthInterceptor extends Interceptor {
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    final token = GetStorage().read('token');
+    if (token != null) {
+      options.headers['Authorization'] = 'Bearer $token';
+    }
+    handler.next(options);
+  }
+}
+
+class ErrorInterceptor extends Interceptor {
+  @override
+  void onError(DioError err, ErrorInterceptorHandler handler) {
+    switch (err.response?.statusCode) {
+      case 401:
+        // Manejar error de autenticación
+        break;
+      case 403:
+        // Manejar error de autorización
+        break;
+      case 404:
+        // Manejar error de recurso no encontrado
+        break;
+      case 422:
+        // Manejar error de validación
+        break;
+      case 500:
+        // Manejar error de servidor
+        break;
+    }
+    handler.next(err);
+  }
+}
+
+class RetryInterceptor extends Interceptor {
+  @override
+  Future onError(DioError err, ErrorInterceptorHandler handler) async {
+    if (_shouldRetry(err)) {
+      try {
+        return await _retry(err.requestOptions);
+      } catch (e) {
+        return handler.next(err);
+      }
+    }
+    return handler.next(err);
+  }
+}
+
+class CacheInterceptor extends Interceptor {
+  final Box<dynamic> cache = Hive.box('api_cache');
+  
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    if (options.method == 'GET') {
+      final cachedResponse = cache.get(options.path);
+      if (cachedResponse != null) {
+        return handler.resolve(cachedResponse);
+      }
+    }
+    handler.next(options);
+  }
+}
+```
+
+7. Implementación de Modelos
+```dart
+class ApiResponse<T> {
+  final bool success;
+  final T? data;
+  final String? error;
+  final int statusCode;
+  final String? message;
+
+  ApiResponse({
+    required this.success,
+    this.data,
+    this.error,
+    required this.statusCode,
+    this.message,
+  });
+
+  factory ApiResponse.fromJson(Map<String, dynamic> json) {
+    return ApiResponse(
+      success: json['success'] as bool,
+      data: json['data'] as T?,
+      error: json['error'] as String?,
+      statusCode: json['statusCode'] as int,
+      message: json['message'] as String?,
+    );
+  }
+}
+```
+
+8. Estrategia de Migración de Datos
+- Crear script de migración para cada colección
+- Validar integridad de datos
+- Realizar migración por fases:
+  1. Usuarios y autenticación
+  2. Predios y canchas
+  3. Reservas y pagos
+  4. Datos auxiliares (favoritos, reseñas, etc.)
+- Implementar rollback en caso de error
+
+9. Manejo de Estado Offline
+- Implementar cola de operaciones pendientes
+- Sincronización automática al recuperar conexión
+- Resolución de conflictos
+- Caché de datos frecuentes
+
+10. Testing de Migración
+- Pruebas unitarias para nuevos servicios
+- Pruebas de integración con backend
+- Pruebas de migración de datos
+- Pruebas de sincronización offline
+- Pruebas de rendimiento
+
+11. Monitoreo y Logging
+- Implementar sistema de logs
+- Monitorear errores de migración
+- Tracking de métricas de rendimiento
+- Alertas automáticas
+
+12. Documentación
+- Actualizar documentación de servicios
+- Documentar proceso de migración
+- Guías de troubleshooting
+- Manual de mantenimiento 
