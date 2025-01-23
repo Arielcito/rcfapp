@@ -2,5 +2,3 @@ secrets/*
 .env 
 .vercel
 server/.env
-app/ios/
-app/android/

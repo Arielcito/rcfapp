@@ -43,5 +43,3 @@ android/app/my-upload-key.keystore
 .env
 .env.*
 
-android/
-ios/
