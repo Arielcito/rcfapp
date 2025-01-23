@@ -17,7 +17,7 @@ class UserBookingsScreen extends StatelessWidget {
         backgroundColor: const Color(0xFF00CC44),
       ),
       body: Obx(
-        () => controller.isLoading.value
+        () => controller.isLoading
             ? const Center(child: CircularProgressIndicator())
             : controller.userBookings.isEmpty
                 ? const Center(
