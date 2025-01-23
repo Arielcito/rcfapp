@@ -14,7 +14,7 @@ class ProfileController extends GetxController {
 
   Future<void> loadUserData() async {
     try {
-      final userData = await _authService.getCurrentUser();
+      final userData = await _authService!.currentUser;
       user.value = userData;
     } catch (e) {
       Get.snackbar(
@@ -37,17 +37,17 @@ class ProfileController extends GetxController {
       }
       
       final response = await _authService.verifyPhone(user.value!.phoneNumber!);
-      if (response.success) {
+      if (response.isNotEmpty) {
         await loadUserData();
         Get.snackbar(
           'Éxito',
-          response.message ?? 'Código enviado correctamente',
+          response ?? 'Código enviado correctamente',
           snackPosition: SnackPosition.BOTTOM,
         );
       } else {
         Get.snackbar(
           'Error',
-          response.message ?? 'Error al verificar el teléfono',
+          response ?? 'Error al verificar el teléfono',
           snackPosition: SnackPosition.BOTTOM,
         );
       }

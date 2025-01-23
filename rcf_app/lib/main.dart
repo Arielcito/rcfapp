@@ -7,6 +7,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'firebase_options.dart';
 import 'controllers/auth/auth_controller.dart';
 import 'views/auth/login_screen.dart';
+import 'routes/app_routes.dart';
 import 'package:flutter/foundation.dart';
 
 void main() async {
@@ -51,7 +52,8 @@ class MyApp extends StatelessWidget {
         ),
         fontFamily: 'Poppins',
       ),
-      home: const LoginScreen(),
+      initialRoute: '/login',
+      getPages: AppRoutes.routes,
       initialBinding: BindingsBuilder(() {
         Get.put(AuthController());
       }),

@@ -14,7 +14,7 @@ class FavoriteController extends GetxController {
   }
 
   Stream<List<FavoriteModel>> getFavorites() async* {
-    final currentUser = await _authService.getCurrentUser();
+    final currentUser = await _authService.currentUser;
     if (currentUser == null) {
       yield [];
     }
@@ -24,7 +24,7 @@ class FavoriteController extends GetxController {
   Future<void> toggleFavorite(String propertyId) async {
     try {
       isLoading.value = true;
-      final currentUser = await _authService.getCurrentUser();
+      final currentUser = await _authService.currentUser;
       if (currentUser == null) {
         Get.snackbar(
           'Error',
@@ -65,7 +65,7 @@ class FavoriteController extends GetxController {
 
   Future<bool> checkIsFavorite(String propertyId) async {
     try {
-      final currentUser = await _authService.getCurrentUser();
+      final currentUser = await _authService.currentUser;
       if (currentUser == null) {
         return false;
       }

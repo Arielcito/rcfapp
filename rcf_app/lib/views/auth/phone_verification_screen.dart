@@ -1,161 +1,73 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
+import 'package:get/get.dart';
 import '../../controllers/auth/auth_controller.dart';
-import '../widgets/custom_button.dart';
-import '../widgets/custom_text_field.dart';
 
-class PhoneVerificationScreen extends StatefulWidget {
+class PhoneVerificationScreen extends StatelessWidget {
   const PhoneVerificationScreen({super.key});
 
   @override
-  State<PhoneVerificationScreen> createState() => _PhoneVerificationScreenState();
-}
-
-class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _phoneController = TextEditingController();
-  final _codeController = TextEditingController();
-  bool _codeSent = false;
-
-  @override
-  void dispose() {
-    _phoneController.dispose();
-    _codeController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _verifyPhone() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      await context.read<AuthController>().verifyPhone(
-            _phoneController.text.trim(),
-          );
-      setState(() {
-        _codeSent = true;
-      });
-    }
-  }
-
-  Future<void> _verifyCode() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      await context.read<AuthController>().verifySmsCode(
-            _codeController.text.trim(),
-            _phoneController.text.trim(),
-          );
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final authController = context.watch<AuthController>();
+    final authController = Get.find<AuthController>();
+    final phoneController = TextEditingController();
+    final codeController = TextEditingController();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Verificación de teléfono'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: Colors.black87,
+        title: const Text('Verificar teléfono'),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 20),
-                Text(
-                  'Verifica tu número',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  _codeSent
-                      ? 'Ingresa el código que enviamos a tu teléfono'
-                      : 'Ingresa tu número de teléfono para verificar tu cuenta',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.grey,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 40),
-                if (!_codeSent) ...[
-                  CustomTextField(
-                    label: 'Número de teléfono',
-                    hint: '+52 1234567890',
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor ingresa tu número de teléfono';
-                      }
-                      if (value.length < 10) {
-                        return 'El número debe tener al menos 10 dígitos';
-                      }
-                      return null;
-                    },
-                  ),
-                ] else ...[
-                  CustomTextField(
-                    label: 'Código de verificación',
-                    hint: '123456',
-                    controller: _codeController,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(6),
-                    ],
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor ingresa el código';
-                      }
-                      if (value.length != 6) {
-                        return 'El código debe tener 6 dígitos';
-                      }
-                      return null;
-                    },
-                  ),
-                ],
-                const SizedBox(height: 20),
-                if (authController.error != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 20),
-                    child: Text(
-                      authController.error.value,
-                      style: const TextStyle(
-                        color: Colors.red,
-                        fontSize: 14,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                CustomButton(
-                  text: _codeSent ? 'Verificar código' : 'Enviar código',
-                  onPressed: _codeSent ? _verifyCode : _verifyPhone,
-                  isLoading: authController.isLoading.value,
-                ),
-                if (_codeSent) ...[
-                  const SizedBox(height: 20),
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _codeSent = false;
-                        _codeController.clear();
-                      });
-                    },
-                    child: const Text('Cambiar número de teléfono'),
-                  ),
-                ],
-              ],
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: phoneController,
+              decoration: const InputDecoration(
+                labelText: 'Número de teléfono',
+                hintText: '+54 9 11 1234-5678',
+              ),
+              keyboardType: TextInputType.phone,
             ),
-          ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => authController.verifyPhone(phoneController.text),
+              child: const Text('Enviar código'),
+            ),
+            const SizedBox(height: 32),
+            TextField(
+              controller: codeController,
+              decoration: const InputDecoration(
+                labelText: 'Código de verificación',
+                hintText: '123456',
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => authController.verifySmsCode(
+                codeController.text,
+                phoneController.text,
+              ),
+              child: const Text('Verificar código'),
+            ),
+            const SizedBox(height: 16),
+            Obx(() {
+              if (authController.error.isNotEmpty) {
+                return Text(
+                  authController.error.value,
+                  style: const TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
+                );
+              }
+              return const SizedBox.shrink();
+            }),
+            Obx(() {
+              if (authController.isLoading.value) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              return const SizedBox.shrink();
+            }),
+          ],
         ),
       ),
     );

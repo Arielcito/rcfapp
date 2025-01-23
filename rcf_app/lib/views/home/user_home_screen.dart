@@ -9,7 +9,7 @@ class UserHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authController = Provider.of<AuthController>(context);
-    final user = authController.currentUser;
+    final user = authController.user;
 
     return Scaffold(
       appBar: AppBar(

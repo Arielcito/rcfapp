@@ -3,30 +3,44 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../controllers/home/home_controller.dart';
 import '../../models/court/court_model.dart';
+import '../../controllers/auth/auth_controller.dart';
 
 class HomeScreen extends GetView<HomeController> {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final authController = Get.find<AuthController>();
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Canchas Disponibles'),
+        title: const Text('Inicio'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () => Get.toNamed('/profile'),
+            icon: const Icon(Icons.logout),
+            onPressed: () => authController.signOut(),
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _buildFilters(context),
-          const SizedBox(height: 16),
-          Expanded(
-            child: _buildCourtsList(),
-          ),
-        ],
+      body: Center(
+        child: Obx(() {
+          final user = authController.user.value;
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Bienvenido ${user?.name ?? ""}',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 20),
+              if (user?.phoneNumber?.isEmpty ?? true)
+                ElevatedButton(
+                  onPressed: () => authController.verifyPhoneNumber(),
+                  child: const Text('Verificar número de teléfono'),
+                ),
+            ],
+          );
+        }),
       ),
     );
   }

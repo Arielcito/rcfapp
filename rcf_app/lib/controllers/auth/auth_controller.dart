@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import '../../models/user/user_model.dart';
-import '../../services/auth/auth_service.dart';
+import '../../services/auth/new_auth_service.dart';
 import '../../routes/app_routes.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -14,40 +14,29 @@ class AuthController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadUser();
+    _initAuthStateListener();
   }
 
-  Future<void> loadUser() async {
-    try {
-      final userData = await _authService.getCurrentUser();
+  void _initAuthStateListener() {
+    _authService.authStateChanges.listen((UserModel? userData) {
       user.value = userData;
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Error al cargar los datos del usuario: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    }
+    });
   }
 
   Future<void> signIn(String email, String password) async {
     try {
       isLoading.value = true;
-      final response = await _authService.signInWithEmail(
+      await _authService.loginWithEmail(
         email: email,
         password: password,
       );
-
-      if (response.success) {
-        user.value = response.data?.user;
-        Get.offAllNamed('/home');
-      } else {
-        Get.snackbar(
-          'Error',
-          response.message ?? 'Error al iniciar sesión',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-      }
+      Get.offAllNamed('/home');
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        e.toString(),
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } finally {
       isLoading.value = false;
     }
@@ -56,22 +45,18 @@ class AuthController extends GetxController {
   Future<void> register(String email, String password, String name) async {
     try {
       isLoading.value = true;
-      final response = await _authService.registerWithEmail(
+      await _authService.registerWithEmail(
         email: email,
         password: password,
         name: name,
       );
-
-      if (response.success) {
-        user.value = response.data?.user;
-        Get.offAllNamed('/home');
-      } else {
-        Get.snackbar(
-          'Error',
-          response.message ?? 'Error al registrar',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-      }
+      Get.offAllNamed('/home');
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        e.toString(),
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } finally {
       isLoading.value = false;
     }
@@ -81,12 +66,11 @@ class AuthController extends GetxController {
     try {
       isLoading.value = true;
       await _authService.signOut();
-      user.value = null;
       Get.offAllNamed('/login');
     } catch (e) {
       Get.snackbar(
         'Error',
-        'Error al cerrar sesión: $e',
+        e.toString(),
         snackPosition: SnackPosition.BOTTOM,
       );
     } finally {
@@ -114,22 +98,19 @@ class AuthController extends GetxController {
       isLoading.value = true;
       error.value = '';
       
-      await _authService.firebaseAuth.verifyPhoneNumber(
-        phoneNumber: phoneNumber,
-        verificationCompleted: (credential) async {
-          await _authService.firebaseAuth.currentUser?.updatePhoneNumber(credential);
-          await loadUser();
-          Get.back();
-        },
-        verificationFailed: (e) {
-          error.value = 'Error de verificación: ${e.message}';
-        },
-        codeSent: (verificationId, resendToken) {
-          _verificationId = verificationId;
-        },
-        codeAutoRetrievalTimeout: (verificationId) {
-          _verificationId = verificationId;
-        },
+      _verificationId = await _authService.verifyPhone(phoneNumber);
+      
+      Get.snackbar(
+        'Éxito',
+        'Código enviado correctamente',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      error.value = 'Error de verificación: $e';
+      Get.snackbar(
+        'Error',
+        error.value,
+        snackPosition: SnackPosition.BOTTOM,
       );
     } finally {
       isLoading.value = false;
@@ -146,13 +127,8 @@ class AuthController extends GetxController {
         return;
       }
 
-      final credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId!,
-        smsCode: smsCode,
-      );
-
-      await _authService.firebaseAuth.currentUser?.updatePhoneNumber(credential);
-      await loadUser();
+      await _authService.verifySmsCode(_verificationId!, smsCode);
+      
       Get.back();
       Get.snackbar(
         'Éxito',
@@ -161,6 +137,11 @@ class AuthController extends GetxController {
       );
     } catch (e) {
       error.value = 'Error al verificar el código: $e';
+      Get.snackbar(
+        'Error',
+        error.value,
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } finally {
       isLoading.value = false;
     }
