@@ -7,7 +7,7 @@ podfile_properties = JSON.parse(File.read(File.join(__dir__, 'Podfile.properties
 ENV['RCT_NEW_ARCH_ENABLED'] = podfile_properties['newArchEnabled'] == 'true' ? '1' : '0'
 ENV['EX_DEV_CLIENT_NETWORK_INSPECTOR'] = podfile_properties['EX_DEV_CLIENT_NETWORK_INSPECTOR']
 
-platform :ios, podfile_properties['ios.deploymentTarget'] || '12.0'
+platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
 install! 'cocoapods',
   :deterministic_uuids => false
 
@@ -31,6 +31,9 @@ target 'RFCApp' do
     ]
   end
 
+# @generated begin react-native-maps - expo prebuild (DO NOT MODIFY) sync-e9cc66c360abe50bc66d89fffb3c55b034d7d369
+  pod 'react-native-google-maps', path: File.dirname(`node --print "require.resolve('react-native-maps/package.json')"`)
+# @generated end react-native-maps
   config = use_native_modules!(config_command)
 
   use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
@@ -51,19 +54,22 @@ target 'RFCApp' do
       :mac_catalyst_enabled => false,
       :ccache_enabled => podfile_properties['apple.ccacheEnabled'] == 'true',
     )
+
     installer.pods_project.targets.each do |target|
-      if target.name == 'BoringSSL-GRPC'
-        target.source_build_phase.files.each do |file|
-          if file.settings && file.settings['COMPILER_FLAGS']
-            flags = file.settings['COMPILER_FLAGS'].split
-            flags.reject! { |flag| flag == '-GCC_WARN_INHIBIT_ALL_WARNINGS' }
-            file.settings['COMPILER_FLAGS'] = flags.join(' ')
-          end
+      target.build_configurations.each do |config|
+        config.build_settings['ENABLE_BITCODE'] = 'NO'
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
+        
+        if target.name == 'BoringSSL-GRPC'
+          config.build_settings['CLANG_WARN_DOCUMENTATION_COMMENTS'] = 'NO'
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'BORINGSSL_PREFIX=BoringSSL'
+          config.build_settings['OTHER_CFLAGS'] = '-Wno-shorten-64-to-32 -Wno-comma -Wno-unreachable-code -Wno-conditional-uninitialized -Wno-deprecated-declarations -Wno-deprecated-implementations -Wno-zero-length-array -Wno-objc-msgsend-selector-stubs'
+          config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES'
         end
       end
     end
-    # This is necessary for Xcode 14, because it signs resource bundles by default
-    # when building for devices.
+
     installer.target_installation_results.pod_target_installation_results
       .each do |pod_name, target_installation_result|
       target_installation_result.resource_bundle_targets.each do |resource_bundle_target|
