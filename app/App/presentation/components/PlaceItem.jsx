@@ -1,8 +1,7 @@
-import React from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
-  Image,
   Dimensions,
   Pressable,
   StyleSheet,
@@ -10,13 +9,26 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Colors from "../../infraestructure/utils/Colors";
+import FastImage from 'react-native-fast-image';
 
-const PlaceItem = ({ place, selectedDate = "", selectedTime = "" }) => {
+const PlaceItem = ({ place, selectedDate = "", selectedTime = "", isTablet }) => {
   const navigation = useNavigation();
+  const [imageError, setImageError] = useState(false);
+
+  const handleImageError = useCallback(() => {
+    setImageError(true);
+  }, []);
+
+  const getImageSource = () => {
+    if (imageError || !place.imagenUrl) {
+      return require('../assets/images/default-place.jpg');
+    }
+    return { uri: place.imagenUrl };
+  };
 
   return (
-    <TouchableOpacity 
-      style={styles.container}
+    <TouchableOpacity
+      style={[styles.container, isTablet && styles.tabletContainer]}
       onPress={() =>
         navigation.navigate("booking", {
           place: place,
@@ -25,7 +37,12 @@ const PlaceItem = ({ place, selectedDate = "", selectedTime = "" }) => {
         })
       }
     >
-      <Image source={{ uri: place.imagenUrl }} style={styles.image} />
+      <FastImage
+        style={styles.image}
+        source={getImageSource()}
+        resizeMode={FastImage.resizeMode.cover}
+        onError={handleImageError}
+      />
       <View style={styles.textContainer}>
         <View style={styles.infoContainer}>
           <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
@@ -65,6 +82,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     height: 140, // Altura fija para mantener consistencia
     overflow: 'hidden',
+  },
+  tabletContainer: {
+    flex: 1,
+    margin: 10,
   },
   image: {
     width: "40%",

@@ -1,4 +1,4 @@
-import { View, Text, ActivityIndicator, Image, FlatList, Pressable } from 'react-native'
+import { View, Text, ActivityIndicator, Image, FlatList, Pressable, Alert } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import Colors from '../../../infraestructure/utils/Colors'
 import { Ionicons } from '@expo/vector-icons'
@@ -34,18 +34,57 @@ export default function OwnerProfileScreen() {
     }
   }
 
-  const signOut = async () => {
-    try {
-      await api.post('/users/logout')
-      await AsyncStorage.multiRemove(['userToken', 'userData', 'userId'])
-      api.defaults.headers.common.Authorization = ''
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'welcomePage' }]
-      })
-    } catch (error) {
-      console.log('Error al cerrar sesión:', error)
-    }
+  const handleSignOut = async () => {
+    Alert.alert(
+      "Cerrar sesión",
+      "¿Estás seguro que deseas cerrar sesión?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel"
+        },
+        {
+          text: "Sí, cerrar sesión",
+          onPress: async () => {
+            try {
+              setLoading(true)
+              
+              // Cerrar sesión en el backend
+              await api.post('/users/logout')
+              
+              // Limpiar el almacenamiento local
+              await AsyncStorage.multiRemove([
+                'userToken', 
+                'userData', 
+                'userId',
+                'userRole'
+              ])
+              
+              // Limpiar headers de la API
+              api.defaults.headers.common.Authorization = ''
+              
+              // Redireccionar al inicio
+              navigation.reset({
+                index: 0,
+                routes: [
+                  {
+                    name: 'welcomePage'
+                  }
+                ]
+              })
+            } catch (error) {
+              console.log('Error al cerrar sesión:', error)
+              Alert.alert(
+                "Error",
+                "Hubo un problema al cerrar sesión. Por favor, intenta nuevamente."
+              )
+            } finally {
+              setLoading(false)
+            }
+          }
+        }
+      ]
+    )
   }
 
   return (
@@ -94,7 +133,7 @@ export default function OwnerProfileScreen() {
             onPress={() =>
               item.id === 1 ?
                 navigation.navigate('owner-pitches')
-                : item.id === 2 ? signOut()
+                : item.id === 2 ? handleSignOut()
                   : navigation.navigate('appointments')
             }
             style={{

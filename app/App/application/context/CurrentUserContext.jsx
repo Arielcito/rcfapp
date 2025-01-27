@@ -16,7 +16,7 @@ export const CurrentUserProvider = ({ children }) => {
     try {
       const [userData, token] = await Promise.all([
         AsyncStorage.getItem('userData'),
-        AsyncStorage.getItem('userToken')
+        AsyncStorage.getItem('auth_token')
       ]);
 
       if (userData && token) {
@@ -33,23 +33,39 @@ export const CurrentUserProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      console.log('Iniciando login para:', email);
       const response = await api.post('/users/login', { email, password });
+      console.log('Respuesta de login:', {
+        success: !!response.data,
+        hasUser: !!response.data.user,
+        hasToken: !!response.data.token,
+        headers: response.headers
+      });
+
       const { user, token } = response.data;
 
       if (!user || !token) {
         throw new Error('Respuesta inválida del servidor');
       }
 
-      await AsyncStorage.setItem('userToken', token);
+      console.log('Guardando datos de sesión...');
+      await AsyncStorage.setItem('auth_token', token);
       await AsyncStorage.setItem('userData', JSON.stringify(user));
       await AsyncStorage.setItem('userId', user.id);
 
+      console.log('Configurando headers de API...');
       api.defaults.headers.common.Authorization = `Bearer ${token}`;
 
+      console.log('Actualizando estado de usuario...');
       setCurrentUser(user);
       return user;
     } catch (error) {
-      console.error('Error en login:', error);
+      console.error('Error detallado en login:', {
+        mensaje: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers
+      });
       throw error;
     }
   };
@@ -60,7 +76,7 @@ export const CurrentUserProvider = ({ children }) => {
     } catch (error) {
       console.error('Error en logout:', error);
     } finally {
-      await AsyncStorage.multiRemove(['userToken', 'userData', 'userId']);
+      await AsyncStorage.multiRemove(['auth_token', 'userData', 'userId']);
       api.defaults.headers.common.Authorization = '';
       setCurrentUser(null);
     }

@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "react-native-fast-image": "^8.6.3",
+    "react-navigation-shared-element": "^3.1.3"
+  }
+}

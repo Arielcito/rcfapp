@@ -16,19 +16,13 @@ const ProfileScreen = () => {
 
   useEffect(() => {
     console.log('ProfileScreen - Usuario del contexto:', currentUser);
-    const fetchAdditionalData = async () => {
-      if (currentUser?.id) {
-        console.log('ProfileScreen - Obteniendo datos adicionales para:', currentUser.id);
-        try {
-          const data = await getProfileInfo(currentUser.id);
-          console.log('ProfileScreen - Datos adicionales obtenidos:', data);
-          setAdditionalData(data);
-        } catch (error) {
-          console.error('ProfileScreen - Error al obtener datos adicionales:', error);
-        }
-      }
-    };
-    fetchAdditionalData();
+    if (currentUser) {
+      setAdditionalData({
+        name: currentUser.name,
+        email: currentUser.email,
+        imageUrl: currentUser.image || null
+      });
+    }
   }, [currentUser]);
 
   const signOut = async () => {
