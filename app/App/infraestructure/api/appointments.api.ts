@@ -103,7 +103,9 @@ export const getAppointmentsByAppointmentDate = async (date: string): Promise<Ap
 
 export const getAppointmentsByUser = async (): Promise<Appointment[]> => {
   try {
+    console.log('Iniciando petición getAppointmentsByUser');
     const response = await api.get('/reservas/user/bookings');
+    console.log('Respuesta exitosa:', response.data);
     const appointments = response.data as ApiAppointment[];
 
     return appointments.map((appointment: ApiAppointment) => ({
@@ -121,8 +123,14 @@ export const getAppointmentsByUser = async (): Promise<Appointment[]> => {
       email: 'usuario@example.com',
       pitch: 1
     }));
-  } catch (error) {
-    console.error("Error fetching user appointments:", error);
+  } catch (error: any) {
+    console.error("Error detallado en getAppointmentsByUser:", {
+      mensaje: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      headers: error.response?.headers,
+      data: error.response?.data
+    });
     return [];
   }
 };

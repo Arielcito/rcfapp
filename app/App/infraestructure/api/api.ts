@@ -12,25 +12,46 @@ export const api = axios.create({
 // Interceptor para manejar tokens
 api.interceptors.request.use(
   async (config) => {
-    const token = await AsyncStorage.getItem('userToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    try {
+      const token = await AsyncStorage.getItem('auth_token');
+      console.log('Token recuperado:', token ? 'Existe token' : 'No hay token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+        console.log('Headers configurados:', config.headers);
+      }
+      return config;
+    } catch (error) {
+      console.error('Error al obtener token:', error);
+      return config;
     }
-    return config;
   },
   (error) => {
+    console.error('Error en interceptor de request:', error);
     return Promise.reject(error);
   }
 );
 
 // Interceptor para manejar errores de respuesta
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('Respuesta exitosa:', {
+      url: response.config.url,
+      status: response.status,
+      headers: response.headers
+    });
+    return response;
+  },
   async (error) => {
+    console.error('Error en respuesta:', {
+      url: error.config?.url,
+      status: error.response?.status,
+      data: error.response?.data,
+      headers: error.config?.headers
+    });
+    
     if (error.response?.status === 401) {
-      // Token expirado o inválido
-      await AsyncStorage.removeItem('userToken');
-      // Aquí podrías redirigir al login si lo necesitas
+      console.log('Error 401 detectado - Removiendo token');
+      await AsyncStorage.removeItem('auth_token');
     }
     return Promise.reject(error);
   }

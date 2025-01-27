@@ -8,10 +8,11 @@ interface UserProfile {
   role?: string;
 }
 
-export const getProfileInfo = async (userEmail: string): Promise<User> => {
+export const getProfileInfo = async (userId: string): Promise<User> => {
   try {
-    const response = await api.get<User>('/users/me');
-    console.log("response getProfileInfo",response.data)
+    console.log("Obteniendo perfil para usuario ID:", userId);
+    const response = await api.get<User>(`/users/${userId}`);
+    console.log("Respuesta de perfil:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error obteniendo información del perfil: ", error);

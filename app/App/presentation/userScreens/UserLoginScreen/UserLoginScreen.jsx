@@ -83,7 +83,9 @@ export default function UserLoginScreen() {
           <TextInput
             style={styles.input}
             placeholder="Email"
-            onChangeText={(text) => handleChange(text, "email")}
+            onChangeText={(text) => handleChange(text.toLowerCase(), "email")}
+            autoCapitalize="none"
+            keyboardType="email-address"
           />
           <TextInput
             style={styles.input}
