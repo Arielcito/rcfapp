@@ -5,11 +5,11 @@ import {
   Dimensions,
   Pressable,
   StyleSheet,
-  TouchableOpacity
+  TouchableOpacity,
+  Image
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Colors from "../../infraestructure/utils/Colors";
-import FastImage from 'react-native-fast-image';
 
 const PlaceItem = ({ place, selectedDate = "", selectedTime = "", isTablet }) => {
   const navigation = useNavigation();
@@ -37,10 +37,10 @@ const PlaceItem = ({ place, selectedDate = "", selectedTime = "", isTablet }) =>
         })
       }
     >
-      <FastImage
+      <Image
         style={styles.image}
         source={getImageSource()}
-        resizeMode={FastImage.resizeMode.cover}
+        resizeMode="cover"
         onError={handleImageError}
       />
       <View style={styles.textContainer}>

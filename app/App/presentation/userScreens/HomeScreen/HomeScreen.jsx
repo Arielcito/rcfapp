@@ -29,7 +29,7 @@ export default function HomeScreen() {
   const [selectedMarker, setSelectedMarker] = useState(0);
   const [next7Days, setNext7Days] = useState([]);
   const [timeList, setTimeList] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().getDate());
+  const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(() => {
     const now = new Date();
     const hour = now.getHours() + 2;
@@ -47,9 +47,9 @@ export default function HomeScreen() {
     setNext7Days(dates);
     
     if (dates && dates.length > 0) {
-      setSelectedDate(dates[0].fullDate);
+      setSelectedDate(dates[0].date);
     }
-    
+
     const today = new Date();
     const currentHour = today.getHours();
     const currentMinutes = today.getMinutes();
@@ -134,7 +134,8 @@ export default function HomeScreen() {
     
     const time = getTime();
     const today = new Date();
-    const diaSeleccionado = Number(String(newDate).split('-')[2]);
+    const selectedDateParts = newDate.split('-');
+    const diaSeleccionado = Number(selectedDateParts[2]);
     const esHoy = diaSeleccionado === today.getDate();
     
     const horariosDisponibles = esHoy ? time.filter((timeSlot) => {
