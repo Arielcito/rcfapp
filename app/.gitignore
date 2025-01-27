@@ -43,3 +43,8 @@ android/app/my-upload-key.keystore
 .env
 .env.*
 
+
+# Expo
+.expo
+dist/
+web-build/

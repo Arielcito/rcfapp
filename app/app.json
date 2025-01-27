@@ -22,7 +22,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow RFC App to use your location."
+          "locationAlwaysAndWhenInUsePermission": "RFC App necesita acceso a tu ubicación para mostrarte los restaurantes más cercanos a ti y calcular las rutas de entrega más eficientes. También usamos tu ubicación para notificarte cuando un pedido está cerca de tu dirección."
         }
       ],
       "expo-font",
@@ -98,11 +98,11 @@
       "buildNumber": "6.0.0",
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos.",
-        "NSPhotoLibraryAddUsageDescription": "Allow $(PRODUCT_NAME) to save photos.",
-        "NSLocationWhenInUseUsageDescription": "La aplicación necesita acceso a tu ubicación para mostrar lugares cercanos",
-        "NSLocationAlwaysUsageDescription": "La aplicación necesita acceso a tu ubicación para funcionalidades en segundo plano",
-        "NSCameraUsageDescription": "La aplicación necesita acceso a la cámara para tomar fotos",
+        "NSPhotoLibraryUsageDescription": "RFC App necesita acceso a tu galería de fotos para que puedas seleccionar y subir imágenes de perfil y documentos necesarios para el registro.",
+        "NSPhotoLibraryAddUsageDescription": "RFC App necesita permiso para guardar fotos en tu galería, como comprobantes de pedidos y recibos de pago.",
+        "NSLocationWhenInUseUsageDescription": "RFC App necesita acceso a tu ubicación para mostrarte los restaurantes más cercanos a ti y calcular las rutas de entrega. Por ejemplo, podrás ver qué restaurantes están a menos de 5 km de tu ubicación actual.",
+        "NSLocationAlwaysUsageDescription": "RFC App necesita acceso a tu ubicación en segundo plano para enviarte notificaciones cuando un pedido está cerca de tu dirección y para optimizar las rutas de entrega en tiempo real.",
+        "NSCameraUsageDescription": "RFC App necesita acceso a la cámara para que puedas tomar fotos de perfil, documentos de identificación y comprobantes de entrega.",
         "UIBackgroundModes": [
           "location",
           "fetch"
