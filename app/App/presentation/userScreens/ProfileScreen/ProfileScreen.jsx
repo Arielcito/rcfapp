@@ -83,6 +83,12 @@ const ProfileScreen = () => {
         <TouchableOpacity style={styles.menuItem} onPress={() => signOut()}>
           <Text style={styles.menuText}>Cerrar sesión</Text>
         </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.menuItem, styles.deleteAccountItem]} 
+          onPress={() => navigator.navigate("delete-account")}
+        >
+          <Text style={[styles.menuText, styles.deleteAccountText]}>Eliminar cuenta</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -192,6 +198,15 @@ const styles = StyleSheet.create({
     borderTopColor: "#E0E0E0",
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 30,
+  },
+  deleteAccountItem: {
+    marginTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+    paddingTop: 20,
+  },
+  deleteAccountText: {
+    color: '#FF3B30',
   },
 });
 

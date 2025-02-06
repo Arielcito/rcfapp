@@ -8,6 +8,7 @@ import {
   Dimensions,
   ActivityIndicator,
   ImageBackground,
+  ToastAndroid,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { FIREBASE_AUTH, FIREBASE_DB } from '../../../infraestructure/config/FirebaseConfig';
@@ -19,113 +20,98 @@ import { api } from '../../../infraestructure/api/api';
 
 export default function UserRegistrationScreen() {
   const [values, setValues] = useState({
+    name: '',
     email: '',
     pwd: '',
     confirmPwd: '',
-    name: '',
-    phone: '',
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
   const image = require('../../assets/images/geometrias-circulares.png');
 
-  function handleChange(text, eventName) {
-    setValues(prev => ({
-      ...prev,
-      [eventName]: text,
-    }));
-    setErrors(prev => ({
-      ...prev,
-      [eventName]: '',
-    }));
-  }
-
-  function validateInputs() {
+  const validateForm = () => {
     const newErrors = {};
-    let isValid = true;
-
-    if (values.name.trim().length < 2) {
-      newErrors.name = 'El nombre debe tener al menos 2 caracteres';
-      isValid = false;
+    
+    if (!values.name.trim()) {
+      newErrors.name = 'El nombre es requerido';
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(values.email)) {
-      newErrors.email = 'Por favor, introduce un email válido';
-      isValid = false;
+    if (!values.email.trim()) {
+      newErrors.email = 'El email es requerido';
+    } else if (!/\S+@\S+\.\S+/.test(values.email)) {
+      newErrors.email = 'Email inválido';
     }
 
-    if (values.pwd.length < 8) {
-      newErrors.pwd = 'La contraseña debe tener al menos 8 caracteres';
-      isValid = false;
+    if (!values.pwd) {
+      newErrors.pwd = 'La contraseña es requerida';
+    } else if (values.pwd.length < 6) {
+      newErrors.pwd = 'La contraseña debe tener al menos 6 caracteres';
     }
 
-    if (values.pwd !== values.confirmPwd) {
+    if (!values.confirmPwd) {
+      newErrors.confirmPwd = 'Confirma tu contraseña';
+    } else if (values.pwd !== values.confirmPwd) {
       newErrors.confirmPwd = 'Las contraseñas no coinciden';
-      isValid = false;
-    }
-
-    const phoneRegex = /^\d{10}$/;
-    if (!phoneRegex.test(values.phone)) {
-      newErrors.phone = 'Por favor, introduce un número de teléfono válido (10 dígitos)';
-      isValid = false;
     }
 
     setErrors(newErrors);
-    return isValid;
-  }
+    return Object.keys(newErrors).length === 0;
+  };
 
-  async function handleRegistration() {
-    if (!validateInputs()) return;
+  const handleChange = (text, field) => {
+    setValues(prev => ({
+      ...prev,
+      [field]: text
+    }));
+    // Limpiar error cuando el usuario empieza a escribir
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: null
+      }));
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
 
     setLoading(true);
     try {
-      const phoneNumberWithCode = `+54${values.phone}`;
-      
-      await api.post('/users/check-email', {
-        email: values.email
+      const response = await api.post('/users/register', {
+        nombre: values.name,
+        email: values.email.toLowerCase(),
+        password: values.pwd,
+        role: 'USER'
       });
 
-      const confirmationResult = await signInWithPhoneNumber(FIREBASE_AUTH, phoneNumberWithCode);
-
-      navigation.navigate('PhoneVerification', {
-        verificationId: confirmationResult.verificationId,
-        userData: values
-      });
-
-    } catch (err) {
-      console.error("Error:", err);
-      setErrors(prev => ({
-        ...prev,
-        email: err?.response?.data?.message || 'Error al verificar el email',
-        general: 'Error al procesar la solicitud. Por favor, intente nuevamente.'
-      }));
+      if (response.status === 201) {
+        ToastAndroid.show('¡Registro exitoso!', ToastAndroid.LONG);
+        navigation.navigate('user-login');
+      }
+    } catch (error) {
+      console.error('Error en registro:', error);
+      ToastAndroid.show(
+        error.response?.data?.message || 'Error en el registro',
+        ToastAndroid.LONG
+      );
     } finally {
       setLoading(false);
     }
-  }
-
-  async function saveUserData(user) {
-    await setDoc(doc(FIREBASE_DB, 'users', user.uid), {
-      email: values.email.toLowerCase(),
-      name: values.name,
-      phone: values.phone,
-      userType: 'user',
-    });
-  }
+  };
 
   return (
     <View style={styles.container}>
       <TouchableOpacity 
-        style={styles.backButton}
+        style={styles.backButton} 
         onPress={() => navigation.goBack()}
       >
-        <Ionicons name="arrow-back" size={24} color={Colors.PRIMARY} />
+        <Ionicons name="arrow-back" size={24} color="black" />
       </TouchableOpacity>
-
+      
       <ImageBackground source={image} resizeMode="contain" style={styles.image} />
       <Text style={styles.heading}>Registro de Usuario</Text>
+      
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
@@ -150,7 +136,7 @@ export default function UserRegistrationScreen() {
           placeholder="Contraseña"
           onChangeText={(text) => handleChange(text, 'pwd')}
           value={values.pwd}
-          secureTextEntry={false}
+          secureTextEntry={true}
           autoCapitalize="none"
         />
         {errors.pwd && <Text style={styles.errorText}>{errors.pwd}</Text>}
@@ -160,37 +146,22 @@ export default function UserRegistrationScreen() {
           placeholder="Confirmar Contraseña"
           onChangeText={(text) => handleChange(text, 'confirmPwd')}
           value={values.confirmPwd}
-          secureTextEntry={false}
+          secureTextEntry={true}
           autoCapitalize="none"
         />
         {errors.confirmPwd && <Text style={styles.errorText}>{errors.confirmPwd}</Text>}
-        
-        <View style={styles.phoneInputContainer}>
-          <View style={styles.prefixContainer}>
-            <Text style={styles.prefixText}>+54</Text>
-          </View>
-          <TextInput
-            style={styles.phoneInput}
-            placeholder="Teléfono"
-            onChangeText={(text) => handleChange(text, 'phone')}
-            value={values.phone}
-            keyboardType="phone-pad"
-          />
-        </View>
-        {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
-        
+
         <TouchableOpacity
-          style={styles.loginButton}
-          onPress={handleRegistration}
+          style={styles.button}
+          onPress={handleSubmit}
           disabled={loading}
         >
           {loading ? (
             <ActivityIndicator color="#ffffff" />
           ) : (
-            <Text style={styles.loginButtonText}>Verificar Teléfono</Text>
+            <Text style={styles.buttonText}>Registrarse</Text>
           )}
         </TouchableOpacity>
-        {errors.general && <Text style={styles.errorText}>{errors.general}</Text>}
       </View>
     </View>
   );
@@ -237,7 +208,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  loginButton: {
+  button: {
     backgroundColor: '#003366',
     height: 60,
     width: width * 0.8,
@@ -246,7 +217,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 40,
   },
-  loginButtonText: {
+  buttonText: {
     color: Colors.WHITE,
     textAlign: 'center',
     fontFamily: 'montserrat',
@@ -263,75 +234,6 @@ const styles = StyleSheet.create({
     color: 'red',
     textAlign: 'center',
     marginTop: 10,
-  },
-  googleButton: {
-    backgroundColor: '#4285F4',
-    height: 60,
-    width: width * 0.8,
-    maxWidth: 350,
-    borderRadius: 10,
-    justifyContent: 'center',
-    marginTop: 20,
-  },
-  googleButtonText: {
-    color: Colors.WHITE,
-    textAlign: 'center',
-    fontFamily: 'montserrat',
-    fontSize: 17,
-  },
-  registerButton: {
-    backgroundColor: Colors.SECONDARY,
-    height: 60,
-    width: width * 0.8,
-    maxWidth: 350,
-    borderRadius: 10,
-    justifyContent: 'center',
-    marginTop: 20,
-  },
-  registerButtonText: {
-    color: Colors.PRIMARY,
-    textAlign: 'center',
-    fontFamily: 'montserrat',
-    fontSize: 17,
-  },
-  phoneInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: width * 0.8,
-    maxWidth: 350,
-    marginBottom: 25,
-  },
-  prefixContainer: {
-    backgroundColor: Colors.PRIMARY,
-    height: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    borderTopLeftRadius: 10,
-    borderBottomLeftRadius: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
-  prefixText: {
-    color: Colors.WHITE,
-    fontSize: 16,
-    fontFamily: 'montserrat',
-  },
-  phoneInput: {
-    flex: 1,
-    height: 60,
-    borderTopRightRadius: 10,
-    borderBottomRightRadius: 10,
-    borderWidth: 1,
-    borderLeftWidth: 0,
-    borderColor: '#ccc',
-    paddingHorizontal: 15,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
   },
   backButton: {
     position: 'absolute',

@@ -1,6 +1,7 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
+apply plugin: 'maven-publish'
 
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 
@@ -210,6 +211,19 @@ dependencies {
         exclude group:'com.squareup.okhttp3', module:'okhttp'
     }
     debugImplementation("com.facebook.flipper:flipper-fresco-plugin:${FLIPPER_VERSION}")
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.findByName('release')
+                groupId = 'com.arielcito'
+                artifactId = 'RFCApp'
+                version = '6.0.0'
+            }
+        }
+    }
 }
 
 apply plugin: 'com.google.gms.google-services'

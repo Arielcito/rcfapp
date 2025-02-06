@@ -6,8 +6,9 @@ import {
   Pressable,
   StyleSheet,
   TouchableOpacity,
-  Image
+  Platform,
 } from "react-native";
+import { Image } from 'expo-image';
 import { useNavigation } from "@react-navigation/native";
 import Colors from "../../infraestructure/utils/Colors";
 
@@ -38,24 +39,25 @@ const PlaceItem = ({ place, selectedDate = "", selectedTime = "", isTablet }) =>
       }
     >
       <Image
-        style={styles.image}
+        style={[styles.image, isTablet && styles.tabletImage]}
         source={getImageSource()}
-        resizeMode="cover"
+        contentFit="cover"
+        transition={300}
         onError={handleImageError}
       />
       <View style={styles.textContainer}>
         <View style={styles.infoContainer}>
-          <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+          <Text style={[styles.title, isTablet && styles.tabletTitle]} numberOfLines={1} ellipsizeMode="tail">
             {place.nombre}
           </Text>
-          <Text style={styles.description} numberOfLines={2} ellipsizeMode="tail">
+          <Text style={[styles.description, isTablet && styles.tabletDescription]} numberOfLines={2} ellipsizeMode="tail">
             {place.description}
           </Text>
         </View>
         <View style={styles.bottomContainer}>
-          <Text style={styles.price}>$20.000</Text>
+          <Text style={[styles.price, isTablet && styles.tabletPrice]}>$20.000</Text>
           <Pressable
-            style={styles.button}
+            style={[styles.button, isTablet && styles.tabletButton]}
             onPress={() =>
               navigation.navigate("booking", {
                 place: place,
@@ -64,7 +66,7 @@ const PlaceItem = ({ place, selectedDate = "", selectedTime = "", isTablet }) =>
               })
             }
           >
-            <Text style={styles.buttonText}>Reservar</Text>
+            <Text style={[styles.buttonText, isTablet && styles.tabletButtonText]}>Reservar</Text>
           </Pressable>
         </View>
       </View>
@@ -77,21 +79,26 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.WHITE,
     margin: 10,
     borderRadius: 15,
-    width: Dimensions.get("screen").width * 0.9,
+    width: Platform.OS === 'ios' ? '95%' : Dimensions.get("screen").width * 0.9,
     marginHorizontal: 20,
     flexDirection: "row",
-    height: 140, // Altura fija para mantener consistencia
+    height: 140,
     overflow: 'hidden',
+    alignSelf: 'center',
   },
   tabletContainer: {
-    flex: 1,
-    margin: 10,
+    width: Platform.OS === 'ios' ? '45%' : '95%',
+    height: 180,
+    margin: 8,
   },
   image: {
     width: "40%",
     height: "100%",
     borderTopLeftRadius: 15,
     borderBottomLeftRadius: 15,
+  },
+  tabletImage: {
+    width: "45%",
   },
   textContainer: {
     flex: 1,
@@ -106,11 +113,18 @@ const styles = StyleSheet.create({
     fontFamily: "montserrat-medium",
     marginBottom: 4,
   },
+  tabletTitle: {
+    fontSize: 20,
+  },
   description: {
     color: Colors.GRAY,
     fontFamily: "montserrat",
     fontSize: 12,
     lineHeight: 16,
+  },
+  tabletDescription: {
+    fontSize: 14,
+    lineHeight: 20,
   },
   bottomContainer: {
     flexDirection: 'row',
@@ -124,17 +138,27 @@ const styles = StyleSheet.create({
     color: "#003366",
     fontWeight: "bold",
   },
+  tabletPrice: {
+    fontSize: 18,
+  },
   button: {
     padding: 6,
     paddingHorizontal: 14,
     backgroundColor: Colors.PRIMARY,
     borderRadius: 6,
   },
+  tabletButton: {
+    padding: 8,
+    paddingHorizontal: 18,
+  },
   buttonText: {
     fontFamily: "montserrat-medium",
     fontSize: 14,
     color: "white",
     textAlign: "center",
+  },
+  tabletButtonText: {
+    fontSize: 16,
   },
 });
 

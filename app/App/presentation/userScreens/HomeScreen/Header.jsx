@@ -1,158 +1,56 @@
-import { View, StyleSheet, Pressable, Text, Modal, TouchableOpacity } from "react-native";
-import React, { useState, useContext } from "react";
-import UbicationIcon from "../../assets/icons/UbicationIcon";
-import { UserLocationContext } from "../../../application/context/UserLocationContext";
-import Colors from "../../../infraestructure/utils/Colors";
-import * as Location from 'expo-location';
+import React from 'react';
+import { View, Text, StyleSheet, Platform } from 'react-native';
+import { useCurrentUser } from '../../../application/context/CurrentUserContext';
+import Colors from '../../../infraestructure/utils/Colors';
 
-export default function Header() {
-  const { location, setLocation } = useContext(UserLocationContext);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const getCurrentLocation = async () => {
-    setLoading(true);
-    try {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        alert('Permiso de ubicación denegado');
-        return;
-      }
-
-      let currentLocation = await Location.getCurrentPositionAsync({});
-      setLocation({
-        latitude: currentLocation.coords.latitude,
-        longitude: currentLocation.coords.longitude,
-      });
-      setIsModalVisible(false);
-    } catch (error) {
-      console.error("Error obteniendo ubicación:", error);
-      alert('Error al obtener la ubicación');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLocationPress = () => {
-    setIsModalVisible(true);
-  };
+const Header = ({ isTablet }) => {
+  const { currentUser } = useCurrentUser();
 
   return (
-    <View style={styles.container}>
-      <Pressable
-        style={styles.locationButton}
-        onPress={handleLocationPress}
-      >
-        <UbicationIcon width={25} height={25} />
-        <Text style={styles.locationText}>
-          {location ? "Cambiar ubicación" : "Establecer ubicación"}
+    <View style={[styles.container, isTablet && styles.tabletContainer]}>
+      <View style={styles.greetingContainer}>
+        <Text style={[styles.greeting, isTablet && styles.tabletGreeting]}>
+          ¡Hola{currentUser?.name ? `, ${currentUser.name}!` : '!'}
         </Text>
-      </Pressable>
-
-      <Modal
-        visible={isModalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setIsModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Ubicación</Text>
-            
-            <TouchableOpacity
-              style={styles.locationOption}
-              onPress={getCurrentLocation}
-              disabled={loading}
-            >
-              <Text style={styles.optionText}>
-                {loading ? "Obteniendo ubicación..." : "Usar mi ubicación actual"}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setIsModalVisible(false)}
-            >
-              <Text style={styles.closeButtonText}>Cerrar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        <Text style={[styles.subGreeting, isTablet && styles.tabletSubGreeting]}>
+          ¿Dónde quieres jugar hoy?
+        </Text>
+      </View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 10,
+    paddingTop: Platform.OS === 'ios' ? 20 : 10,
   },
-  locationButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: Colors.WHITE,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+  tabletContainer: {
+    paddingHorizontal: 20,
+    alignItems: 'center',
   },
-  locationText: {
-    marginLeft: 8,
-    fontSize: 14,
-    fontFamily: "montserrat-medium",
-    color: Colors.PRIMARY,
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  modalContent: {
-    backgroundColor: Colors.WHITE,
-    borderRadius: 20,
-    padding: 20,
-    width: "80%",
-    maxHeight: "80%",
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontFamily: "montserrat-bold",
-    marginBottom: 20,
-    textAlign: "center",
-    color: Colors.PRIMARY,
-  },
-  locationOption: {
-    backgroundColor: Colors.PRIMARY,
-    padding: 15,
-    borderRadius: 10,
+  greetingContainer: {
     marginBottom: 10,
   },
-  optionText: {
+  greeting: {
+    fontSize: 24,
+    fontFamily: 'montserrat-medium',
     color: Colors.WHITE,
+    marginBottom: 5,
+  },
+  tabletGreeting: {
+    fontSize: 32,
+    textAlign: 'center',
+  },
+  subGreeting: {
     fontSize: 16,
-    fontFamily: "montserrat-medium",
-    textAlign: "center",
-  },
-  closeButton: {
-    backgroundColor: Colors.GRAY,
-    padding: 15,
-    borderRadius: 10,
-    marginTop: 10,
-  },
-  closeButtonText: {
+    fontFamily: 'montserrat',
     color: Colors.WHITE,
-    fontSize: 16,
-    fontFamily: "montserrat-medium",
-    textAlign: "center",
+    opacity: 0.9,
+  },
+  tabletSubGreeting: {
+    fontSize: 20,
+    textAlign: 'center',
   },
 });
+
+export default Header;
