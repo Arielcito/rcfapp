@@ -2,3 +2,9 @@ secrets/*
 .env 
 .vercel
 server/.env
+server/node_modules
+server/dist
+server/drizzle
+server/drizzle.config.ts
+server/drizzle.config.ts
+server/drizzle.config.ts
