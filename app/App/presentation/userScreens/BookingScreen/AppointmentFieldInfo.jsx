@@ -1,4 +1,5 @@
-import { View, Text, Image } from "react-native";
+import { View, Text } from "react-native";
+import { Image } from 'expo-image';
 import React from "react";
 
 export default function ApointmentFieldInfo({ place }) {
@@ -14,6 +15,8 @@ export default function ApointmentFieldInfo({ place }) {
         <Image
           source={{ uri: place.imagenUrl }}
           style={{ width: "100%", height: 200 }}
+          contentFit="cover"
+          transition={300}
         />
         <View>
           <Text

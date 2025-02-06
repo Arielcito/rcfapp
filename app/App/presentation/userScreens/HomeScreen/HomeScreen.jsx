@@ -7,6 +7,7 @@ import {
   FlatList,
   TouchableOpacity,
   Modal,
+  Platform,
 } from "react-native";
 import Header from "./Header";
 import { UserLocationContext } from "../../../application/context/UserLocationContext";
@@ -19,6 +20,7 @@ import { getPredios } from "../../../infraestructure/api/places.api";
 import { getAvailableTimes } from "../../../infraestructure/api/appointments.api";
 import { useFocusEffect } from '@react-navigation/native';
 import { Dimensions } from 'react-native';
+import moment from 'moment';
 
 export default function HomeScreen() {
   const { location, setLocation } = useContext(UserLocationContext);
@@ -29,17 +31,13 @@ export default function HomeScreen() {
   const [selectedMarker, setSelectedMarker] = useState(0);
   const [next7Days, setNext7Days] = useState([]);
   const [timeList, setTimeList] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedTime, setSelectedTime] = useState(() => {
-    const now = new Date();
-    const hour = now.getHours() + 2;
-    return `${hour.toString().padStart(2, '0')}:00`;
-  });
-  const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(moment().format("YYYY-MM-DD"));
+  const [selectedTime, setSelectedTime] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [isTimePickerVisible, setIsTimePickerVisible] = useState(false);
 
-  const { width: screenWidth } = Dimensions.get('window');
-  const isTablet = screenWidth >= 768;
+  const { width } = Dimensions.get('window');
+  const isTablet = width >= 768;
 
   const initializeDateAndTime = useCallback(() => {
     const dates = getDays();
@@ -220,7 +218,7 @@ export default function HomeScreen() {
     <SelectMarkerContext.Provider value={{ selectedMarker, setSelectedMarker }}>
       <View style={[styles.container, isTablet && styles.tabletContainer]}>
         <View style={[styles.headerContainer, isTablet && styles.tabletHeaderContainer]}>
-          <Header />
+          <Header isTablet={isTablet} />
           <Text style={[styles.sectionTitle, isTablet && styles.tabletSectionTitle]}>Elegi la fecha</Text>
           <FlatList
             data={next7Days}
@@ -282,19 +280,124 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50,
-  },
-  headerContainer: {
-    zIndex: 10,
-    padding: 10,
-    width: "100%",
-    paddingHorizontal: 20,
     backgroundColor: Colors.WHITE,
   },
+  tabletContainer: {
+    paddingHorizontal: 20,
+  },
+  headerContainer: {
+    backgroundColor: Colors.PRIMARY,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingBottom: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    paddingHorizontal: 20,
+  },
+  tabletHeaderContainer: {
+    paddingHorizontal: 40,
+  },
   sectionTitle: {
-    padding: 10,
+    color: Colors.WHITE,
+    fontSize: 20,
     fontFamily: "montserrat-medium",
+    marginVertical: 15,
+  },
+  tabletSectionTitle: {
+    fontSize: 24,
+  },
+  dayButtonContainer: {
+    flexDirection: 'row',
+    marginBottom: 15,
+  },
+  tabletDayButtonContainer: {
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  timePickerContainer: {
+    marginTop: 15,
+  },
+  tabletTimePickerContainer: {
+    alignItems: 'center',
+  },
+  timePickerLabel: {
+    color: Colors.WHITE,
     fontSize: 16,
+    fontFamily: "montserrat",
+    marginBottom: 10,
+  },
+  timePickerButton: {
+    backgroundColor: Colors.WHITE,
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  timePickerButtonText: {
+    color: Colors.PRIMARY,
+    fontSize: 16,
+    fontFamily: "montserrat-medium",
+  },
+  listContainer: {
+    flex: 1,
+    paddingTop: 10,
+  },
+  listLoadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeList: {
+    flex: 1,
+  },
+  placeListContent: {
+    paddingBottom: 20,
+    alignItems: Platform.OS === 'ios' ? 'center' : 'stretch',
+  },
+  noPlacesText: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: Colors.GRAY,
+    marginTop: 20,
+  },
+  tabletNoPlacesText: {
+    fontSize: 20,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: Colors.WHITE,
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontFamily: "montserrat-medium",
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  timeList: {
+    maxHeight: 300,
+  },
+  timeItem: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  timeItemText: {
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  selectedTimeItem: {
+    backgroundColor: Colors.PRIMARY_LIGHT,
+  },
+  selectedTimeText: {
+    color: Colors.PRIMARY,
+    fontWeight: 'bold',
   },
   dayButton: {
     borderWidth: 2,
@@ -325,46 +428,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingTop: 2,
   },
-  timePickerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  timePickerLabel: {
-    padding: 10,
-    fontFamily: "montserrat-medium",
-    fontSize: 16,
-  },
-  timePickerButton: {
-    backgroundColor: Colors.PRIMARY,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-  },
-  timePickerButtonText: {
-    color: Colors.WHITE,
-    fontFamily: "montserrat-medium",
-    fontSize: 16,
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  modalContent: {
-    backgroundColor: Colors.WHITE,
-    borderRadius: 20,
-    padding: 20,
-    width: "80%",
-    maxHeight: "80%",
-  },
-  modalTitle: {
-    fontFamily: "montserrat-medium",
-    fontSize: 18,
-    marginBottom: 20,
-    textAlign: "center",
-  },
   timeButton: {
     flex: 1,
     margin: 5,
@@ -390,54 +453,9 @@ const styles = StyleSheet.create({
     fontFamily: "montserrat-medium",
     fontSize: 16,
   },
-  placeList: {
-    flex: 1,
-  },
-  placeListContent: {
-    paddingBottom: 20,
-  },
-  noPlacesText: {
-    fontFamily: "montserrat-medium",
-    fontSize: 16,
-    textAlign: "center",
-    marginTop: 20,
-  },
-  listLoadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 50,
-  },
-  tabletContainer: {
-    paddingTop: 70,
-    paddingHorizontal: 30,
-  },
-  tabletHeaderContainer: {
-    paddingHorizontal: 30,
-  },
-  tabletSectionTitle: {
-    fontSize: 24,
-    marginBottom: 20,
-  },
   tabletDayButton: {
     width: 80,
     height: 80,
     marginRight: 20,
-  },
-  tabletDayButtonContainer: {
-    paddingVertical: 20,
-  },
-  tabletTimePickerContainer: {
-    marginBottom: 30,
-  },
-  tabletPlaceList: {
-    paddingBottom: 400,
-  },
-  tabletNoPlacesText: {
-    fontSize: 20,
-    marginTop: 40,
-  },
-  listContainer: {
-    flex: 1,
   },
 });

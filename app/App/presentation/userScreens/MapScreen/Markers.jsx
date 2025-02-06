@@ -1,4 +1,5 @@
-import { Image } from 'react-native'
+import { View } from 'react-native'
+import { Image } from 'expo-image';
 import React, { useContext } from 'react'
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps'
 import { SelectMarkerContext } from "../../../application/context/SelectMarkerContext";
@@ -21,11 +22,15 @@ export default function Markers({index, place }) {
         <Image 
           source={require('./../../assets/images/marker-selected.png')}
           style={{ width: 60, height: 60 }}
+          contentFit="cover"
+          transition={300}
         />
       ) : (
         <Image 
           source={require('./../../assets/images/marker.png')}
           style={{ width: 60, height: 60 }}
+          contentFit="cover"
+          transition={300}
         />
       )}
     </Marker>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Platform } from "react-native";
+import { Platform, View } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Colors from "../../infraestructure/utils/Colors";
@@ -12,6 +12,7 @@ import MyBookingsScreen from "../userScreens/MyBookingsScreen/MyBookingsScreen";
 import PaymentScreen from "../userScreens/PaymentScreen/PaymentScreen";
 import PitchProfileScreen from "../userScreens/PitchProfileScreen/PitchProfileScreen";
 import EditProfileScreen from "../userScreens/ProfileScreen/EditProfileScreen";
+import DeleteAccountScreen from "../userScreens/ProfileScreen/DeleteAccountScreen";
 import MyBookingDescriptionScreen from "../userScreens/MyBookingsScreen/MyBookingDescriptionScreen";
 import SuccessScreen from "../userScreens/SuccessScreen/SuccressScreen";
 import MapScreen from "../userScreens/MapScreen/MapScreen";
@@ -38,6 +39,11 @@ const ProfileStack = () => (
     <Stack.Screen name="profile" component={ProfileScreen} />
     <Stack.Screen name="myBooking" component={MyBookingsScreen} />
     <Stack.Screen name="termsAndCondition" component={TermsAndCondition} />
+    <Stack.Screen name="delete-account" component={DeleteAccountScreen} options={{
+      headerShown: true,
+      headerTitle: "Eliminar cuenta",
+      headerTintColor: "black",
+    }} />
     <Stack.Screen
       name="myBookingDescription"
       component={MyBookingDescriptionScreen}

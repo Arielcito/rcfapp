@@ -104,8 +104,7 @@
         "NSLocationAlwaysUsageDescription": "RFC App necesita acceso a tu ubicación en segundo plano para enviarte notificaciones cuando un pedido está cerca de tu dirección y para optimizar las rutas de entrega en tiempo real.",
         "NSCameraUsageDescription": "RFC App necesita acceso a la cámara para que puedas tomar fotos de perfil, documentos de identificación y comprobantes de entrega.",
         "UIBackgroundModes": [
-          "location",
-          "fetch"
+          "location"
         ]
       },
       "supportsTablet": true,

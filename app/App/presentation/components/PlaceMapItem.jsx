@@ -2,20 +2,26 @@ import React from "react";
 import {
   View,
   Text,
-  Image,
   Dimensions,
   Pressable,
   StyleSheet,
 } from "react-native";
+import { Image } from 'expo-image';
 import { useNavigation } from "@react-navigation/native";
 import Colors from "../../infraestructure/utils/Colors";
+
 const PlaceMapItem = ({ place}) => {
   const navigation = useNavigation();
 
   return (
     <View style={styles.container}>
       <View style={styles.contentContainer}>
-        <Image source={{ uri: place.imageUrl }} style={styles.image} />
+        <Image 
+          source={{ uri: place.imageUrl }} 
+          style={styles.image}
+          contentFit="cover"
+          transition={300}
+        />
         <View style={styles.textContainer}>
           <Text numberOfLines={1} style={styles.title}>
             {place.name}

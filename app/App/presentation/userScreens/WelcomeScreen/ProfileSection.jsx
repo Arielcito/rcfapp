@@ -1,4 +1,5 @@
-import { View, Text, Image, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import { Image } from 'expo-image';
 import React from "react";
 
 export default function ProfileSection({ user }) {
@@ -15,6 +16,8 @@ export default function ProfileSection({ user }) {
       <Image
         source={require("./../../../assets/profile.jpeg")}
         style={styles.profileImage}
+        contentFit="cover"
+        transition={300}
       />
 
       <Text>Hola {user?.email}</Text>
