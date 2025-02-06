@@ -33,6 +33,11 @@ const createPrediosTable = (): PrediosTable => pgTable('predios', {
   codigoPostal: text('codigo_postal'),
   telefono: text('telefono'),
   email: text('email'),
+  cbu: text('cbu'),
+  titularCuenta: text('titular_cuenta'),
+  tipoCuenta: text('tipo_cuenta'),
+  banco: text('banco'),
+  numeroCuenta: text('numero_cuenta'),
   latitud: decimal('latitud'),
   longitud: decimal('longitud'),
   capacidadEstacionamiento: integer('capacidad_estacionamiento'),
@@ -95,15 +100,25 @@ export const pagos = pgTable('Pago', {
   detallesAdicionales: text('detallesAdicionales'),
 });
 
-export const movimientosCaja = pgTable('MovimientoCaja', {
+export const categoriaMovimiento = pgTable('categoria_movimiento', {
   id: uuid('id').primaryKey().$defaultFn(createId),
-  predioId: uuid('predioId').notNull().references(() => predios.id),
+  nombre: text('nombre').notNull(),
+  tipo: text('tipo', { enum: ['INGRESO', 'EGRESO'] }).notNull(),
+  descripcion: text('descripcion'),
+  activo: boolean('activo').default(true),
+});
+
+export const movimientosCaja = pgTable('movimientos_caja', {
+  id: uuid('id').primaryKey().$defaultFn(createId),
+  predioId: uuid('predio_id').references(() => predios.id),
+  categoriaId: uuid('categoria_id').references(() => categoriaMovimiento.id),
   concepto: varchar('concepto').notNull(),
   descripcion: text('descripcion'),
   monto: decimal('monto', { precision: 10, scale: 2 }).notNull(),
-  tipo: varchar('tipo').notNull(), // INGRESO o EGRESO
-  metodoPago: varchar('metodoPago').notNull(),
-  fechaMovimiento: timestamp('fechaMovimiento').defaultNow(),
+  tipo: varchar('tipo', { length: 20 }).notNull(),
+  metodoPago: varchar('metodo_pago').notNull(),
+  fechaMovimiento: timestamp('fecha_movimiento').defaultNow(),
+  comprobante: varchar('comprobante', { length: 255 }),
 });
 
 // Configurar las relaciones
@@ -124,4 +139,15 @@ export const canchasRelations = relations(canchas, ({ one }) => ({
     fields: [canchas.predioId],
     references: [predios.id]
   })
+}));
+
+export const movimientosCajaRelations = relations(movimientosCaja, ({ one }) => ({
+  predio: one(predios, {
+    fields: [movimientosCaja.predioId],
+    references: [predios.id],
+  }),
+  categoria: one(categoriaMovimiento, {
+    fields: [movimientosCaja.categoriaId],
+    references: [categoriaMovimiento.id],
+  }),
 }));    

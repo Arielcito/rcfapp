@@ -8,6 +8,11 @@ export interface Predio {
   codigoPostal?: string;
   telefono?: string;
   email?: string;
+  cbu?: string;
+  titularCuenta?: string;
+  tipoCuenta?: string;
+  banco?: string;
+  numeroCuenta?: string;
   latitud?: number;
   longitud?: number;
   capacidadEstacionamiento?: number;
@@ -29,6 +34,11 @@ export interface PredioCreationData {
   codigoPostal?: string;
   telefono?: string;
   email?: string;
+  cbu?: string;
+  titularCuenta?: string;
+  tipoCuenta?: string;
+  banco?: string;
+  numeroCuenta?: string;
   latitud?: number;
   longitud?: number;
   capacidadEstacionamiento?: number;
