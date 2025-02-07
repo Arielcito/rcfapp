@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const api = axios.create({
-  baseURL: 'https://backoffice.xerato.io/rcf/api',
+  baseURL: 'http://localhost:3001/api',
   timeout: 10000,
   withCredentials: true,
   headers: {

@@ -4,21 +4,21 @@ import { categoriaMovimiento } from './schema';
 async function seedCategorias() {
   // Categorías de Gastos
   const gastos = [
-    { nombre: 'Servicios', tipo: 'EGRESO', descripcion: 'Gastos de luz, agua, gas, internet' },
-    { nombre: 'Mantenimiento', tipo: 'EGRESO', descripcion: 'Limpieza y reparaciones' },
-    { nombre: 'Personal', tipo: 'EGRESO', descripcion: 'Sueldos y cargas sociales' },
-    { nombre: 'Equipamiento', tipo: 'EGRESO', descripcion: 'Pelotas, redes y equipos' },
-    { nombre: 'Marketing', tipo: 'EGRESO', descripcion: 'Publicidad y promoción' },
-    { nombre: 'Impuestos', tipo: 'EGRESO', descripcion: 'Impuestos y tasas' },
-    { nombre: 'Otros Gastos', tipo: 'EGRESO', descripcion: 'Gastos varios' }
+    { nombre: 'Servicios', tipo: 'EGRESO' as const, descripcion: 'Gastos de luz, agua, gas, internet' },
+    { nombre: 'Mantenimiento', tipo: 'EGRESO' as const, descripcion: 'Limpieza y reparaciones' },
+    { nombre: 'Personal', tipo: 'EGRESO' as const, descripcion: 'Sueldos y cargas sociales' },
+    { nombre: 'Equipamiento', tipo: 'EGRESO' as const, descripcion: 'Pelotas, redes y equipos' },
+    { nombre: 'Marketing', tipo: 'EGRESO' as const, descripcion: 'Publicidad y promoción' },
+    { nombre: 'Impuestos', tipo: 'EGRESO' as const, descripcion: 'Impuestos y tasas' },
+    { nombre: 'Otros Gastos', tipo: 'EGRESO' as const, descripcion: 'Gastos varios' }
   ];
 
   // Categorías de Ingresos
   const ingresos = [
-    { nombre: 'Reservas', tipo: 'INGRESO', descripcion: 'Ingresos por reservas de canchas' },
-    { nombre: 'Alquiler Equipos', tipo: 'INGRESO', descripcion: 'Alquiler de equipamiento deportivo' },
-    { nombre: 'Eventos', tipo: 'INGRESO', descripcion: 'Ingresos por eventos especiales' },
-    { nombre: 'Otros Ingresos', tipo: 'INGRESO', descripcion: 'Ingresos varios' }
+    { nombre: 'Reservas', tipo: 'INGRESO' as const, descripcion: 'Ingresos por reservas de canchas' },
+    { nombre: 'Alquiler Equipos', tipo: 'INGRESO' as const, descripcion: 'Alquiler de equipamiento deportivo' },
+    { nombre: 'Eventos', tipo: 'INGRESO' as const, descripcion: 'Ingresos por eventos especiales' },
+    { nombre: 'Otros Ingresos', tipo: 'INGRESO' as const, descripcion: 'Ingresos varios' }
   ];
 
   try {

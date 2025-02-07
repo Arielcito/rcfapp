@@ -1,6 +1,6 @@
 import express from 'express';
 import * as movimientoController from '../controllers/movimientoController';
-import { authMiddleware } from '../middlewares/auth';
+import { authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/categorias', movimientoController.getCategorias);
 
 // Rutas protegidas
-router.use(authMiddleware);
+router.use(authenticateToken);
 
 // Movimientos por predio
 router.get('/predio/:predioId', movimientoController.getMovimientos);

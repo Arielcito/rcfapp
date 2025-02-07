@@ -7,14 +7,55 @@ import type {
   MovimientoCajaCreationData,
   MovimientoCajaUpdateData,
   MovimientoCajaFiltros,
-  ResumenMovimientos
+  ResumenMovimientos,
+  MetodoPago
 } from '../types/movimiento';
 
 // Categorías
 export const getCategorias = async (): Promise<CategoriaMovimiento[]> => {
-  return await db.select()
+  const result = await db.select()
     .from(categoriaMovimiento)
     .where(eq(categoriaMovimiento.activo, true));
+
+  return result.map(cat => ({
+    id: cat.id,
+    nombre: cat.nombre,
+    tipo: cat.tipo as 'INGRESO' | 'EGRESO',
+    descripcion: cat.descripcion || undefined,
+    activo: cat.activo || false
+  }));
+};
+
+interface DBMovimiento {
+  id: string;
+  predioId: string | null;
+  categoriaId: string | null;
+  concepto: string;
+  descripcion: string | null;
+  monto: string;
+  tipo: string;
+  metodoPago: string;
+  fechaMovimiento: Date | null;
+  comprobante: string | null;
+}
+
+const mapMovimientoFromDB = (mov: DBMovimiento): MovimientoCaja | null => {
+  if (!mov.id || !mov.predioId || !mov.categoriaId || !mov.fechaMovimiento) {
+    return null;
+  }
+
+  return {
+    id: mov.id,
+    predioId: mov.predioId,
+    categoriaId: mov.categoriaId,
+    concepto: mov.concepto,
+    descripcion: mov.descripcion || undefined,
+    monto: Number(mov.monto),
+    tipo: mov.tipo as 'INGRESO' | 'EGRESO',
+    metodoPago: mov.metodoPago as MetodoPago,
+    fechaMovimiento: mov.fechaMovimiento,
+    comprobante: mov.comprobante || undefined
+  };
 };
 
 // Movimientos
@@ -40,32 +81,53 @@ export const getMovimientos = async (
     conditions.push(eq(movimientosCaja.metodoPago, filtros.metodoPago));
   }
 
-  return await db.select()
+  const result = await db.select()
     .from(movimientosCaja)
     .where(and(...conditions))
     .orderBy(movimientosCaja.fechaMovimiento);
+
+  return result.map(mov => {
+    const mapped = mapMovimientoFromDB(mov);
+    if (!mapped) {
+      throw new Error(`Movimiento inválido encontrado: ${mov.id}`);
+    }
+    return mapped;
+  });
 };
 
 export const createMovimiento = async (
   movimientoData: MovimientoCajaCreationData
 ): Promise<MovimientoCaja> => {
-  const [movimiento] = await db.insert(movimientosCaja)
-    .values(movimientoData)
-    .returning() as MovimientoCaja[];
+  const [result] = await db.insert(movimientosCaja)
+    .values({
+      ...movimientoData,
+      monto: String(movimientoData.monto)
+    })
+    .returning();
 
-  return movimiento;
+  const mapped = mapMovimientoFromDB(result);
+  if (!mapped) {
+    throw new Error('Error al crear el movimiento: datos inválidos');
+  }
+  return mapped;
 };
 
 export const updateMovimiento = async (
   id: string,
   movimientoData: MovimientoCajaUpdateData
 ): Promise<MovimientoCaja | null> => {
-  const [movimiento] = await db.update(movimientosCaja)
-    .set(movimientoData)
-    .where(eq(movimientosCaja.id, id))
-    .returning() as MovimientoCaja[];
+  const updateData = {
+    ...movimientoData,
+    monto: movimientoData.monto ? String(movimientoData.monto) : undefined
+  };
 
-  return movimiento || null;
+  const [result] = await db.update(movimientosCaja)
+    .set(updateData)
+    .where(eq(movimientosCaja.id, id))
+    .returning();
+
+  if (!result) return null;
+  return mapMovimientoFromDB(result);
 };
 
 export const deleteMovimiento = async (id: string): Promise<void> => {
@@ -78,7 +140,20 @@ export const getResumenMovimientos = async (
   fechaDesde?: Date,
   fechaHasta?: Date
 ): Promise<ResumenMovimientos> => {
-  const movimientos = await getMovimientos(predioId, { fechaDesde, fechaHasta });
+  const movimientos = await db.select({
+    id: movimientosCaja.id,
+    monto: movimientosCaja.monto,
+    tipo: movimientosCaja.tipo,
+    categoriaId: movimientosCaja.categoriaId,
+    categoriaNombre: categoriaMovimiento.nombre
+  })
+  .from(movimientosCaja)
+  .leftJoin(categoriaMovimiento, eq(movimientosCaja.categoriaId, categoriaMovimiento.id))
+  .where(and(
+    eq(movimientosCaja.predioId, predioId),
+    fechaDesde ? gte(movimientosCaja.fechaMovimiento, fechaDesde) : undefined,
+    fechaHasta ? lte(movimientosCaja.fechaMovimiento, fechaHasta) : undefined
+  ));
 
   const resumen: ResumenMovimientos = {
     totalIngresos: 0,
@@ -96,13 +171,14 @@ export const getResumenMovimientos = async (
       resumen.totalEgresos += Number(mov.monto);
     }
 
-    // Acumular por categoría
-    const categoriaActual = categoriasMap.get(mov.categoriaId) || { 
-      nombre: '', 
-      total: 0 
-    };
-    categoriaActual.total += Number(mov.monto);
-    categoriasMap.set(mov.categoriaId, categoriaActual);
+    if (mov.categoriaId) {
+      const categoriaActual = categoriasMap.get(mov.categoriaId) || { 
+        nombre: mov.categoriaNombre || 'Sin categoría', 
+        total: 0 
+      };
+      categoriaActual.total += Number(mov.monto);
+      categoriasMap.set(mov.categoriaId, categoriaActual);
+    }
   }
 
   resumen.balance = resumen.totalIngresos - resumen.totalEgresos;
