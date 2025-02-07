@@ -128,13 +128,16 @@ export default function HomeScreen() {
 
   const handleDateSelection = (newDate) => {
     if (!newDate) return;
+    console.log('HomeScreen - Nueva fecha seleccionada:', newDate);
+    console.log('HomeScreen - Tipo de fecha:', typeof newDate);
+    
     setSelectedDate(newDate);
     
     const time = getTime();
     const today = new Date();
-    const selectedDateParts = newDate.split('-');
-    const diaSeleccionado = Number(selectedDateParts[2]);
-    const esHoy = diaSeleccionado === today.getDate();
+    const selectedDateObj = moment(newDate);
+    console.log('HomeScreen - Fecha parseada con moment:', selectedDateObj.format('YYYY-MM-DD'));
+    const esHoy = selectedDateObj.isSame(moment(), 'day');
     
     const horariosDisponibles = esHoy ? time.filter((timeSlot) => {
       const hora = Number(timeSlot.time.split(':')[0]);
@@ -186,33 +189,36 @@ export default function HomeScreen() {
     </Modal>
   );
 
-  const renderDayButton = ({ item }) => (
-    <TouchableOpacity
-      style={[
-        styles.dayButton,
-        selectedDate === item.date && { backgroundColor: Colors.PRIMARY },
-        isTablet && styles.tabletDayButton,
-      ]}
-      onPress={() => handleDateSelection(item.date)}
-    >
-      <View style={styles.dayButtonHeader}>
-        <Text style={[
-          styles.dayButtonHeaderText,
-          selectedDate === item.date && { color: Colors.WHITE },
-        ]}>
-          {item.day}
-        </Text>
-      </View>
-      <View>
-        <Text style={[
-          styles.dayButtonDateText,
-          selectedDate === item.date && { color: Colors.WHITE },
-        ]}>
-          {item.formmatedDate}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
+  const renderDayButton = ({ item }) => {
+    console.log('HomeScreen - Renderizando botón de día:', item);
+    return (
+      <TouchableOpacity
+        style={[
+          styles.dayButton,
+          selectedDate === item.date && { backgroundColor: Colors.PRIMARY },
+          isTablet && styles.tabletDayButton,
+        ]}
+        onPress={() => handleDateSelection(item.date)}
+      >
+        <View style={styles.dayButtonHeader}>
+          <Text style={[
+            styles.dayButtonHeaderText,
+            selectedDate === item.date && { color: Colors.WHITE },
+          ]}>
+            {item.day}
+          </Text>
+        </View>
+        <View>
+          <Text style={[
+            styles.dayButtonDateText,
+            selectedDate === item.date && { color: Colors.WHITE },
+          ]}>
+            {item.formmatedDate}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SelectMarkerContext.Provider value={{ selectedMarker, setSelectedMarker }}>

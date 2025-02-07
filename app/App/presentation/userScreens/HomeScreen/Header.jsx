@@ -23,6 +23,19 @@ const Header = ({ isTablet }) => {
 const styles = StyleSheet.create({
   container: {
     paddingTop: Platform.OS === 'ios' ? 20 : 10,
+    backgroundColor: '#1E3A8A',
+    paddingHorizontal: 15,
+    paddingBottom: 15,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   tabletContainer: {
     paddingHorizontal: 20,

@@ -12,7 +12,7 @@ import { Image } from 'expo-image';
 import { useNavigation } from "@react-navigation/native";
 import Colors from "../../infraestructure/utils/Colors";
 
-const PlaceItem = ({ place, selectedDate = "", selectedTime = "", isTablet }) => {
+const PlaceItem = ({ place, selectedDate, selectedTime, isTablet }) => {
   const navigation = useNavigation();
   const [imageError, setImageError] = useState(false);
 
@@ -27,16 +27,18 @@ const PlaceItem = ({ place, selectedDate = "", selectedTime = "", isTablet }) =>
     return { uri: place.imagenUrl };
   };
 
+  const handlePress = () => {
+    navigation.navigate("booking", {
+      place,
+      selectedDate: selectedDate,
+      selectedTime,
+    });
+  };
+
   return (
     <TouchableOpacity
       style={[styles.container, isTablet && styles.tabletContainer]}
-      onPress={() =>
-        navigation.navigate("booking", {
-          place: place,
-          date: selectedDate,
-          time: selectedTime,
-        })
-      }
+      onPress={handlePress}
     >
       <Image
         style={[styles.image, isTablet && styles.tabletImage]}
@@ -58,13 +60,7 @@ const PlaceItem = ({ place, selectedDate = "", selectedTime = "", isTablet }) =>
           <Text style={[styles.price, isTablet && styles.tabletPrice]}>$20.000</Text>
           <Pressable
             style={[styles.button, isTablet && styles.tabletButton]}
-            onPress={() =>
-              navigation.navigate("booking", {
-                place: place,
-                date: selectedDate,
-                time: selectedTime,
-              })
-            }
+            onPress={handlePress}
           >
             <Text style={[styles.buttonText, isTablet && styles.tabletButtonText]}>Reservar</Text>
           </Pressable>
