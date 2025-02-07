@@ -39,12 +39,29 @@ export default function BookingSection({
 
   useEffect(() => {
     moment.locale("es");
-    setSelectedDate(preselectedDate);
+    console.log('BookingSection - Fecha preseleccionada:', preselectedDate);
+    console.log('BookingSection - Hora preseleccionada:', preselectedTime);
+    
+    // Aseguramos que la fecha sea un objeto moment válido
+    const fechaValida = moment(preselectedDate, 'YYYY-MM-DD', true);
+    if (fechaValida.isValid()) {
+      setSelectedDate(fechaValida);
+    } else {
+      console.error('Fecha inválida recibida:', preselectedDate);
+      setSelectedDate(moment()); // Fecha actual como fallback
+    }
+
     setSelectedTime(preselectedTime);
-    const timeMoment = moment(preselectedTime, "HH:mm");
-    const newTimeMoment = timeMoment.add(1, "hour");
-    const newTime = newTimeMoment.format("HH:mm");
-    setEndTime(newTime);
+    
+    if (preselectedTime) {
+      const timeMoment = moment(preselectedTime, "HH:mm");
+      if (timeMoment.isValid()) {
+        const newTimeMoment = timeMoment.add(1, "hour");
+        const newTime = newTimeMoment.format("HH:mm");
+        setEndTime(newTime);
+      }
+    }
+    
     fetchCanchas();
   }, [preselectedDate, preselectedTime]);
 
@@ -67,7 +84,14 @@ export default function BookingSection({
   };
 
   const formatDate = (date) => {
-    return moment(date).format("dddd, D [de] MMMM");
+    if (!date || !moment.isMoment(date)) {
+      console.error('Fecha inválida para formatear:', date);
+      return 'Fecha no válida';
+    }
+    console.log('BookingSection - Formateando fecha:', date.format('YYYY-MM-DD'));
+    const formattedDate = date.format("dddd, D [de] MMMM");
+    console.log('BookingSection - Fecha formateada:', formattedDate);
+    return formattedDate;
   };
 
   const renderCanchaItem = ({ item }) => (
@@ -116,7 +140,7 @@ export default function BookingSection({
       <View style={styles.detailsContainer}>
         <View style={styles.detailItem}>
           <Ionicons name="calendar-outline" size={24} color={Colors.PRIMARY} />
-          <Text style={styles.detailText}>{formatDate(selectedDate)}</Text>
+          <Text style={styles.detailText}>{selectedDate ? formatDate(selectedDate) : 'Fecha no seleccionada'}</Text>
         </View>
         <View style={styles.detailItem}>
           <Ionicons name="time-outline" size={24} color={Colors.PRIMARY} />
@@ -225,7 +249,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   canchaItem: {
-    backgroundColor: Colors.LIGHT_GRAY,
+    backgroundColor: '#E8F0FE',
     borderRadius: 8,
     padding: 12,
     marginRight: 8,
@@ -239,11 +263,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 4,
-    color: Colors.WHITE,
+    color: '#1E3A8A',
   },
   canchaDetail: {
     fontSize: 14,
-    color: Colors.GRAY,
+    color: '#4B5563',
   },
   detailsContainer: {
     backgroundColor: "#f0f0f0",

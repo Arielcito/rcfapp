@@ -11,6 +11,7 @@ import {
   ScrollView,
   Platform,
   Alert,
+  Share,
 } from "react-native";
 import React, { useContext } from "react";
 import { useNavigation } from "@react-navigation/native";
@@ -114,9 +115,79 @@ export default function PaymentScreen() {
     }
   };
 
+  const compartirDatosBancarios = async () => {
+    try {
+      const mensaje = `Datos para transferencia:
+CBU: ${place.cbu}
+Titular: ${place.titularCuenta}
+Banco: ${place.banco}
+Tipo de cuenta: ${place.tipoCuenta}
+Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
+
+      await Share.share({
+        message: mensaje,
+      });
+    } catch (error) {
+      console.error("Error al compartir:", error);
+      showMessage("Error al compartir los datos bancarios");
+    }
+  };
+
+  const renderTransferenciaBancaria = () => {
+    if (selectedPaymentMethod !== 'transferencia') return null;
+    if (!place.cbu) {
+      return (
+        <View style={styles.transferWarning}>
+          <Text style={styles.warningText}>Este predio no tiene datos bancarios configurados.</Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.transferContainer}>
+        <View style={styles.transferDataRow}>
+          <Text style={styles.transferLabel}>CBU:</Text>
+          <Text style={styles.transferValue}>{place.cbu}</Text>
+        </View>
+        {place.titularCuenta && (
+          <View style={styles.transferDataRow}>
+            <Text style={styles.transferLabel}>Titular:</Text>
+            <Text style={styles.transferValue}>{place.titularCuenta}</Text>
+          </View>
+        )}
+        {place.banco && (
+          <View style={styles.transferDataRow}>
+            <Text style={styles.transferLabel}>Banco:</Text>
+            <Text style={styles.transferValue}>{place.banco}</Text>
+          </View>
+        )}
+        {place.tipoCuenta && (
+          <View style={styles.transferDataRow}>
+            <Text style={styles.transferLabel}>Tipo de cuenta:</Text>
+            <Text style={styles.transferValue}>{place.tipoCuenta}</Text>
+          </View>
+        )}
+        <TouchableOpacity 
+          style={styles.shareButton}
+          onPress={compartirDatosBancarios}
+        >
+          <Ionicons name="share-outline" size={20} color={Colors.WHITE} />
+          <Text style={styles.shareButtonText}>Compartir datos</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   const handlePayment = async () => {
     try {
       switch (selectedPaymentMethod) {
+        case "transferencia": {
+          if (!place.cbu) {
+            throw new Error("Este predio no tiene datos bancarios configurados");
+          }
+          await bookAppointment("Transferencia");
+          break;
+        }
         case "Mercado Pago": {
           const data = await handleIntegrationMP(cancha);
           if (!data) {
@@ -287,6 +358,19 @@ export default function PaymentScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
+          onPress={() => setSelectedPaymentMethod("transferencia")}
+          style={[
+            styles.paymentButton,
+            selectedPaymentMethod === "transferencia" && {
+              borderColor: Colors.PRIMARY,
+            },
+          ]}
+        >
+          <Ionicons name="card-outline" size={30} color={Colors.PRIMARY} />
+          <Text style={styles.paymentMethodText}>Transferencia</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           onPress={() => setSelectedPaymentMethod("tarjeta")}
           style={[
             styles.paymentButton,
@@ -311,6 +395,7 @@ export default function PaymentScreen() {
         </TouchableOpacity>
       </View>
 
+      {renderTransferenciaBancaria()}
       {renderCreditCardForm()}
 
       <View style={styles.stickyButtonContainer}>
@@ -482,5 +567,57 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontFamily: "montserrat-medium",
     fontSize: 17,
+  },
+  transferContainer: {
+    backgroundColor: Colors.WHITE,
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 15,
+  },
+  transferDataRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.LIGHT_GRAY,
+  },
+  transferLabel: {
+    fontSize: 14,
+    color: Colors.GRAY,
+    fontFamily: "montserrat-medium",
+  },
+  transferValue: {
+    fontSize: 14,
+    color: Colors.BLACK,
+    fontFamily: "montserrat",
+    flex: 1,
+    textAlign: 'right',
+    marginLeft: 10,
+  },
+  transferWarning: {
+    backgroundColor: '#FEF3C7',
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 15,
+  },
+  warningText: {
+    color: '#92400E',
+    fontFamily: "montserrat",
+    textAlign: 'center',
+  },
+  shareButton: {
+    flexDirection: 'row',
+    backgroundColor: Colors.PRIMARY,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 15,
+  },
+  shareButtonText: {
+    color: Colors.WHITE,
+    fontFamily: "montserrat-medium",
+    marginLeft: 8,
   },
 });
