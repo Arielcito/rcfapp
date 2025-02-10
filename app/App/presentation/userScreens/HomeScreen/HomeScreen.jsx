@@ -40,11 +40,15 @@ export default function HomeScreen() {
   const isTablet = width >= 768;
 
   const initializeDateAndTime = useCallback(() => {
+    console.log('HomeScreen - Iniciando initializeDateAndTime');
     const dates = getDays();
     const time = getTime();
+    console.log('HomeScreen - Fechas obtenidas:', dates);
+    console.log('HomeScreen - Horarios obtenidos:', time);
     setNext7Days(dates);
     
     if (dates && dates.length > 0) {
+      console.log('HomeScreen - Estableciendo fecha inicial:', dates[0].date);
       setSelectedDate(dates[0].date);
     }
 
@@ -58,6 +62,7 @@ export default function HomeScreen() {
       return hora > currentHour + 1 || (hora === currentHour + 1 && currentMinutes < 30);
     });
 
+    console.log('HomeScreen - Horarios disponibles:', horariosDisponibles);
     setTimeList(horariosDisponibles);
     
     // Para hoy, establecemos el horario a una hora después de la actual
@@ -67,6 +72,7 @@ export default function HomeScreen() {
       return hora >= siguienteHora;
     }) || horariosDisponibles[0];
     
+    console.log('HomeScreen - Horario inicial seleccionado:', horarioDisponible);
     setSelectedTime(horarioDisponible ? horarioDisponible.time : null);
   }, []);
 
@@ -226,6 +232,7 @@ export default function HomeScreen() {
         <View style={[styles.headerContainer, isTablet && styles.tabletHeaderContainer]}>
           <Header isTablet={isTablet} />
           <Text style={[styles.sectionTitle, isTablet && styles.tabletSectionTitle]}>Elegi la fecha</Text>
+          {console.log('HomeScreen - Renderizando lista de días:', next7Days)}
           <FlatList
             data={next7Days}
             horizontal={true}
