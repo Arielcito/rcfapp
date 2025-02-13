@@ -6,6 +6,7 @@ export interface MercadoPagoConfigDTO {
 }
 
 export interface PreferenceItem {
+  id?: string;
   title: string;
   description: string;
   picture_url?: string;

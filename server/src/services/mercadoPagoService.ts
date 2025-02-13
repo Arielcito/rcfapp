@@ -56,7 +56,10 @@ export class MercadoPagoService {
       const preference = new Preference(mercadopago);
       
       const preferenceData = {
-        items: data.items,
+        items: data.items.map(item => ({
+          ...item,
+          id: item.id || `item-${Date.now()}-${Math.random().toString(36).substring(7)}`
+        })),
         external_reference: data.external_reference,
         back_urls: {
           success: data.back_urls?.success || process.env.MP_SUCCESS_URL,

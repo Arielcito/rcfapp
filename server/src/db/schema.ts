@@ -9,7 +9,7 @@ type PrediosTable = ReturnType<typeof pgTable>;
 
 // Crear las tablas con funciones separadas para evitar referencias circulares
 const createUsersTable = (): UsersTable => pgTable('users', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').primaryKey().$defaultFn(createId),
   name: text('name'),
   email: text('email').notNull().unique(),
   password: text('password'),

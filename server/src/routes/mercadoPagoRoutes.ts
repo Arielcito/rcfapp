@@ -1,13 +1,12 @@
 import { Router } from 'express';
 import { MercadoPagoController } from '../controllers/mercadoPagoController';
-import { authenticateToken, isOwner } from '../middleware/auth';
+import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 const mercadoPagoController = new MercadoPagoController();
 
 // Rutas protegidas que requieren autenticación y ser dueño
 router.use(authenticateToken);
-router.use(isOwner);
 
 // Configuración de Mercado Pago
 router.post('/config', mercadoPagoController.saveConfig);
