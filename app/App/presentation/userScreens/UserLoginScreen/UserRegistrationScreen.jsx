@@ -8,22 +8,22 @@ import {
   Dimensions,
   ActivityIndicator,
   ImageBackground,
+  Platform,
+  Alert,
   ToastAndroid,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { FIREBASE_AUTH, FIREBASE_DB } from '../../../infraestructure/config/FirebaseConfig';
-import { PhoneAuthProvider, signInWithPhoneNumber } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
 import Colors from '../../../infraestructure/utils/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../../infraestructure/api/api';
 
 export default function UserRegistrationScreen() {
   const [values, setValues] = useState({
-    name: '',
+    nombre: '',
     email: '',
     pwd: '',
     confirmPwd: '',
+    telefono: '',
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -33,8 +33,8 @@ export default function UserRegistrationScreen() {
   const validateForm = () => {
     const newErrors = {};
     
-    if (!values.name.trim()) {
-      newErrors.name = 'El nombre es requerido';
+    if (!values.nombre.trim()) {
+      newErrors.nombre = 'El nombre es requerido';
     }
 
     if (!values.email.trim()) {
@@ -55,6 +55,12 @@ export default function UserRegistrationScreen() {
       newErrors.confirmPwd = 'Las contraseñas no coinciden';
     }
 
+    if (!values.telefono) {
+      newErrors.telefono = 'El número de teléfono es requerido';
+    } else if (!/^\+?[1-9]\d{1,14}$/.test(values.telefono)) {
+      newErrors.telefono = 'Número de teléfono inválido (formato: +549XXXXXXXXXX)';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -64,12 +70,19 @@ export default function UserRegistrationScreen() {
       ...prev,
       [field]: text
     }));
-    // Limpiar error cuando el usuario empieza a escribir
     if (errors[field]) {
       setErrors(prev => ({
         ...prev,
         [field]: null
       }));
+    }
+  };
+
+  const showMessage = (message, title = 'Mensaje') => {
+    if (Platform.OS === 'ios') {
+      Alert.alert(title, message);
+    } else {
+      ToastAndroid.show(message, ToastAndroid.LONG);
     }
   };
 
@@ -79,22 +92,20 @@ export default function UserRegistrationScreen() {
     setLoading(true);
     try {
       const response = await api.post('/users/register', {
-        nombre: values.name,
+        name: values.nombre,
         email: values.email.toLowerCase(),
         password: values.pwd,
+        telefono: values.telefono,
         role: 'USER'
       });
 
       if (response.status === 201) {
-        ToastAndroid.show('¡Registro exitoso!', ToastAndroid.LONG);
+        showMessage('¡Registro exitoso!');
         navigation.navigate('user-login');
       }
     } catch (error) {
       console.error('Error en registro:', error);
-      ToastAndroid.show(
-        error.response?.data?.message || 'Error en el registro',
-        ToastAndroid.LONG
-      );
+      showMessage(error.response?.data?.message || 'Error en el registro');
     } finally {
       setLoading(false);
     }
@@ -116,10 +127,10 @@ export default function UserRegistrationScreen() {
         <TextInput
           style={styles.input}
           placeholder="Nombre"
-          onChangeText={(text) => handleChange(text, 'name')}
-          value={values.name}
+          onChangeText={(text) => handleChange(text, 'nombre')}
+          value={values.nombre}
         />
-        {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+        {errors.nombre && <Text style={styles.errorText}>{errors.nombre}</Text>}
         
         <TextInput
           style={styles.input}
@@ -138,6 +149,8 @@ export default function UserRegistrationScreen() {
           value={values.pwd}
           secureTextEntry={true}
           autoCapitalize="none"
+          textContentType="none"
+          autoCorrect={false}
         />
         {errors.pwd && <Text style={styles.errorText}>{errors.pwd}</Text>}
 
@@ -148,8 +161,19 @@ export default function UserRegistrationScreen() {
           value={values.confirmPwd}
           secureTextEntry={true}
           autoCapitalize="none"
+          textContentType="none"
+          autoCorrect={false}
         />
         {errors.confirmPwd && <Text style={styles.errorText}>{errors.confirmPwd}</Text>}
+
+        <TextInput
+          style={styles.input}
+          placeholder="Teléfono (+549XXXXXXXXXX)"
+          onChangeText={(text) => handleChange(text, 'telefono')}
+          value={values.telefono}
+          keyboardType="phone-pad"
+        />
+        {errors.telefono && <Text style={styles.errorText}>{errors.telefono}</Text>}
 
         <TouchableOpacity
           style={styles.button}
@@ -159,7 +183,9 @@ export default function UserRegistrationScreen() {
           {loading ? (
             <ActivityIndicator color="#ffffff" />
           ) : (
-            <Text style={styles.buttonText}>Registrarse</Text>
+            <Text style={styles.buttonText}>
+              Registrarse
+            </Text>
           )}
         </TouchableOpacity>
       </View>

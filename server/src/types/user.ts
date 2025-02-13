@@ -21,6 +21,7 @@ export interface UserCreationData {
   email: string;
   password: string;
   role?: Role;
+  telefono?: string;
 }
 
 export interface UserUpdateData {
