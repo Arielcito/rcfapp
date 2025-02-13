@@ -19,7 +19,6 @@ import { useState } from "react";
 import { useRoute } from "@react-navigation/native";
 import MercadoPagoImage from "../../assets/images/mercado-pago.png";
 import CreditCardImage from "../../assets/images/credit-card.png";
-import handleIntegrationMP from "../../../infraestructure/config/MercadoPagoConfig";
 import { openBrowserAsync } from "expo-web-browser";
 import moment from "moment";
 import Colors from "../../../infraestructure/utils/Colors";
@@ -29,6 +28,7 @@ import CashImage from "../../assets/images/cash.png";
 import { api } from "../../../infraestructure/api/api";
 import { useCurrentUser } from "../../../application/context/CurrentUserContext";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { mercadoPagoApi } from "../../../infraestructure/api/mercadopago.api";
 
 const { width } = Dimensions.get("window");
 
@@ -189,15 +189,31 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
           break;
         }
         case "Mercado Pago": {
-          const data = await handleIntegrationMP(cancha);
-          if (!data) {
+          const preferenceData = {
+            predioId: place.id,
+            items: [{
+              title: cancha.nombre,
+              description: `Reserva en ${place.nombre} - ${cancha.tipo} ${cancha.tipoSuperficie}`,
+              picture_url: cancha.imagenUrl || place.imagenUrl,
+              quantity: 1,
+              currency_id: "ARS",
+              unit_price: cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora
+            }],
+            external_reference: `reserva_${Date.now()}`
+          };
+
+          const { data: preference } = await mercadoPagoApi.createPreference(preferenceData);
+          
+          if (!preference?.init_point) {
             throw new Error("Error al procesar pago con Mercado Pago");
           }
-          const response = await openBrowserAsync(data);
+
+          const response = await openBrowserAsync(preference.init_point);
           
           if (response.type === "cancel") {
             throw new Error("Pago cancelado por el usuario");
           }
+
           await bookAppointment("Mercado Pago");
           break;
         }

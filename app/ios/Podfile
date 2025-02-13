@@ -16,11 +16,6 @@ prepare_react_native_project!
 target 'RFCApp' do
   use_expo_modules!
 
-  pod 'Firebase', :modular_headers => true
-  pod 'FirebaseCoreInternal', :modular_headers => true
-  pod 'GoogleUtilities', :modular_headers => true
-  pod 'FirebaseCore', :modular_headers => true
-
   if ENV['EXPO_USE_COMMUNITY_AUTOLINKING'] == '1'
     config_command = ['node', '-e', "process.argv=['', '', 'config'];require('@react-native-community/cli').run()"];
   else
@@ -60,33 +55,8 @@ target 'RFCApp' do
       :ccache_enabled => podfile_properties['apple.ccacheEnabled'] == 'true',
     )
 
-    # Fix BoringSSL-GRPC issue unsupported option '-G'
-    installer.pods_project.targets.each do |target|
-      if target.name == 'BoringSSL-GRPC'
-        target.source_build_phase.files.each do |file|
-          if file.settings && file.settings['COMPILER_FLAGS']
-            flags = file.settings['COMPILER_FLAGS'].split
-            flags.reject! { |flag| flag == '-GCC_WARN_INHIBIT_ALL_WARNINGS' }
-            file.settings['COMPILER_FLAGS'] = flags.join(' ')
-          end
-        end
-      end
-      
-      target.build_configurations.each do |config|
-        config.build_settings['ENABLE_BITCODE'] = 'NO'
-        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
-        
-        if target.name == 'BoringSSL-GRPC'
-          config.build_settings['CLANG_WARN_DOCUMENTATION_COMMENTS'] = 'NO'
-          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
-          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'BORINGSSL_PREFIX=BoringSSL'
-          config.build_settings['OTHER_CFLAGS'] = '-Wno-shorten-64-to-32 -Wno-comma -Wno-unreachable-code -Wno-conditional-uninitialized -Wno-deprecated-declarations -Wno-deprecated-implementations -Wno-zero-length-array'
-          config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES'
-          config.build_settings['COMPILER_INDEX_STORE_ENABLE'] = 'NO'
-        end
-      end
-    end
-
+    # This is necessary for Xcode 14, because it signs resource bundles by default
+    # when building for devices.
     installer.target_installation_results.pod_target_installation_results
       .each do |pod_name, target_installation_result|
       target_installation_result.resource_bundle_targets.each do |resource_bundle_target|

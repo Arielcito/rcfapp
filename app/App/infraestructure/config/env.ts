@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 
 const ENV = {
   dev: {
-    apiUrl: 'http://localhost:3001/api',
+    apiUrl: 'https://backoffice.xerato.io/rcf/api',
     firebase: {
       apiKey: "AIzaSyC63HcJiZPxNDxCSwFm0258ctV0ILQDjRc",
       authDomain: "rfc-app-11121.firebaseapp.com",
@@ -34,4 +34,4 @@ const getEnvVars = () => {
 
 export default getEnvVars();
 
-export const API_URL = 'http://localhost:3001/api'; 
+export const API_URL = 'https://backoffice.xerato.io/rcf/api'; 

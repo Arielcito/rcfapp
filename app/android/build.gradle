@@ -2,20 +2,20 @@
 
 buildscript {
     ext {
-        buildToolsVersion = findProperty('android.buildToolsVersion') ?: '34.0.0'
+        buildToolsVersion = findProperty('android.buildToolsVersion') ?: '35.0.0'
         minSdkVersion = Integer.parseInt(findProperty('android.minSdkVersion') ?: '24')
-        compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '34')
+        compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '35')
         targetSdkVersion = Integer.parseInt(findProperty('android.targetSdkVersion') ?: '34')
-        kotlinVersion = findProperty('android.kotlinVersion') ?: '2.0.21'
-        hermesEnabled = true
-        ndkVersion = "27.1.12297006"
+        kotlinVersion = findProperty('android.kotlinVersion') ?: '1.9.25'
+
+        ndkVersion = "26.1.10909125"
     }
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.9'
+        classpath 'com.google.firebase:firebase-crashlytics-gradle:3.0.2'
         classpath 'com.google.gms:google-services:4.4.1'
         classpath('com.android.tools.build:gradle')
         classpath('com.facebook.react:react-native-gradle-plugin')
@@ -39,29 +39,5 @@ allprojects {
         google()
         mavenCentral()
         maven { url 'https://www.jitpack.io' }
-    }
-}
-
-subprojects {
-    plugins.withType(com.android.build.gradle.BasePlugin) {
-        android {
-            compileSdkVersion rootProject.ext.compileSdkVersion
-            buildToolsVersion rootProject.ext.buildToolsVersion
-            
-            defaultConfig {
-                minSdkVersion rootProject.ext.minSdkVersion
-                targetSdkVersion rootProject.ext.targetSdkVersion
-            }
-        }
-    }
-    
-    plugins.withType(com.android.build.gradle.LibraryPlugin) {
-        android {
-            buildTypes {
-                release {
-                    consumerProguardFiles "consumer-rules.pro"
-                }
-            }
-        }
     }
 }

@@ -121,6 +121,16 @@ export const movimientosCaja = pgTable('movimientos_caja', {
   comprobante: varchar('comprobante', { length: 255 }),
 });
 
+export const predioMercadoPagoConfig = pgTable('predio_mercadopago_config', {
+  id: uuid('id').primaryKey().$defaultFn(createId),
+  predioId: uuid('predio_id').notNull().references(() => predios.id).unique(),
+  accessToken: varchar('access_token').notNull(),
+  publicKey: varchar('public_key').notNull(),
+  isTestMode: boolean('is_test_mode').default(false),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
 // Configurar las relaciones
 export const usersRelations = relations(users, ({ many }) => ({
   prediosOwned: many(predios)

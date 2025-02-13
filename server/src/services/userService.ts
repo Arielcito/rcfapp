@@ -179,14 +179,21 @@ export const registerUser = async (userData: UserCreationData) => {
       name: userData.name,
       email: userData.email,
       password: hashedPassword,
-      role: 'USER'
+      role: userData.role || 'USER',
+      telefono: userData.telefono
     })
     .returning({
       id: users.id,
       name: users.name,
       email: users.email,
-      role: users.role
+      role: users.role,
+      telefono: users.telefono
     });
+
+  if (!newUser) {
+    logger.error('Error al crear el usuario: no se generó el registro');
+    throw new Error('Error al crear el usuario');
+  }
 
   logger.info(`Usuario creado exitosamente con ID: ${newUser.id}`);
 
