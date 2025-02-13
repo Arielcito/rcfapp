@@ -91,6 +91,7 @@ export default function UserRegistrationScreen() {
 
     setLoading(true);
     try {
+      console.log('values', values);
       const response = await api.post('/users/register', {
         name: values.nombre,
         email: values.email.toLowerCase(),
