@@ -40,40 +40,47 @@ export default function HomeScreen() {
   const isTablet = width >= 768;
 
   const initializeDateAndTime = useCallback(() => {
-    console.log('HomeScreen - Iniciando initializeDateAndTime');
+    console.log('🔄 [INIT] Iniciando inicialización de fecha y hora');
     const dates = getDays();
     const time = getTime();
-    console.log('HomeScreen - Fechas obtenidas:', dates);
-    console.log('HomeScreen - Horarios obtenidos:', time);
-    setNext7Days(dates);
     
-    if (dates && dates.length > 0) {
-      console.log('HomeScreen - Estableciendo fecha inicial:', dates[0].date);
+    if (Array.isArray(dates) && dates.length > 0) {
+      console.log('📅 [INIT] Fecha inicial seleccionada:', dates[0].date);
+      setNext7Days(dates);
       setSelectedDate(dates[0].date);
+
+      // Verificar si la fecha seleccionada es hoy
+      const today = moment();
+      const selectedDateObj = moment(dates[0].date);
+      const esHoy = selectedDateObj.isSame(today, 'day');
+      
+      console.log('📅 [INIT] ¿Es fecha de hoy?:', esHoy);
+
+      let horariosDisponibles = time;
+      
+      if (esHoy) {
+        const currentHour = today.hour();
+        const currentMinutes = today.minutes();
+        
+        horariosDisponibles = time.filter((timeSlot) => {
+          const [hour] = timeSlot.time.split(':').map(Number);
+          // Permitir reservas desde la próxima hora
+          return hour > currentHour || (hour === currentHour && currentMinutes < 30);
+        });
+      }
+
+      console.log('⏰ [INIT] Cantidad de horarios disponibles:', horariosDisponibles.length);
+      setTimeList(horariosDisponibles);
+      
+      if (horariosDisponibles.length > 0) {
+        const horarioInicial = horariosDisponibles[0].time;
+        console.log('⏰ [INIT] Horario inicial seleccionado:', horarioInicial);
+        setSelectedTime(horarioInicial);
+      } else {
+        console.log('⏰ [INIT] No hay horarios disponibles para hoy');
+        setSelectedTime(null);
+      }
     }
-
-    const today = new Date();
-    const currentHour = today.getHours();
-    const currentMinutes = today.getMinutes();
-    
-    // Filtramos los horarios solo si es hoy
-    const horariosDisponibles = time.filter((timeSlot) => {
-      const hora = Number(timeSlot.time.split(':')[0]);
-      return hora > currentHour + 1 || (hora === currentHour + 1 && currentMinutes < 30);
-    });
-
-    console.log('HomeScreen - Horarios disponibles:', horariosDisponibles);
-    setTimeList(horariosDisponibles);
-    
-    // Para hoy, establecemos el horario a una hora después de la actual
-    const siguienteHora = currentHour + 2;
-    const horarioDisponible = horariosDisponibles.find(slot => {
-      const hora = Number(slot.time.split(':')[0]);
-      return hora >= siguienteHora;
-    }) || horariosDisponibles[0];
-    
-    console.log('HomeScreen - Horario inicial seleccionado:', horarioDisponible);
-    setSelectedTime(horarioDisponible ? horarioDisponible.time : null);
   }, []);
 
   // Cargar los predios una sola vez y cachearlos
@@ -117,6 +124,7 @@ export default function HomeScreen() {
   }, [next7Days, selectedDate, selectedTime, cachedPredios]);
 
   useEffect(() => {
+    console.log('🔄 [EFFECT] Iniciando efecto de carga inicial');
     const initialize = async () => {
       await loadPredios();
       initializeDateAndTime();
@@ -125,39 +133,16 @@ export default function HomeScreen() {
     initialize();
   }, [loadPredios, initializeDateAndTime]);
 
-  // Actualizar la lista de lugares cuando cambia la fecha o la hora
   useEffect(() => {
     if (selectedDate && selectedTime && cachedPredios) {
+      console.log('🔄 [EFFECT] Actualizando lista de lugares:', {
+        fecha: selectedDate,
+        hora: selectedTime,
+        hayPredios: !!cachedPredios
+      });
       updatePlaceList();
     }
   }, [selectedDate, selectedTime, cachedPredios, updatePlaceList]);
-
-  const handleDateSelection = (newDate) => {
-    if (!newDate) return;
-    console.log('HomeScreen - Nueva fecha seleccionada:', newDate);
-    console.log('HomeScreen - Tipo de fecha:', typeof newDate);
-    
-    setSelectedDate(newDate);
-    
-    const time = getTime();
-    const today = new Date();
-    const selectedDateObj = moment(newDate);
-    console.log('HomeScreen - Fecha parseada con moment:', selectedDateObj.format('YYYY-MM-DD'));
-    const esHoy = selectedDateObj.isSame(moment(), 'day');
-    
-    const horariosDisponibles = esHoy ? time.filter((timeSlot) => {
-      const hora = Number(timeSlot.time.split(':')[0]);
-      return hora > today.getHours() + 1 || (hora === today.getHours() + 1 && today.getMinutes() < 30);
-    }) : time;
-
-    setTimeList(horariosDisponibles);
-    
-    // Mantenemos la hora seleccionada si está disponible
-    const horaActualDisponible = horariosDisponibles.find(slot => slot.time === selectedTime);
-    if (!horaActualDisponible) {
-      setSelectedTime(horariosDisponibles[0]?.time || null);
-    }
-  };
 
   const renderTimePickerModal = () => (
     <Modal
@@ -195,21 +180,65 @@ export default function HomeScreen() {
     </Modal>
   );
 
-  const renderDayButton = ({ item }) => {
-    console.log('HomeScreen - Renderizando botón de día:', item);
+  const renderDayButton = useCallback(({ item }) => {
+    const isSelected = selectedDate === item.date;
+    
+    const handleDatePress = () => {
+      if (!item.date) return;
+      console.log('📅 [CAMBIO] Nueva fecha seleccionada:', item.date);
+      
+      setSelectedDate(item.date);
+      
+      const time = getTime();
+      const today = moment();
+      const selectedDateObj = moment(item.date);
+      const esHoy = selectedDateObj.isSame(today, 'day');
+      
+      console.log('📅 [CAMBIO] ¿Es fecha de hoy?:', esHoy);
+      
+      let horariosDisponibles = time;
+      
+      if (esHoy) {
+        const currentHour = today.hour();
+        const currentMinutes = today.minutes();
+        
+        horariosDisponibles = time.filter((timeSlot) => {
+          const [hour] = timeSlot.time.split(':').map(Number);
+          // Permitir reservas desde la próxima hora
+          return hour > currentHour || (hour === currentHour && currentMinutes < 30);
+        });
+      }
+
+      console.log('⏰ [CAMBIO] Cantidad de horarios disponibles:', horariosDisponibles.length);
+      setTimeList(horariosDisponibles);
+      
+      // Verificar si el horario actual sigue siendo válido
+      const horaActualDisponible = horariosDisponibles.find(slot => slot.time === selectedTime);
+      if (!horaActualDisponible && horariosDisponibles.length > 0) {
+        const nuevoHorario = horariosDisponibles[0].time;
+        console.log('⏰ [CAMBIO] Nuevo horario seleccionado:', nuevoHorario);
+        setSelectedTime(nuevoHorario);
+      } else if (horariosDisponibles.length === 0) {
+        console.log('⏰ [CAMBIO] No hay horarios disponibles para esta fecha');
+        setSelectedTime(null);
+      } else {
+        console.log('⏰ [CAMBIO] Se mantiene el horario actual:', selectedTime);
+      }
+    };
+    
     return (
       <TouchableOpacity
         style={[
           styles.dayButton,
-          selectedDate === item.date && { backgroundColor: Colors.PRIMARY },
+          isSelected && { backgroundColor: Colors.PRIMARY },
           isTablet && styles.tabletDayButton,
         ]}
-        onPress={() => handleDateSelection(item.date)}
+        onPress={handleDatePress}
       >
         <View style={styles.dayButtonHeader}>
           <Text style={[
             styles.dayButtonHeaderText,
-            selectedDate === item.date && { color: Colors.WHITE },
+            isSelected && { color: Colors.WHITE },
           ]}>
             {item.day}
           </Text>
@@ -217,14 +246,14 @@ export default function HomeScreen() {
         <View>
           <Text style={[
             styles.dayButtonDateText,
-            selectedDate === item.date && { color: Colors.WHITE },
+            isSelected && { color: Colors.WHITE },
           ]}>
             {item.formmatedDate}
           </Text>
         </View>
       </TouchableOpacity>
     );
-  };
+  }, [selectedDate, selectedTime, isTablet]);
 
   return (
     <SelectMarkerContext.Provider value={{ selectedMarker, setSelectedMarker }}>
@@ -232,14 +261,18 @@ export default function HomeScreen() {
         <View style={[styles.headerContainer, isTablet && styles.tabletHeaderContainer]}>
           <Header isTablet={isTablet} />
           <Text style={[styles.sectionTitle, isTablet && styles.tabletSectionTitle]}>Elegi la fecha</Text>
-          {console.log('HomeScreen - Renderizando lista de días:', next7Days)}
-          <FlatList
-            data={next7Days}
-            horizontal={true}
-            showsHorizontalScrollIndicator={false}
-            renderItem={renderDayButton}
-            contentContainerStyle={isTablet && styles.tabletDayButtonContainer}
-          />
+          {Array.isArray(next7Days) && next7Days.length > 0 ? (
+            <FlatList
+              data={next7Days}
+              horizontal={true}
+              showsHorizontalScrollIndicator={false}
+              renderItem={renderDayButton}
+              keyExtractor={item => item.date}
+              contentContainerStyle={isTablet && styles.tabletDayButtonContainer}
+            />
+          ) : (
+            <Text style={styles.noPlacesText}>Cargando fechas disponibles...</Text>
+          )}
           <View style={[styles.timePickerContainer, isTablet && styles.tabletTimePickerContainer]}>
             <Text style={styles.timePickerLabel}>¿A qué hora jugas?</Text>
             <TouchableOpacity
