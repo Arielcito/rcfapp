@@ -1,5 +1,6 @@
 import type { Appointment } from "../../domain/entities/appointment.entity";
 import { api } from "./api";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const HORARIOS_DISPONIBLES = [
   "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00",
@@ -104,8 +105,30 @@ export const getAppointmentsByAppointmentDate = async (date: string): Promise<Ap
 export const getAppointmentsByUser = async (): Promise<Appointment[]> => {
   try {
     console.log('Iniciando petición getAppointmentsByUser');
-    const response = await api.get('/reservas/user/bookings');
-    console.log('Respuesta exitosa:', response.data);
+    const token = await AsyncStorage.getItem('auth_token');
+    
+    if (!token) {
+      console.error('No hay token de autorización disponible');
+      throw new Error('No autorizado');
+    }
+
+    const response = await api.get('/reservas/user/bookings', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.data) {
+      console.warn('No se recibieron datos de reservas');
+      return [];
+    }
+
+    console.log('Respuesta de reservas:', {
+      status: response.status,
+      headers: response.headers,
+      data: response.data
+    });
+
     const appointments = response.data as ApiAppointment[];
 
     return appointments.map((appointment: ApiAppointment) => ({
@@ -131,7 +154,7 @@ export const getAppointmentsByUser = async (): Promise<Appointment[]> => {
       headers: error.response?.headers,
       data: error.response?.data
     });
-    return [];
+    throw error;
   }
 };
 

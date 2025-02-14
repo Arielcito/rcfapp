@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import { eq, sql } from 'drizzle-orm';
 import type { User, UserCreationData, UserUpdateData } from '../types/user';
 import { logger } from '../utils/logger';
+import { createId } from '../utils/ids';
 
 export const createUser = async (userData: UserCreationData): Promise<User> => {
   const { name, email, password, role = 'USER' } = userData;
@@ -160,58 +161,89 @@ export const loginUser = async (email: string, password: string) => {
 };
 
 export const registerUser = async (userData: UserCreationData) => {
-  logger.info('Verificando si el email ya existe:', userData.email);
-  const [existingUser] = await db.select()
-    .from(users)
-    .where(eq(users.email, userData.email));
+  try {
+    logger.info('=== Iniciando registro de usuario ===');
+    logger.info('Datos recibidos:', JSON.stringify(userData, null, 2));
 
-  if (existingUser) {
-    logger.warn(`Intento de registro con email existente: ${userData.email}`);
-    throw new Error('El correo electrónico ya está registrado');
-  }
+    logger.info('Verificando si el email ya existe:', userData.email);
+    const [existingUser] = await db.select()
+      .from(users)
+      .where(eq(users.email, userData.email));
 
-  logger.info('Hasheando contraseña');
-  const hashedPassword = await bcrypt.hash(userData.password, 10);
-  
-  logger.info('Creando nuevo usuario');
-  const [newUser] = await db.insert(users)
-    .values({
+    if (existingUser) {
+      logger.warn(`Intento de registro con email existente: ${userData.email}`);
+      throw new Error('El correo electrónico ya está registrado');
+    }
+
+    logger.info('Hasheando contraseña');
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    
+    // Generar UUID manualmente
+    const userId = createId();
+    logger.info('UUID generado:', userId);
+    
+    logger.info('Preparando datos para inserción:', {
+      id: userId,
       name: userData.name,
       email: userData.email,
-      password: hashedPassword,
       role: userData.role || 'USER',
       telefono: userData.telefono
-    })
-    .returning({
-      id: users.id,
-      name: users.name,
-      email: users.email,
-      role: users.role,
-      telefono: users.telefono
     });
 
-  if (!newUser) {
-    logger.error('Error al crear el usuario: no se generó el registro');
-    throw new Error('Error al crear el usuario');
+    const [newUser] = await db.insert(users)
+      .values({
+        id: userId,
+        name: userData.name,
+        email: userData.email,
+        password: hashedPassword,
+        role: userData.role || 'USER',
+        telefono: userData.telefono,
+        emailVerified: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        role: users.role,
+        telefono: users.telefono,
+        createdAt: users.createdAt
+      });
+
+    if (!newUser) {
+      logger.error('Error al crear el usuario: no se generó el registro');
+      throw new Error('Error al crear el usuario');
+    }
+
+    logger.info('Usuario creado exitosamente. Datos:', JSON.stringify(newUser, null, 2));
+
+    const token = jwt.sign(
+      { 
+        id: newUser.id, 
+        email: newUser.email, 
+        role: newUser.role 
+      },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
+    );
+
+    logger.info('Token generado exitosamente');
+    logger.info('=== Fin registro de usuario ===');
+    
+    return {
+      user: newUser,
+      token
+    };
+  } catch (error) {
+    logger.error('Error en registerUser:', {
+      error,
+      stack: error instanceof Error ? error.stack : undefined,
+      message: error instanceof Error ? error.message : 'Error desconocido',
+      details: error instanceof Error && 'details' in error ? error.details : undefined
+    });
+    throw error;
   }
-
-  logger.info(`Usuario creado exitosamente con ID: ${newUser.id}`);
-
-  const token = jwt.sign(
-    { 
-      id: newUser.id, 
-      email: newUser.email, 
-      role: newUser.role 
-    },
-    process.env.JWT_SECRET || 'your-secret-key',
-    { expiresIn: '24h' }
-  );
-
-  logger.info('Token generado exitosamente');
-  return {
-    user: newUser,
-    token
-  };
 };
 
 export const getCurrentUserById = async (userId: string) => {

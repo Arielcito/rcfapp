@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet, Modal, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, Pressable, StyleSheet, Modal, ScrollView, TouchableOpacity, Linking, Alert } from "react-native";
 import React, { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import Colors from "../../../infraestructure/utils/Colors";
@@ -14,6 +14,32 @@ export default function AppointmentItem({ reserva }) {
   const hora = format(fecha, 'HH:mm', { locale: es });
   const fechaFormateada = format(fecha, 'dd/MM/yyyy', { locale: es });
   const estado = reserva.estadoPago.toLowerCase();
+
+  const handleWhatsApp = () => {
+    const message = `Hola! Tengo una reserva en "${reserva.predio?.nombre}" para el ${fechaFormateada} a las ${hora}. Me gustaría consultar algunos detalles.`;
+    const phoneNumber = reserva.predio?.telefono?.replace(/\D/g, '') || '';
+    
+    // Aseguramos que el número tenga el formato correcto
+    const formattedNumber = phoneNumber.startsWith('54') ? phoneNumber : `54${phoneNumber}`;
+    
+    const url = `whatsapp://send?phone=${formattedNumber}&text=${encodeURIComponent(message)}`;
+    
+    Linking.canOpenURL(url)
+      .then(supported => {
+        if (!supported) {
+          Alert.alert(
+            'Error',
+            'WhatsApp no está instalado en este dispositivo'
+          );
+        } else {
+          return Linking.openURL(url);
+        }
+      })
+      .catch(err => {
+        console.error('Error al abrir WhatsApp:', err);
+        Alert.alert('Error', 'No se pudo abrir WhatsApp');
+      });
+  };
 
   const renderDetalleReserva = () => {
     return (
@@ -71,6 +97,27 @@ export default function AppointmentItem({ reserva }) {
               </View>
 
               <View style={styles.separador} />
+
+              <View style={styles.detalleSeccion}>
+                <Text style={styles.detalleLabel}>Contacto del Predio</Text>
+                <View style={styles.contactContainer}>
+                  <View style={styles.phoneContainer}>
+                    <Icon name="call-outline" size={20} color={Colors.PRIMARY} />
+                    <Text style={styles.phoneText}>
+                      {reserva.predio?.telefono || 'No disponible'}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.whatsappButton}
+                    onPress={handleWhatsApp}
+                  >
+                    <Icon name="logo-whatsapp" size={20} color="white" />
+                    <Text style={styles.whatsappButtonText}>
+                      Contactar por WhatsApp
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
 
               {reserva.notasAdicionales && (
                 <View style={styles.detalleSeccion}>
@@ -242,5 +289,33 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#eee',
     marginVertical: 15,
-  }
+  },
+  contactContainer: {
+    marginTop: 8,
+  },
+  phoneContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  phoneText: {
+    marginLeft: 8,
+    fontSize: 16,
+    color: Colors.PRIMARY,
+    fontWeight: '500',
+  },
+  whatsappButton: {
+    backgroundColor: '#25D366',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
+    borderRadius: 8,
+  },
+  whatsappButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
 });

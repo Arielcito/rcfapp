@@ -162,16 +162,25 @@ export class ReservaController {
 
   async getUserBookings(req: Request, res: Response) {
     try {
+      console.log('[ReservaController] Iniciando getUserBookings');
+      console.log('[ReservaController] Headers:', {
+        authorization: req.headers.authorization,
+        cookie: req.headers.cookie
+      });
+      console.log('[ReservaController] Usuario en request:', req.body.user);
+
       const userId = req.body.user?.id;
       if (!userId) {
+        console.error('[ReservaController] No se encontró ID de usuario en el request');
         return res.status(401).json({
           success: false,
           error: 'Usuario no autorizado'
         });
       }
 
+      console.log('[ReservaController] Buscando reservas para usuario:', userId);
       const reservas = await reservaService.getUserBookings(userId);
-      const now = new Date();
+      console.log('[ReservaController] Reservas encontradas:', reservas.length);
 
       const formattedReservas = reservas.map(reserva => ({
         appointmentId: reserva.id,
@@ -187,9 +196,15 @@ export class ReservaController {
         metodoPago: reserva.metodoPago
       }));
 
+      console.log('[ReservaController] Respuesta formateada:', {
+        totalReservas: formattedReservas.length,
+        primeraReserva: formattedReservas[0] || null
+      });
+
       res.json(formattedReservas);
     } catch (error) {
-      console.error('Error al obtener las reservas:', error);
+      console.error('[ReservaController] Error completo:', error);
+      console.error('[ReservaController] Stack:', error instanceof Error ? error.stack : 'No stack available');
       res.status(500).json({ message: 'Error al obtener las reservas' });
     }
   }
