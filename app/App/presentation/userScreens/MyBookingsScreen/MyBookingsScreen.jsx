@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
+  Alert,
 } from "react-native";
 import { TabView, TabBar } from "react-native-tab-view";
 import Colors from "../../../infraestructure/utils/Colors";
@@ -22,22 +23,56 @@ const filterActiveAppointments = (appointments) => {
   const now = moment().format("YYYY-MM-DD");
   const currentHour = moment().format("HH:mm");
 
-  return appointments.filter(
+  console.log('Filtrando reservas activas:', {
+    fechaActual: now,
+    horaActual: currentHour,
+    totalReservas: appointments.length
+  });
+
+  const filtered = appointments.filter(
     (appointment) =>
       appointment.estado === "reservado" &&
       (appointment.appointmentDate > now || 
        (appointment.appointmentDate === now && 
         appointment.appointmentTime > currentHour))
   );
+
+  console.log('Resultado filtrado activas:', {
+    reservasFiltradas: filtered.length,
+    primeraReserva: filtered[0] ? {
+      fecha: filtered[0].appointmentDate,
+      hora: filtered[0].appointmentTime,
+      estado: filtered[0].estado
+    } : null
+  });
+
+  return filtered;
 };
 
 const filterPastAppointments = (appointments) => {
   const now = moment().format("YYYY-MM-DD");
-  return appointments.filter(
+  
+  console.log('Filtrando reservas pendientes:', {
+    fechaActual: now,
+    totalReservas: appointments.length
+  });
+
+  const filtered = appointments.filter(
     (appointment) =>
       (appointment.estado === "pendiente" || appointment.estado === "reservado") && 
       appointment.appointmentDate >= now
   );
+
+  console.log('Resultado filtrado pendientes:', {
+    reservasFiltradas: filtered.length,
+    primeraReserva: filtered[0] ? {
+      fecha: filtered[0].appointmentDate,
+      hora: filtered[0].appointmentTime,
+      estado: filtered[0].estado
+    } : null
+  });
+
+  return filtered;
 };
 
 const filterCancelledAppointments = (appointments) => {
@@ -182,12 +217,20 @@ export default function MyBookingsScreen() {
       try {
         const appointments = await getAppointmentsByUser();
         
+        console.log('Reservas obtenidas:', {
+          total: appointments?.length || 0,
+          primeraReserva: appointments?.[0] ? {
+            fecha: appointments[0].appointmentDate,
+            hora: appointments[0].appointmentTime,
+            estado: appointments[0].estado
+          } : null
+        });
+        
         if (!appointments || appointments.length === 0) {
           setAppList([]);
           setAppListActive([]);
           setAppListPast([]);
           setAppListCancelled([]);
-          setLoading(false);
           return;
         }
 
@@ -198,7 +241,18 @@ export default function MyBookingsScreen() {
         setAppListPast(filterPastAppointments(validAppointments));
         setAppListCancelled(filterCancelledAppointments(validAppointments));
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error al obtener reservas:", error);
+        if (error.message === 'No autorizado') {
+          Alert.alert(
+            "Error de autenticación",
+            "Por favor, inicia sesión nuevamente para ver tus reservas"
+          );
+        } else {
+          Alert.alert(
+            "Error",
+            "No se pudieron cargar las reservas. Por favor, intenta más tarde."
+          );
+        }
         setAppList([]);
         setAppListActive([]);
         setAppListPast([]);

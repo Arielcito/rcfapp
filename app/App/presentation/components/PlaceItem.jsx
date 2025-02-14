@@ -11,6 +11,7 @@ import {
 import { Image } from 'expo-image';
 import { useNavigation } from "@react-navigation/native";
 import Colors from "../../infraestructure/utils/Colors";
+import moment from 'moment';
 
 const PlaceItem = ({ place, selectedDate, selectedTime, isTablet }) => {
   const navigation = useNavigation();
@@ -27,13 +28,61 @@ const PlaceItem = ({ place, selectedDate, selectedTime, isTablet }) => {
     return { uri: place.imagenUrl };
   };
 
+  const formatDate = (date) => {
+    if (!date) return null;
+    // Si ya es una cadena en formato YYYY-MM-DD, la devolvemos tal cual
+    if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return date;
+    }
+    // Si es un objeto moment, lo formateamos
+    if (moment.isMoment(date)) {
+      return date.format('YYYY-MM-DD');
+    }
+    // Si es otro tipo de fecha, intentamos convertirla
+    try {
+      return moment(date).format('YYYY-MM-DD');
+    } catch (error) {
+      console.error('PlaceItem - Error al formatear fecha:', error);
+      return null;
+    }
+  };
+
   const handlePress = () => {
+    const formattedDate = formatDate(selectedDate);
+    
+    console.log('PlaceItem - Datos de navegación:', {
+      place: {
+        id: place.id,
+        nombre: place.nombre,
+        direccion: place.direccion
+      },
+      selectedDate: formattedDate,
+      selectedTime: selectedTime,
+      originalDate: selectedDate
+    });
+
+    if (!formattedDate) {
+      console.warn('PlaceItem - Advertencia: No hay fecha seleccionada o es inválida');
+    }
+    if (!selectedTime) {
+      console.warn('PlaceItem - Advertencia: No hay hora seleccionada');
+    }
+
     navigation.navigate("booking", {
       place,
-      selectedDate: selectedDate,
-      selectedTime,
+      preselectedDate: formattedDate,
+      preselectedTime: selectedTime,
     });
   };
+
+  console.log('PlaceItem - Datos del lugar:', {
+    id: place.id,
+    nombre: place.nombre,
+    direccion: place.direccion,
+    imagenUrl: place.imagenUrl,
+    selectedDate: selectedDate,
+    selectedTime: selectedTime
+  });
 
   return (
     <TouchableOpacity

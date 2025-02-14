@@ -228,8 +228,9 @@ export class ReservaService {
   }
 
   async getUserBookings(userId: string) {
-    console.log('[ReservaService] Obteniendo reservas del usuario:', userId);
+    console.log('[ReservaService] Iniciando búsqueda de reservas para usuario:', userId);
     try {
+      console.log('[ReservaService] Construyendo query...');
       const reservas = await db
         .select({
           id: Reserva.id,
@@ -260,10 +261,21 @@ export class ReservaService {
         .leftJoin(predios, eq(canchas.predioId, predios.id))
         .orderBy(Reserva.fechaHora);
 
-      console.log('[ReservaService] Reservas encontradas:', reservas);
+      console.log('[ReservaService] Query ejecutada. Resultados:', {
+        totalReservas: reservas.length,
+        primeraReserva: reservas[0] ? {
+          id: reservas[0].id,
+          fecha: reservas[0].fechaHora,
+          estado: reservas[0].estadoPago,
+          cancha: reservas[0].cancha?.nombre
+        } : null
+      });
+
       return reservas;
     } catch (error) {
-      console.error('[ReservaService] Error al obtener reservas del usuario:', error);
+      console.error('[ReservaService] Error al obtener reservas:', error);
+      console.error('[ReservaService] Stack:', error instanceof Error ? error.stack : 'No stack available');
+      console.error('[ReservaService] Query params:', { userId });
       throw new Error('Error al obtener las reservas del usuario');
     }
   }

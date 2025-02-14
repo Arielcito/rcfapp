@@ -7,7 +7,7 @@ const reservaController = new ReservaController();
 
 // Rutas GET
 router.get('/', authenticateToken, reservaController.getReservas);
-router.get('/user/bookings', authenticateToken, reservaController.getUserBookings);
+router.get('/user/bookings', reservaController.getUserBookings);
 router.get('/owner/:id', authenticateToken, reservaController.getReservasByOwner);
 router.get('/owner/:date/:ownerId', authenticateToken, reservaController.getReservasByDate);
 router.get('/:id', authenticateToken, reservaController.getReservaById);
