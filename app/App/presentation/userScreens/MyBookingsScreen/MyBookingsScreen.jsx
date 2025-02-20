@@ -11,6 +11,7 @@ import {
   Platform,
   StatusBar,
   Alert,
+  Modal,
 } from "react-native";
 import { TabView, TabBar } from "react-native-tab-view";
 import Colors from "../../../infraestructure/utils/Colors";
@@ -167,6 +168,7 @@ export default function MyBookingsScreen() {
   const [index, setIndex] = useState(0);
   const navigator = useNavigation();
   const layout = useWindowDimensions();
+  const [showFeedback, setShowFeedback] = useState(true);
 
   const [routes] = useState([
     { key: "activas", title: "Aprobadas" },
@@ -235,7 +237,7 @@ export default function MyBookingsScreen() {
         }
 
         const validAppointments = appointments.filter(app => app?.appointmentId);
-        
+        console.log("validAppointments", validAppointments)
         setAppList(validAppointments);
         setAppListActive(filterActiveAppointments(validAppointments));
         setAppListPast(filterPastAppointments(validAppointments));
@@ -276,23 +278,66 @@ export default function MyBookingsScreen() {
             <Text style={styles.loadingText}>Cargando...</Text>
           </View>
         ) : (
-          <TabView
-            key={layout.width}
-            navigationState={{ index, routes }}
-            renderScene={renderScene}
-            onIndexChange={setIndex}
-            initialLayout={{ width: layout.width }}
-            renderTabBar={props => (
-              <TabBar
-                {...props}
-                key={`tabbar-${index}`}
-                indicatorStyle={{ backgroundColor: Colors.PRIMARY }}
-                style={{ backgroundColor: "#fff" }}
-                activeColor={Colors.PRIMARY}
-                inactiveColor="#777"
-              />
-            )}
-          />
+          <>
+            <Modal
+              animationType="slide"
+              transparent={true}
+              visible={showFeedback}
+              onRequestClose={() => setShowFeedback(false)}
+            >
+              <View style={styles.modalContainer}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>¡Tu opinión nos importa!</Text>
+                  <Text style={styles.modalText}>
+                    ¿Cómo ha sido tu experiencia usando nuestra app?
+                  </Text>
+                  <View style={styles.buttonContainer}>
+                    <TouchableOpacity
+                      style={[styles.feedbackButton, styles.positiveButton]}
+                      onPress={() => {
+                        Alert.alert("¡Gracias por tu feedback positivo!");
+                        setShowFeedback(false);
+                      }}
+                    >
+                      <Text style={styles.buttonText}>👍 Me gusta</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.feedbackButton, styles.negativeButton]}
+                      onPress={() => {
+                        Alert.alert("Gracias por ayudarnos a mejorar");
+                        setShowFeedback(false);
+                      }}
+                    >
+                      <Text style={styles.buttonText}>👎 Puede mejorar</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={() => setShowFeedback(false)}
+                  >
+                    <Text style={styles.closeButtonText}>Cerrar</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
+            <TabView
+              key={layout.width}
+              navigationState={{ index, routes }}
+              renderScene={renderScene}
+              onIndexChange={setIndex}
+              initialLayout={{ width: layout.width }}
+              renderTabBar={props => (
+                <TabBar
+                  {...props}
+                  key={`tabbar-${index}`}
+                  indicatorStyle={{ backgroundColor: Colors.PRIMARY }}
+                  style={{ backgroundColor: "#fff" }}
+                  activeColor={Colors.PRIMARY}
+                  inactiveColor="#777"
+                />
+              )}
+            />
+          </>
         )}
       </View>
     </SafeAreaView>
@@ -360,5 +405,64 @@ const styles = StyleSheet.create({
   appointmentText: {
     fontSize: 14,
     color: "#333",
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 25,
+    alignItems: "center",
+    width: "80%",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 15,
+    textAlign: "center",
+    color: "#333",
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: "center",
+    color: "#666",
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
+    marginBottom: 15,
+  },
+  feedbackButton: {
+    padding: 10,
+    borderRadius: 8,
+    width: "45%",
+  },
+  positiveButton: {
+    backgroundColor: Colors.PRIMARY,
+  },
+  negativeButton: {
+    backgroundColor: "#FF6B6B",
+  },
+  closeButton: {
+    marginTop: 10,
+    padding: 10,
+  },
+  closeButtonText: {
+    color: "#666",
+    fontSize: 14,
   },
 });

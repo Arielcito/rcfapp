@@ -163,13 +163,9 @@ export class ReservaController {
   async getUserBookings(req: Request, res: Response) {
     try {
       console.log('[ReservaController] Iniciando getUserBookings');
-      console.log('[ReservaController] Headers:', {
-        authorization: req.headers.authorization,
-        cookie: req.headers.cookie
-      });
-      console.log('[ReservaController] Usuario en request:', req.body.user);
+      console.log('[ReservaController] Usuario autenticado:', req.user);
 
-      const userId = req.body.user?.id;
+      const userId = req.user?.id;
       if (!userId) {
         console.error('[ReservaController] No se encontró ID de usuario en el request');
         return res.status(401).json({
@@ -205,7 +201,10 @@ export class ReservaController {
     } catch (error) {
       console.error('[ReservaController] Error completo:', error);
       console.error('[ReservaController] Stack:', error instanceof Error ? error.stack : 'No stack available');
-      res.status(500).json({ message: 'Error al obtener las reservas' });
+      res.status(500).json({ 
+        success: false,
+        error: 'Error al obtener las reservas' 
+      });
     }
   }
 
