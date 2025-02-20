@@ -44,5 +44,18 @@
         "APP_ENV": "production"
       }
     }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "arielserato@gmail.com",
+        "ascAppId": "6476858051",
+        "appleTeamId": "5943JL6865"
+      },
+      "android": {
+        "track": "production",
+        "releaseStatus": "completed"
+      }
+    }
   }
 }

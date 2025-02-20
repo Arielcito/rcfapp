@@ -112,26 +112,19 @@ export const getAppointmentsByUser = async (): Promise<Appointment[]> => {
       throw new Error('No autorizado');
     }
 
-    const response = await api.get('/reservas/user/bookings', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
+    const { data } = await api.get('/reservas/user/bookings');
 
-    if (!response.data) {
-      console.warn('No se recibieron datos de reservas');
+    if (!data || !Array.isArray(data)) {
+      console.warn('No se recibieron datos de reservas o formato inválido');
       return [];
     }
 
     console.log('Respuesta de reservas:', {
-      status: response.status,
-      headers: response.headers,
-      data: response.data
+      totalReservas: data.length,
+      primeraReserva: data[0] || null
     });
 
-    const appointments = response.data as ApiAppointment[];
-
-    return appointments.map((appointment: ApiAppointment) => ({
+    return data.map((appointment: ApiAppointment) => ({
       appointmentId: typeof appointment.appointmentId === 'string' 
         ? Number.parseInt(appointment.appointmentId, 10) 
         : appointment.appointmentId,
@@ -146,13 +139,13 @@ export const getAppointmentsByUser = async (): Promise<Appointment[]> => {
       email: 'usuario@example.com',
       pitch: 1
     }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error detallado en getAppointmentsByUser:", {
-      mensaje: error.message,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      headers: error.response?.headers,
-      data: error.response?.data
+      mensaje: error instanceof Error ? error.message : 'Error desconocido',
+      status: (error as any)?.response?.status,
+      statusText: (error as any)?.response?.statusText,
+      headers: (error as any)?.response?.headers,
+      data: (error as any)?.response?.data
     });
     throw error;
   }

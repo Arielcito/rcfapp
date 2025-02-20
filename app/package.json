@@ -1,6 +1,6 @@
 {
   "name": "rfc-app",
-  "version": "6.0.0",
+  "version": "6.0.2",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
@@ -13,8 +13,8 @@
     "build:preview-android": "eas build --profile preview --platform android",
     "build:preview-ios": "eas build --profile preview --platform ios",
     "build:production": "eas build --profile production",
-    "build:production-android": "eas build --profile production --platform android",
-    "build:production-ios": "eas build --profile production --platform ios",
+    "build:production-android": "eas build --profile production --platform android --auto-submit",
+    "build:production-ios": "eas build --profile production --platform ios ",
     "build:development": "eas build --profile development",
     "build:development-android": "eas build --profile development --platform android",
     "build:development-ios": "eas build --profile development --platform ios",
