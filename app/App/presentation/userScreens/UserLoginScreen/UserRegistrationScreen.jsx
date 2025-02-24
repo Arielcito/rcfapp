@@ -16,6 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import Colors from '../../../infraestructure/utils/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../../infraestructure/api/api';
+import { useCurrentUser } from "../../../application/context/CurrentUserContext";
 
 export default function UserRegistrationScreen() {
   const [values, setValues] = useState({
@@ -28,6 +29,7 @@ export default function UserRegistrationScreen() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
+  const { login } = useCurrentUser();
   const image = require('../../assets/images/geometrias-circulares.png');
 
   const validateForm = () => {
@@ -91,7 +93,6 @@ export default function UserRegistrationScreen() {
 
     setLoading(true);
     try {
-      console.log('values', values);
       const response = await api.post('/users/register', {
         name: values.nombre,
         email: values.email.toLowerCase(),
@@ -101,8 +102,21 @@ export default function UserRegistrationScreen() {
       });
 
       if (response.status === 201) {
-        showMessage('¡Registro exitoso!');
-        navigation.navigate('user-login');
+        try {
+          const user = await login(values.email.toLowerCase(), values.pwd);
+          if (user.role === 'USER') {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'TabUserNavigation' }],
+            });
+          } else {
+            showMessage("Esta cuenta no tiene permisos de usuario. Por favor, use la opción de inicio de sesión correcta.");
+          }
+        } catch (loginError) {
+          console.error('Error en login automático:', loginError);
+          showMessage('Registro exitoso. Por favor, inicie sesión.');
+          navigation.navigate('user-login');
+        }
       }
     } catch (error) {
       console.error('Error en registro:', error);
