@@ -14,10 +14,8 @@ api.interceptors.request.use(
   async (config) => {
     try {
       const token = await AsyncStorage.getItem('auth_token');
-      console.log('Token recuperado:', token ? 'Existe token' : 'No hay token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
-        console.log('Headers configurados:', config.headers);
       }
       return config;
     } catch (error) {
@@ -34,11 +32,7 @@ api.interceptors.request.use(
 // Interceptor para manejar errores de respuesta
 api.interceptors.response.use(
   (response) => {
-    console.log('Respuesta exitosa:', {
-      url: response.config.url,
-      status: response.status,
-      headers: response.headers
-    });
+
     return response;
   },
   async (error) => {

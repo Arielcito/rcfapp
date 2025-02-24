@@ -27,34 +27,25 @@ export const authenticateToken = (
   res: Response,
   next: NextFunction
 ) => {
-  console.log("=== Inicio de verificación de token ===");
-  console.log("Headers completos:", req.headers);
-  console.log("Authorization header:", req.headers.authorization);
+  console.log("[Auth] Iniciando verificación de token");
   
   const token = req.headers.authorization?.split(' ')[1];
-  console.log("Token extraído:", token);
   
   if (!token) {
-    console.log("No se encontró token en el header");
+    console.log("[Auth] Token no encontrado");
     return res.status(401).json({ message: 'No autorizado' });
   }
 
   try {
     const secretKey = process.env.JWT_SECRET || 'your-secret-key';
-    console.log("Secret key configurada:", secretKey ? 'Existe' : 'Usando valor por defecto');
+    console.log("[Auth] Verificando token");
     
-    console.log("Intentando verificar token...");
     const decoded = jwt.verify(
       token, 
       secretKey
     ) as JWTPayload;
     
-    console.log("Token decodificado exitosamente:", {
-      id: decoded.id,
-      email: decoded.email,
-      role: decoded.role,
-      tokenCompleto: decoded
-    });
+    console.log("[Auth] Token verificado exitosamente");
 
     req.user = {
       id: decoded.id,
@@ -63,21 +54,10 @@ export const authenticateToken = (
       name: null
     };
     
-    console.log("Usuario agregado a req.user:", req.user);
-    console.log("Tipo de role:", typeof req.user.role);
-    console.log("Valor de role:", req.user.role);
-    console.log("=== Fin de verificación de token ===");
+    console.log("[Auth] Usuario autenticado");
     next();
   } catch (error: unknown) {
-    console.log("=== Error detallado en verificación ===");
-    console.log("Error completo:", error);
-    console.log("Tipo de error:", typeof error);
-    if (error instanceof jwt.JsonWebTokenError) {
-      console.log("Tipo específico de error JWT:", error.name);
-      console.log("Mensaje de error JWT:", error.message);
-      console.log("Stack de error:", error.stack);
-    }
-    console.log("=== Fin de error detallado ===");
+    console.log("[Auth] Error en verificación de token");
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
     res.status(401).json({ message: 'Token inválido', error: errorMessage });
   }
