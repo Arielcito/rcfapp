@@ -17,7 +17,7 @@ interface CreateReservaDTO {
   notasAdicionales?: string;
 }
 
-interface Reserva {
+interface ReservaResponse {
   id: string;
   fechaHora: string;
   duracion: number;
@@ -31,10 +31,10 @@ interface Reserva {
     tipo: string;
     tipoSuperficie: string;
   };
-  usuario: {
+  predio: {
     id: string;
     nombre: string;
-    email: string;
+    direccion: string;
     telefono: string;
   };
 }
@@ -50,7 +50,7 @@ export const reservaApi = {
     }
   },
 
-  filtrarReservasPorFecha: (reservas: Reserva[], fecha: Date) => {
+  filtrarReservasPorFecha: (reservas: ReservaResponse[], fecha: Date) => {
     const inicioDia = startOfDay(fecha);
     const finDia = endOfDay(fecha);
     
@@ -60,13 +60,13 @@ export const reservaApi = {
     });
   },
 
-  filtrarReservasPorEstado: (reservas: Reserva[], estado: string) => {
+  filtrarReservasPorEstado: (reservas: ReservaResponse[], estado: string) => {
     return reservas.filter(reserva => 
       reserva.estadoPago.toLowerCase() === estado.toLowerCase()
     );
   },
 
-  filtrarReservasPorCancha: (reservas: Reserva[], canchaId: string) => {
+  filtrarReservasPorCancha: (reservas: ReservaResponse[], canchaId: string) => {
     return reservas.filter(reserva => 
       reserva.cancha.id === canchaId
     );
@@ -84,25 +84,18 @@ export const reservaApi = {
 
   obtenerReservasPorFecha: async (fecha: string, ownerId: string) => {
     try {
-      const todasLasReservas = await reservaApi.obtenerTodasReservas();
-      const reservasFiltradas = reservaApi.filtrarReservasPorFecha(
-        todasLasReservas,
-        parseISO(fecha)
-      );
-
-      // Formatear las reservas para la vista
+      const response = await api.get(`/reserva/owner/${fecha}/${ownerId}`);
       return {
-        proximasReservas: reservasFiltradas.map(reserva => ({
+        proximasReservas: response.data.map((reserva: ReservaResponse) => ({
           id: reserva.id,
           fechaHora: reserva.fechaHora,
           canchaId: reserva.cancha.nombre,
           duracion: reserva.duracion,
           estado: reserva.estadoPago.toLowerCase(),
-          usuario: reserva.usuario.nombre,
           precio: Number.parseInt(reserva.precioTotal, 10),
-          telefono: reserva.usuario.telefono,
-          email: reserva.usuario.email,
-          notas: reserva.notasAdicionales || ''
+          notas: reserva.notasAdicionales || '',
+          cancha: reserva.cancha,
+          predio: reserva.predio
         }))
       };
     } catch (error) {
@@ -157,6 +150,45 @@ export const reservaApi = {
       return response.data;
     } catch (error) {
       console.error('Error al actualizar reserva:', error);
+      throw error;
+    }
+  },
+
+  obtenerReservasUsuario: async () => {
+    try {
+      console.log('Obteniendo reservas del usuario');
+      const response = await api.get('/reservas/user/bookings');
+      console.log('Respuesta del servidor:', response.data);
+
+      return response.data.map((reserva: any) => ({
+        appointmentId: reserva.appointmentId,
+        appointmentDate: reserva.appointmentDate,
+        appointmentTime: reserva.appointmentTime,
+        estado: reserva.estado.toLowerCase(),
+        duracion: reserva.duracion || 60,
+        precioTotal: reserva.precioTotal || '0',
+        imageUrl: reserva.place?.imageUrl || 'https://example.com/placeholder.jpg',
+        place: {
+          ...reserva.place,
+          imageUrl: reserva.place?.imageUrl || 'https://example.com/placeholder.jpg'
+        },
+        cancha: {
+          id: reserva.place?.id || '',
+          nombre: reserva.place?.name || 'Sin nombre',
+          tipo: reserva.place?.description?.split('-')?.[0]?.trim() || 'Fútbol',
+          tipoSuperficie: reserva.place?.description?.split('-')?.[1]?.trim() || 'No especificado',
+          imageUrl: reserva.place?.imageUrl || 'https://example.com/placeholder.jpg'
+        },
+        predio: {
+          id: reserva.place?.id || '',
+          nombre: reserva.place?.name || 'Sin nombre',
+          direccion: reserva.place?.address || 'Sin dirección',
+          telefono: reserva.place?.telefono || 'Sin teléfono'
+        },
+        metodoPago: reserva.metodoPago
+      }));
+    } catch (error) {
+      console.error('Error al obtener reservas del usuario:', error);
       throw error;
     }
   }

@@ -13,67 +13,33 @@ import {
   Alert,
   Modal,
 } from "react-native";
-import { TabView, TabBar } from "react-native-tab-view";
+import { TabView, SceneMap, TabBar } from "react-native-tab-view";
 import Colors from "../../../infraestructure/utils/Colors";
 import BookingItem from "./BookingItem";
 import moment from "moment";
-import { getAppointmentsByUser } from "../../../infraestructure/api/appointments.api";
+import { reservaApi } from "../../../infraestructure/api/reserva.api";
 import { useNavigation } from "@react-navigation/native";
-
+import { useCurrentUser } from "../../../application/context/CurrentUserContext";
 const filterActiveAppointments = (appointments) => {
   const now = moment().format("YYYY-MM-DD");
   const currentHour = moment().format("HH:mm");
 
-  console.log('Filtrando reservas activas:', {
-    fechaActual: now,
-    horaActual: currentHour,
-    totalReservas: appointments.length
-  });
-
-  const filtered = appointments.filter(
+  return appointments.filter(
     (appointment) =>
       appointment.estado === "reservado" &&
       (appointment.appointmentDate > now || 
        (appointment.appointmentDate === now && 
         appointment.appointmentTime > currentHour))
   );
-
-  console.log('Resultado filtrado activas:', {
-    reservasFiltradas: filtered.length,
-    primeraReserva: filtered[0] ? {
-      fecha: filtered[0].appointmentDate,
-      hora: filtered[0].appointmentTime,
-      estado: filtered[0].estado
-    } : null
-  });
-
-  return filtered;
 };
 
 const filterPastAppointments = (appointments) => {
   const now = moment().format("YYYY-MM-DD");
-  
-  console.log('Filtrando reservas pendientes:', {
-    fechaActual: now,
-    totalReservas: appointments.length
-  });
-
-  const filtered = appointments.filter(
+  return appointments.filter(
     (appointment) =>
       (appointment.estado === "pendiente" || appointment.estado === "reservado") && 
       appointment.appointmentDate >= now
   );
-
-  console.log('Resultado filtrado pendientes:', {
-    reservasFiltradas: filtered.length,
-    primeraReserva: filtered[0] ? {
-      fecha: filtered[0].appointmentDate,
-      hora: filtered[0].appointmentTime,
-      estado: filtered[0].estado
-    } : null
-  });
-
-  return filtered;
 };
 
 const filterCancelledAppointments = (appointments) => {
@@ -82,73 +48,13 @@ const filterCancelledAppointments = (appointments) => {
   );
 };
 
-// Componente para mostrar reservas activas
-const Activas = ({ appointments, setLoading, loading }) => {
-  const navigation = useNavigation();
-  
-  return (
-    <View style={styles.container}>
-      {appointments.length === 0 ? (
-        <>
-          <Text style={styles.noReservationsText}>
-            Aún no hiciste ninguna reserva en la app
-          </Text>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("home")}
-            style={styles.button}
-          >
-            <Text style={styles.buttonText}>Buscar cancha</Text>
-          </TouchableOpacity>
-        </>
-      ) : (
-        <FlatList
-          data={appointments}
-          refreshing={loading}
-          keyExtractor={(item) => item.appointmentId?.toString() || Math.random().toString()}
-          renderItem={({ item }) => (
-            <BookingItem place={item} setLoading={setLoading} />
-          )}
-        />
-      )}
-    </View>
-  );
-};
-
-// Componente para mostrar reservas pasadas
-const Pasadas = ({ appointments, setLoading, loading }) => (
+const renderBookingList = (appointments, loading, setLoading, emptyMessage, buttonText, onButtonPress) => (
   <View style={styles.container}>
     {appointments.length === 0 ? (
       <>
-        <Text style={styles.noReservationsText}>
-          Aún no tienes reservas pasadas
-        </Text>
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Ver historial</Text>
-        </TouchableOpacity>
-      </>
-    ) : (
-      <FlatList
-        data={appointments}
-        refreshing={loading}
-        keyExtractor={(item) => item.appointmentId?.toString() || Math.random().toString()}
-        renderItem={({ item }) => (
-          <BookingItem place={item} setLoading={setLoading} />
-        )}
-      />
-    )}
-  </View>
-);
-
-// Componente para mostrar reservas canceladas
-const Canceladas = ({ appointments, setLoading, loading }) => (
-  <View style={styles.container}>
-    {appointments.length === 0 ? (
-      <>
-        <Text style={styles.noReservationsText}>
-          No hay reservas canceladas
-        </Text>
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Explorar</Text>
+        <Text style={styles.noReservationsText}>{emptyMessage}</Text>
+        <TouchableOpacity onPress={onButtonPress} style={styles.button}>
+          <Text style={styles.buttonText}>{buttonText}</Text>
         </TouchableOpacity>
       </>
     ) : (
@@ -166,9 +72,15 @@ const Canceladas = ({ appointments, setLoading, loading }) => (
 
 export default function MyBookingsScreen() {
   const [index, setIndex] = useState(0);
-  const navigator = useNavigation();
+  const navigation = useNavigation();
   const layout = useWindowDimensions();
   const [showFeedback, setShowFeedback] = useState(true);
+  const { user } = useCurrentUser();
+
+  const [loading, setLoading] = useState(false);
+  const [appListActive, setAppListActive] = useState([]);
+  const [appListPast, setAppListPast] = useState([]);
+  const [appListCancelled, setAppListCancelled] = useState([]);
 
   const [routes] = useState([
     { key: "activas", title: "Aprobadas" },
@@ -176,60 +88,40 @@ export default function MyBookingsScreen() {
     { key: "canceladas", title: "Historial" },
   ]);
 
-  const [loading, setLoading] = useState(false);
-  const [appList, setAppList] = useState([]);
-  const [appListActive, setAppListActive] = useState([]);
-  const [appListPast, setAppListPast] = useState([]);
-  const [appListCancelled, setAppListCancelled] = useState([]);
-
-  const renderScene = ({ route }) => {
-    switch (route.key) {
-      case "activas":
-        return (
-          <Activas
-            appointments={appListActive}
-            setLoading={setLoading}
-            loading={loading}
-          />
-        );
-      case "pasadas":
-        return (
-          <Pasadas
-            appointments={appListPast}
-            setLoading={setLoading}
-            loading={loading}
-          />
-        );
-      case "canceladas":
-        return (
-          <Canceladas
-            appointments={appListCancelled}
-            setLoading={setLoading}
-            loading={loading}
-          />
-        );
-      default:
-        return null;
-    }
-  };
+  const renderScene = SceneMap({
+    activas: () => renderBookingList(
+      appListActive,
+      loading,
+      setLoading,
+      "Aún no hiciste ninguna reserva en la app",
+      "Buscar cancha",
+      () => navigation.navigate("home")
+    ),
+    pasadas: () => renderBookingList(
+      appListPast,
+      loading,
+      setLoading,
+      "Aún no tienes reservas pasadas",
+      "Ver historial",
+      () => {}
+    ),
+    canceladas: () => renderBookingList(
+      appListCancelled,
+      loading,
+      setLoading,
+      "No hay reservas canceladas",
+      "Explorar",
+      () => {}
+    ),
+  });
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const appointments = await getAppointmentsByUser();
-        
-        console.log('Reservas obtenidas:', {
-          total: appointments?.length || 0,
-          primeraReserva: appointments?.[0] ? {
-            fecha: appointments[0].appointmentDate,
-            hora: appointments[0].appointmentTime,
-            estado: appointments[0].estado
-          } : null
-        });
+        const appointments = await reservaApi.obtenerReservasUsuario();
         
         if (!appointments || appointments.length === 0) {
-          setAppList([]);
           setAppListActive([]);
           setAppListPast([]);
           setAppListCancelled([]);
@@ -237,8 +129,6 @@ export default function MyBookingsScreen() {
         }
 
         const validAppointments = appointments.filter(app => app?.appointmentId);
-        console.log("validAppointments", validAppointments)
-        setAppList(validAppointments);
         setAppListActive(filterActiveAppointments(validAppointments));
         setAppListPast(filterPastAppointments(validAppointments));
         setAppListCancelled(filterCancelledAppointments(validAppointments));
@@ -255,7 +145,6 @@ export default function MyBookingsScreen() {
             "No se pudieron cargar las reservas. Por favor, intenta más tarde."
           );
         }
-        setAppList([]);
         setAppListActive([]);
         setAppListPast([]);
         setAppListCancelled([]);
@@ -265,6 +154,16 @@ export default function MyBookingsScreen() {
     };
     fetchData();
   }, []);
+
+  const renderTabBar = (props) => (
+    <TabBar
+      {...props}
+      indicatorStyle={{ backgroundColor: Colors.PRIMARY }}
+      style={{ backgroundColor: "#fff" }}
+      activeColor={Colors.PRIMARY}
+      inactiveColor="#777"
+    />
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -321,21 +220,11 @@ export default function MyBookingsScreen() {
               </View>
             </Modal>
             <TabView
-              key={layout.width}
               navigationState={{ index, routes }}
               renderScene={renderScene}
               onIndexChange={setIndex}
               initialLayout={{ width: layout.width }}
-              renderTabBar={props => (
-                <TabBar
-                  {...props}
-                  key={`tabbar-${index}`}
-                  indicatorStyle={{ backgroundColor: Colors.PRIMARY }}
-                  style={{ backgroundColor: "#fff" }}
-                  activeColor={Colors.PRIMARY}
-                  inactiveColor="#777"
-                />
-              )}
+              renderTabBar={renderTabBar}
             />
           </>
         )}
