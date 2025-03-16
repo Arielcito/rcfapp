@@ -1,8 +1,11 @@
 import type { Request, Response } from 'express';
 import { ReservaService } from '../services/reservaService';
 import type { CreateReservaDTO, UpdateReservaDTO } from '../types/reserva';
-import type { User } from '../types/user';
-import moment from 'moment';
+
+import { logger } from '../utils/logger';
+import { HttpError } from '../utils/errors';
+import { BookingResponse } from '../types/booking';
+import { ApiResponse } from 'mercadopago/dist/types';
 
 const reservaService = new ReservaService();
 
@@ -10,7 +13,7 @@ export class ReservaController {
   async getReservas(req: Request, res: Response) {
     try {
       const reservas = await reservaService.getReservas();
-      console.log('Reservas obtenidas:', reservas);
+      console.log('Reservas obtenidas:', reservas.length);
       res.json({
         success: true,
         data: reservas
@@ -163,48 +166,62 @@ export class ReservaController {
 
   async getUserBookings(req: Request, res: Response) {
     try {
-      console.log('[ReservaController] Iniciando getUserBookings');
-      console.log('[ReservaController] Usuario autenticado:', req.user);
-
+      logger.info('[ReservaController] Iniciando getUserBookings');
+      
       const userId = req.user?.id;
       if (!userId) {
-        console.error('[ReservaController] No se encontró ID de usuario en el request');
-        return res.status(401).json({
-          success: false,
-          error: 'Usuario no autorizado'
-        });
+        throw new HttpError(401, 'Usuario no autorizado');
       }
 
-      console.log('[ReservaController] Buscando reservas para usuario:', userId);
+      logger.info(`[ReservaController] Buscando reservas para usuario: ${userId}`);
       const reservas = await reservaService.getUserBookings(userId);
-      console.log('[ReservaController] Reservas encontradas:', reservas.length);
-
-      const formattedReservas = reservas.map(reserva => ({
+      
+      const formattedReservas: BookingResponse[] = reservas.map(reserva => ({
         appointmentId: reserva.id,
         place: {
-          name: reserva.cancha?.nombre || 'Cancha sin nombre',
-          description: reserva.cancha ? `${reserva.cancha.tipo || 'Fútbol'} - ${reserva.cancha.tipoSuperficie || 'No especificado'}` : 'Sin descripción',
-          imageUrl: "https://example.com/placeholder.jpg",
+          name: reserva.cancha?.nombre || 'Sin nombre',
+          description: reserva.cancha ? 
+            `${reserva.cancha.tipo || 'Fútbol'} - ${reserva.cancha.tipoSuperficie || 'No especificado'}` : 
+            'Sin descripción',
+          imageUrl: reserva.cancha?.imagenUrl || "https://example.com/placeholder.jpg",
           telefono: reserva.predio?.telefono || 'No disponible'
         },
         appointmentDate: new Date(reserva.fechaHora).toISOString().split('T')[0],
-        appointmentTime: new Date(reserva.fechaHora).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+        appointmentTime: new Date(reserva.fechaHora).toLocaleTimeString('es-ES', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        }),
         estado: reserva.estadoPago?.toLowerCase() || 'pendiente',
-        metodoPago: reserva.metodoPago
+        metodoPago: reserva.metodoPago || undefined,
+        duracion: reserva.duracion,
+        precioTotal: Number(reserva.precioTotal) || 0
       }));
 
-      console.log('[ReservaController] Respuesta formateada:', {
-        totalReservas: formattedReservas.length,
-        primeraReserva: formattedReservas[0] || null
-      });
+      logger.info(`[ReservaController] Reservas formateadas exitosamente. Total: ${formattedReservas.length}`);
 
-      res.json(formattedReservas);
-    } catch (error) {
-      console.error('[ReservaController] Error completo:', error);
-      console.error('[ReservaController] Stack:', error instanceof Error ? error.stack : 'No stack available');
+      const response = {
+        success: true,
+        data: formattedReservas,
+        message: 'Reservas obtenidas exitosamente'
+      };
+
+      res.json(response);
+    } catch (err: unknown) {
+      logger.error('[ReservaController] Error al obtener reservas:', err);
+      
+      const error = err as Error;
+      
+      if (error instanceof HttpError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          error: error.message
+        });
+      }
+      
       res.status(500).json({ 
         success: false,
-        error: 'Error al obtener las reservas' 
+        error: 'Error interno al obtener las reservas',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   }

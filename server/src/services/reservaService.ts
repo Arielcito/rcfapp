@@ -247,6 +247,7 @@ export class ReservaService {
             tipoSuperficie: canchas.tipoSuperficie,
             longitud: canchas.longitud,
             ancho: canchas.ancho,
+            imagenUrl: canchas.imagenUrl,
           },
           predio: {
             id: predios.id,

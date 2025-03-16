@@ -14,44 +14,26 @@ import {
   Modal,
 } from "react-native";
 import { TabView, SceneMap, TabBar } from "react-native-tab-view";
-import Colors from "../../../infraestructure/utils/Colors";
-import BookingItem from "./BookingItem";
-import moment from "moment";
-import { reservaApi } from "../../../infraestructure/api/reserva.api";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { useCurrentUser } from "../../../application/context/CurrentUserContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import moment from "moment";
 
-// Move filter functions outside component for better performance
-const filterActiveAppointments = (appointments) => {
-  const now = moment().format("YYYY-MM-DD");
-  const currentHour = moment().format("HH:mm");
+// Constants
+import Colors from "../../../infraestructure/utils/Colors";
 
-  return appointments.filter(
-    (appointment) =>
-      appointment.estado === "reservado" &&
-      (appointment.appointmentDate > now || 
-       (appointment.appointmentDate === now && 
-        appointment.appointmentTime > currentHour))
-  );
-};
+// Components
+import BookingItem from "./BookingItem";
 
-const filterPastAppointments = (appointments) => {
-  const now = moment().format("YYYY-MM-DD");
-  return appointments.filter(
-    (appointment) =>
-      (appointment.estado === "pendiente" || appointment.estado === "reservado") && 
-      appointment.appointmentDate >= now
-  );
-};
+// Hooks
+import { useCurrentUser } from "../../../application/context/CurrentUserContext";
+import { useBookings } from "../../../application/hooks/useBookings";
 
-const filterCancelledAppointments = (appointments) => {
-  return appointments.filter(
-    (appointment) => appointment.estado === "cancelado"
-  );
-};
+// Utils
+import { filterBookings } from "../../../infraestructure/utils/bookingFilters";
+import { showErrorAlert } from "../../../infraestructure/utils/alerts";
+import { STORAGE_KEYS } from "../../../infraestructure/constants";
 
-// Create a memoized EmptyBookingsList component
+// Components
 const EmptyBookingsList = memo(({ message, buttonText, onButtonPress }) => (
   <View style={styles.emptyContainer}>
     <Text style={styles.noReservationsText}>{message}</Text>
@@ -61,7 +43,6 @@ const EmptyBookingsList = memo(({ message, buttonText, onButtonPress }) => (
   </View>
 ));
 
-// Create a memoized BookingList component
 const BookingList = memo(({ 
   appointments, 
   loading, 
@@ -99,11 +80,12 @@ const BookingList = memo(({
       showsVerticalScrollIndicator={false}
       initialNumToRender={6}
       maxToRenderPerBatch={10}
+      windowSize={5}
+      removeClippedSubviews={true}
     />
   );
 });
 
-// Create a memoized FeedbackModal component
 const FeedbackModal = memo(({ visible, onClose, onPositive, onNegative }) => (
   <Modal
     animationType="slide"
@@ -143,19 +125,20 @@ const FeedbackModal = memo(({ visible, onClose, onPositive, onNegative }) => (
 ));
 
 export default function MyBookingsScreen() {
-  const [index, setIndex] = useState(0);
   const navigation = useNavigation();
   const layout = useWindowDimensions();
+  const { currentUser } = useCurrentUser();
+  
+  const [index, setIndex] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
-  const { currentUser: user } = useCurrentUser();
-
   const [loading, setLoading] = useState(false);
-  const [appointments, setAppointments] = useState({
-    active: [],
-    past: [],
-    cancelled: []
-  });
-  const [error, setError] = useState(null);
+
+  const { 
+    bookings, 
+    error, 
+    isLoading, 
+    refetch 
+  } = useBookings(currentUser?.id);
 
   const [routes] = useState([
     { key: "activas", title: "Aprobadas" },
@@ -167,7 +150,7 @@ export default function MyBookingsScreen() {
   useEffect(() => {
     const checkFeedbackStatus = async () => {
       try {
-        const feedbackShown = await AsyncStorage.getItem('feedbackShown');
+        const feedbackShown = await AsyncStorage.getItem(STORAGE_KEYS.FEEDBACK_SHOWN);
         setShowFeedback(feedbackShown !== 'true');
       } catch (error) {
         console.error('Error checking feedback status:', error);
@@ -177,155 +160,41 @@ export default function MyBookingsScreen() {
     checkFeedbackStatus();
   }, []);
 
-  const handleFeedbackClosed = async () => {
+  const handleFeedbackClosed = useCallback(async () => {
     try {
-      await AsyncStorage.setItem('feedbackShown', 'true');
+      await AsyncStorage.setItem(STORAGE_KEYS.FEEDBACK_SHOWN, 'true');
       setShowFeedback(false);
     } catch (error) {
       console.error('Error saving feedback status:', error);
     }
-  };
+  }, []);
 
-  const handlePositiveFeedback = async () => {
+  const handlePositiveFeedback = useCallback(async () => {
     Alert.alert("¡Gracias por tu feedback positivo!");
     handleFeedbackClosed();
-  };
+  }, [handleFeedbackClosed]);
 
-  const handleNegativeFeedback = async () => {
+  const handleNegativeFeedback = useCallback(async () => {
     Alert.alert("Gracias por ayudarnos a mejorar");
     handleFeedbackClosed();
-  };
+  }, [handleFeedbackClosed]);
 
-  const fetchAppointments = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      // Intenta obtener el userId del context primero
-      let userId = user?.id;
-      
-      // Si no hay userId del usuario en el context, intentar con AsyncStorage
-      if (!userId) {
-        console.warn('ID de usuario no disponible en context, buscando en AsyncStorage');
-        try {
-          const userIdFromStorage = await AsyncStorage.getItem('userId');
-          if (userIdFromStorage) {
-            userId = userIdFromStorage;
-          } else {
-            const userData = await AsyncStorage.getItem('userData');
-            if (userData) {
-              const parsedUser = JSON.parse(userData);
-              userId = parsedUser?.id;
-              console.log('ID recuperado de userData:', userId);
-            }
-          }
-        } catch (storageError) {
-          console.error('Error al leer de AsyncStorage:', storageError);
-        }
-      }
-      
-      // Si aún no hay userId, usar modo demo
-      if (!userId) {
-        console.warn('No hay datos de usuario en ninguna fuente, mostrando reservas de ejemplo');
-        const demoAppointment = {
-          appointmentId: 999,
-          appointmentDate: moment().format('YYYY-MM-DD'),
-          appointmentTime: '18:00',
-          estado: 'reservado',
-          duracion: 60,
-          precioTotal: '0',
-          place: {
-            name: 'Modo Sin Conexión',
-            description: 'Fútbol - Césped sintético',
-            imageUrl: 'https://example.com/placeholder.jpg',
-            telefono: '555-1234'
-          }
-        };
-        
-        setAppointments({
-          active: [demoAppointment],
-          past: [],
-          cancelled: []
-        });
-        
-        return;
-      }
-      
-      // Continúa con el proceso normal
-      console.log('Filtrando reservas para usuario con ID:', userId);
-      const allAppointments = await reservaApi.obtenerReservasUsuarioFiltradas(userId);
-      
-      if (!allAppointments || allAppointments.length === 0) {
-        console.log('No se encontraron reservas');
-        setAppointments({
-          active: [],
-          past: [],
-          cancelled: []
-        });
-        return;
-      }
-
-      const validAppointments = allAppointments.filter(app => app?.appointmentId);
-      console.log(`Total de reservas válidas: ${validAppointments.length}`);
-      
-      const activeApps = filterActiveAppointments(validAppointments);
-      const pastApps = filterPastAppointments(validAppointments);
-      const cancelledApps = filterCancelledAppointments(validAppointments);
-      
-      console.log(`Reservas por categoría: Activas=${activeApps.length}, Pendientes=${pastApps.length}, Historial=${cancelledApps.length}`);
-      
-      setAppointments({
-        active: activeApps,
-        past: pastApps,
-        cancelled: cancelledApps
-      });
-    } catch (error) {
-      console.error("Error detallado al obtener reservas:", {
-        message: error.message,
-        stack: error.stack,
-        response: error.response ? {
-          status: error.response.status,
-          data: error.response.data
-        } : 'No response data'
-      });
-      
-      setError(error.message);
-      
-      if (error.message === 'No autorizado') {
-        Alert.alert(
-          "Error de autenticación",
-          "Por favor, inicia sesión nuevamente para ver tus reservas"
-        );
-      } else {
-        Alert.alert(
-          "Error",
-          "No se pudieron cargar las reservas. Por favor, intenta más tarde."
-        );
-      }
-      
-      setAppointments({
-        active: [],
-        past: [],
-        cancelled: []
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
+  const navigateToHome = useCallback(() => 
+    navigation.navigate("home"), 
+    [navigation]
+  );
 
   // Use useFocusEffect to refetch data when screen is focused
   useFocusEffect(
     useCallback(() => {
-      fetchAppointments();
-    }, [fetchAppointments])
+      refetch();
+    }, [refetch])
   );
-
-  const navigateToHome = useCallback(() => navigation.navigate("home"), [navigation]);
 
   const renderScene = SceneMap({
     activas: () => (
       <BookingList
-        appointments={appointments.active}
+        appointments={filterBookings(bookings?.active || [])}
         loading={loading}
         setLoading={setLoading}
         emptyMessage="Aún no hiciste ninguna reserva en la app"
@@ -335,7 +204,7 @@ export default function MyBookingsScreen() {
     ),
     pasadas: () => (
       <BookingList
-        appointments={appointments.past}
+        appointments={filterBookings(bookings?.past || [])}
         loading={loading}
         setLoading={setLoading}
         emptyMessage="Aún no tienes reservas pendientes"
@@ -345,7 +214,7 @@ export default function MyBookingsScreen() {
     ),
     canceladas: () => (
       <BookingList
-        appointments={appointments.cancelled}
+        appointments={filterBookings(bookings?.cancelled || [])}
         loading={loading}
         setLoading={setLoading}
         emptyMessage="No hay reservas canceladas"
@@ -358,11 +227,11 @@ export default function MyBookingsScreen() {
   const renderTabBar = useCallback(props => (
     <TabBar
       {...props}
-      indicatorStyle={{ backgroundColor: Colors.PRIMARY }}
-      style={{ backgroundColor: "#fff" }}
+      indicatorStyle={styles.tabIndicator}
+      style={styles.tabBar}
       activeColor={Colors.PRIMARY}
       inactiveColor="#777"
-      labelStyle={{ fontWeight: "500" }}
+      labelStyle={styles.tabLabel}
     />
   ), []);
 
@@ -373,7 +242,7 @@ export default function MyBookingsScreen() {
           <Text style={styles.errorText}>No se pudieron cargar las reservas</Text>
           <TouchableOpacity 
             style={styles.button} 
-            onPress={fetchAppointments}
+            onPress={refetch}
           >
             <Text style={styles.buttonText}>Reintentar</Text>
           </TouchableOpacity>
@@ -389,11 +258,9 @@ export default function MyBookingsScreen() {
           <Text style={styles.headerTitle}>Mis reservas</Text>
         </View>
         
-        {loading && appointments.active.length === 0 && 
-          appointments.past.length === 0 && 
-          appointments.cancelled.length === 0 ? (
+        {isLoading && !bookings ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size={"large"} color={Colors.PRIMARY} />
+            <ActivityIndicator size="large" color={Colors.PRIMARY} />
             <Text style={styles.loadingText}>Cargando...</Text>
           </View>
         ) : (
@@ -478,7 +345,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   loadingText: {
-    fontFamily: "montserrat",
     marginTop: 10,
     color: "#666",
   },
@@ -554,4 +420,13 @@ const styles = StyleSheet.create({
     color: "#666",
     fontSize: 14,
   },
+  tabIndicator: {
+    backgroundColor: Colors.PRIMARY
+  },
+  tabBar: {
+    backgroundColor: "#fff"
+  },
+  tabLabel: {
+    fontWeight: "500"
+  }
 });

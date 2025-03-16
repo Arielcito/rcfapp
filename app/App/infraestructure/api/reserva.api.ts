@@ -242,35 +242,7 @@ export const reservaApi = {
       
       console.log(`Reservas filtradas para usuario con ID ${userId}: ${filteredAppointments.length}`);
       
-      return filteredAppointments.map((reserva) => ({
-        appointmentId: reserva.appointmentId,
-        appointmentDate: reserva.appointmentDate,
-        appointmentTime: reserva.appointmentTime,
-        estado: reserva.estado.toLowerCase(),
-        duracion: 60, // Valor por defecto si no está disponible
-        precioTotal: '0', // Valor por defecto si no está disponible
-        imageUrl: 'https://example.com/placeholder.jpg',
-        place: {
-          name: 'Cancha',
-          description: 'Fútbol - Césped sintético',
-          imageUrl: 'https://example.com/placeholder.jpg',
-          telefono: '555-1234'
-        },
-        cancha: {
-          id: '1',
-          nombre: 'Cancha',
-          tipo: 'Fútbol',
-          tipoSuperficie: 'Césped sintético',
-          imageUrl: 'https://example.com/placeholder.jpg'
-        },
-        predio: {
-          id: '1',
-          nombre: 'Predio Deportivo',
-          direccion: 'Calle ejemplo 123',
-          telefono: '555-1234'
-        },
-        metodoPago: 'No especificado'
-      }));
+      return filteredAppointments;
     } catch (error) {
       console.error('Error al obtener y filtrar reservas del usuario:', error);
       throw error;

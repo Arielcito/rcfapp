@@ -121,6 +121,14 @@ const styles = StyleSheet.create({
     height: 140,
     overflow: 'hidden',
     alignSelf: 'center',
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   tabletContainer: {
     width: Platform.OS === 'ios' ? '45%' : '95%',
@@ -132,6 +140,7 @@ const styles = StyleSheet.create({
     height: "100%",
     borderTopLeftRadius: 15,
     borderBottomLeftRadius: 15,
+    backgroundColor: '#f5f5f5',
   },
   tabletImage: {
     width: "45%",
@@ -148,6 +157,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: "montserrat-medium",
     marginBottom: 4,
+    color: '#1a1a1a',
   },
   tabletTitle: {
     fontSize: 20,
@@ -157,6 +167,7 @@ const styles = StyleSheet.create({
     fontFamily: "montserrat",
     fontSize: 12,
     lineHeight: 16,
+    opacity: 0.8,
   },
   tabletDescription: {
     fontSize: 14,
@@ -167,6 +178,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 'auto',
+    paddingTop: 8,
+    borderTopWidth: 0.5,
+    borderTopColor: 'rgba(0,0,0,0.05)',
   },
   price: {
     fontSize: 16,
@@ -178,14 +192,22 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   button: {
-    padding: 6,
-    paddingHorizontal: 14,
+    padding: 8,
+    paddingHorizontal: 16,
     backgroundColor: Colors.PRIMARY,
-    borderRadius: 6,
+    borderRadius: 8,
+    shadowColor: Colors.PRIMARY,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
   },
   tabletButton: {
-    padding: 8,
-    paddingHorizontal: 18,
+    padding: 10,
+    paddingHorizontal: 20,
   },
   buttonText: {
     fontFamily: "montserrat-medium",
