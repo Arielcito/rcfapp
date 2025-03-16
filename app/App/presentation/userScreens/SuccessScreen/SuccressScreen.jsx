@@ -5,6 +5,8 @@ import {
   StyleSheet,
   SafeAreaView,
   ActivityIndicator,
+  Share,
+  TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
@@ -83,6 +85,35 @@ const SuccessScreen = () => {
     }
   };
 
+  const generarVoucher = async () => {
+    try {
+      const mensaje = `VOUCHER DE RESERVA - RCF App
+---------------------------------------
+Predio: ${reserva.predio.nombre || 'N/A'}
+Cancha: ${reserva.cancha.nombre}
+Tipo: ${reserva.cancha.tipo}
+Superficie: ${reserva.cancha.tipoSuperficie}
+Dimensiones: ${reserva.cancha.longitud}m x ${reserva.cancha.ancho}m
+Fecha: ${formatDate(reserva.fechaHora)}
+Hora: ${formatTime(reserva.fechaHora)}hs - ${getEndTime(reserva.fechaHora)}hs
+Método de pago: ${reserva.metodoPago}
+Monto a pagar: $${Number(reserva.precioTotal).toLocaleString()}
+Estado de pago: ${reserva.estadoPago}
+---------------------------------------
+ID Reserva: ${appointmentData.data?.id || 'No disponible'}
+Reserva realizada a través de RCF App
+`;
+
+      await Share.share({
+        message: mensaje,
+        title: "Voucher de Reserva - RCF App",
+      });
+    } catch (error) {
+      console.error("Error al compartir voucher:", error);
+      alert("Error al generar el voucher. Por favor intente nuevamente.");
+    }
+  };
+
   if (!appointmentData) {
     return (
       <SafeAreaView style={styles.container}>
@@ -152,7 +183,14 @@ const SuccessScreen = () => {
           </View>
         </View>
 
-        <View>
+        {reserva.metodoPago === "Efectivo" && (
+          <TouchableOpacity style={styles.voucherButton} onPress={generarVoucher}>
+            <Ionicons name="document-text-outline" size={24} color="#fff" />
+            <Text style={styles.voucherButtonText}>Obtener Voucher</Text>
+          </TouchableOpacity>
+        )}
+
+        <View style={styles.buttonContainer}>
           <ButtonPrimary
             text="Ver agenda de reservas"
             onPress={() => navigation.navigate("Tabs")}
@@ -251,6 +289,24 @@ const styles = StyleSheet.create({
     color: "#666",
     flex: 1,
     fontSize: 16,
+  },
+  voucherButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.PRIMARY,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  voucherButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+    marginLeft: 8,
+  },
+  buttonContainer: {
+    marginBottom: 16,
   },
   whatsappButtonContainer: {
     position: 'absolute',

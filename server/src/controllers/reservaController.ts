@@ -10,6 +10,7 @@ export class ReservaController {
   async getReservas(req: Request, res: Response) {
     try {
       const reservas = await reservaService.getReservas();
+      console.log('Reservas obtenidas:', reservas);
       res.json({
         success: true,
         data: reservas

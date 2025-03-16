@@ -6,18 +6,18 @@ const router = Router();
 const reservaController = new ReservaController();
 
 // Rutas GET
-router.get('/', reservaController.getReservas);
-router.get('/user/bookings', reservaController.getUserBookings);
-router.get('/owner/:id', reservaController.getReservasByOwner);
-router.get('/owner/:date/:ownerId', reservaController.getReservasByDate);
-router.get('/:id', reservaController.getReservaById);
+router.get('/', authenticateToken, reservaController.getReservas);
+router.get('/user/bookings', authenticateToken, reservaController.getUserBookings);
+router.get('/owner/:id', authenticateToken, reservaController.getReservasByOwner);
+router.get('/owner/:date/:ownerId', authenticateToken, reservaController.getReservasByDate);
+router.get('/:id', authenticateToken, reservaController.getReservaById);
 
 // Rutas POST
-router.post('/', reservaController.createReserva);
-router.post('/check', reservaController.checkReservaAvailability);
-router.post('/available-times', reservaController.getAvailableTimes);
+router.post('/', authenticateToken, reservaController.createReserva);
+router.post('/check', authenticateToken, reservaController.checkReservaAvailability);
+router.post('/available-times', authenticateToken, reservaController.getAvailableTimes);
 
 // Rutas PUT
-router.put('/:id', reservaController.updateReserva);
+router.put('/:id', authenticateToken, reservaController.updateReserva);
 
 export default router; 

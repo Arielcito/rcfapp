@@ -30,13 +30,6 @@ export const getTime = () => {
       time: `${hour}:00`,
     };
     timeList.push(timeSlot);
-    
-    if (i < 23) {
-      const halfHourSlot = {
-        time: `${hour}:30`,
-      };
-      timeList.push(halfHourSlot);
-    }
   }
 
   return timeList;

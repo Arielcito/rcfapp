@@ -1,8 +1,25 @@
 import { Platform } from 'react-native';
 
+// API URL Configuration - Single source of truth
+const API_CONFIG = {
+  DEV: {
+    ANDROID: 'http://192.168.1.38:3001/api',
+    IOS: 'http://localhost:3001/api',
+  },
+  PROD: 'https://backoffice.xerato.io/rcf/api'
+};
+
+const getApiUrl = () => {
+  if (Platform.OS === 'android') {
+    return API_CONFIG.DEV.ANDROID;
+  }
+  return API_CONFIG.DEV.IOS;
+};
+
 const ENV = {
   dev: {
-    apiUrl: 'http://localhost:3001/api',
+    //apiUrl: 'https://backoffice.xerato.io/rcf/api',
+    apiUrl: getApiUrl(),
     firebase: {
       apiKey: "AIzaSyC63HcJiZPxNDxCSwFm0258ctV0ILQDjRc",
       authDomain: "rfc-app-11121.firebaseapp.com",
@@ -14,7 +31,7 @@ const ENV = {
     }
   },
   prod: {
-    apiUrl: 'https://backoffice.xerato.io/rcf/api',
+    apiUrl: API_CONFIG.PROD,
     firebase: {
       apiKey: "AIzaSyC63HcJiZPxNDxCSwFm0258ctV0ILQDjRc",
       authDomain: "rfc-app-11121.firebaseapp.com",
@@ -34,4 +51,5 @@ const getEnvVars = () => {
 
 export default getEnvVars();
 
-export const API_URL = 'https://localhost:3001/api'; 
+//export const API_URL = 'https://backoffice.xerato.io/rcf/api'; 
+export const API_URL = getApiUrl(); 
