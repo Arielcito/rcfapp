@@ -75,15 +75,6 @@ const PlaceItem = ({ place, selectedDate, selectedTime, isTablet }) => {
     });
   };
 
-  console.log('PlaceItem - Datos del lugar:', {
-    id: place.id,
-    nombre: place.nombre,
-    direccion: place.direccion,
-    imagenUrl: place.imagenUrl,
-    selectedDate: selectedDate,
-    selectedTime: selectedTime
-  });
-
   return (
     <TouchableOpacity
       style={[styles.container, isTablet && styles.tabletContainer]}

@@ -18,12 +18,24 @@ const OwnerHomeScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
 
   const ordenarReservas = (reservasArray) => {
-    return [...reservasArray].sort((a, b) => 
-      compareDesc(parseISO(a.fechaReserva), parseISO(b.fechaReserva))
-    );
+    if (!Array.isArray(reservasArray)) return [];
+    return [...reservasArray].sort((a, b) => {
+      try {
+        // Check if we should use fechaReserva or fechaHora
+        const dateFieldA = a.fechaReserva || a.fechaHora;
+        const dateFieldB = b.fechaReserva || b.fechaHora;
+        
+        if (!dateFieldA || !dateFieldB) return 0;
+        return compareDesc(parseISO(dateFieldA), parseISO(dateFieldB));
+      } catch (error) {
+        return 0;
+      }
+    });
   };
 
   const generarDatosGrafico = (reservas) => {
+    if (!Array.isArray(reservas)) return [];
+    
     const hoy = new Date();
     const labels = Array.from({ length: 7 }, (_, i) => {
       return format(subDays(hoy, 6 - i), 'EEE', { locale: es });
@@ -31,10 +43,19 @@ const OwnerHomeScreen = () => {
 
     const datos = Array(7).fill(0);
     for (const reserva of reservas) {
-      const fechaReserva = parseISO(reserva.fechaHora);
-      const diasAtras = Math.floor((hoy - fechaReserva) / (1000 * 60 * 60 * 24));
-      if (diasAtras >= 0 && diasAtras < 7) {
-        datos[6 - diasAtras]++;
+      try {
+        if (!reserva.fechaHora) continue;
+        const fechaReserva = parseISO(reserva.fechaHora);
+        
+        // Check if date is valid
+        if (!Number.isFinite(fechaReserva.getTime())) continue;
+        
+        const diasAtras = Math.floor((hoy - fechaReserva) / (1000 * 60 * 60 * 24));
+        if (diasAtras >= 0 && diasAtras < 7) {
+          datos[6 - diasAtras]++;
+        }
+      } catch (error) {
+        // Skip this item if there's an error
       }
     }
 
@@ -79,6 +100,29 @@ const OwnerHomeScreen = () => {
   const renderDetalleReserva = () => {
     if (!selectedReserva) return null;
 
+    // Helper function to safely format dates
+    const safeFormatDate = (dateStr) => {
+      try {
+        if (!dateStr) return "Fecha no disponible";
+        const date = parseISO(dateStr);
+        if (!Number.isFinite(date.getTime())) return "Fecha inválida";
+        return format(date, 'dd MMM yyyy HH:mm', { locale: es });
+      } catch (error) {
+        return "Error en formato de fecha";
+      }
+    };
+
+    // Helper function to safely format numbers
+    const safeFormatNumber = (num) => {
+      try {
+        if (num === undefined || num === null) return "0";
+        const number = Number(num);
+        return !Number.isFinite(number) ? "0" : number.toLocaleString();
+      } catch (error) {
+        return "0";
+      }
+    };
+
     return (
       <Modal
         animationType="slide"
@@ -102,22 +146,22 @@ const OwnerHomeScreen = () => {
               <View style={styles.detalleSeccion}>
                 <Text style={styles.detalleLabel}>Fecha y Hora</Text>
                 <Text style={styles.detalleValor}>
-                  {format(parseISO(selectedReserva.fechaHora), 'dd MMM yyyy HH:mm', { locale: es })}
+                  {safeFormatDate(selectedReserva.fechaHora)}
                 </Text>
               </View>
 
               <View style={styles.detalleSeccion}>
                 <Text style={styles.detalleLabel}>Duración</Text>
-                <Text style={styles.detalleValor}>{selectedReserva.duracion} minutos</Text>
+                <Text style={styles.detalleValor}>{selectedReserva.duracion || 0} minutos</Text>
               </View>
 
               <View style={styles.detalleSeccion}>
                 <Text style={styles.detalleLabel}>Estado de Pago</Text>
                 <Text style={[
                   styles.detalleValor,
-                  { color: selectedReserva.estadoPago.toLowerCase() === 'pagado' ? '#4CAF50' : '#FFC107' }
+                  { color: selectedReserva.estadoPago && selectedReserva.estadoPago.toLowerCase() === 'pagado' ? '#4CAF50' : '#FFC107' }
                 ]}>
-                  {selectedReserva.estadoPago}
+                  {selectedReserva.estadoPago || 'Pendiente'}
                 </Text>
               </View>
 
@@ -129,7 +173,7 @@ const OwnerHomeScreen = () => {
               <View style={styles.detalleSeccion}>
                 <Text style={styles.detalleLabel}>Precio</Text>
                 <Text style={styles.detallePrecio}>
-                  ${Number(selectedReserva.precioTotal).toLocaleString()}
+                  ${safeFormatNumber(selectedReserva.precioTotal)}
                 </Text>
               </View>
 
@@ -160,9 +204,31 @@ const OwnerHomeScreen = () => {
     // Mostrar solo las próximas 5 reservas
     const proximasReservas = reservas.slice(0, 5);
 
-    return proximasReservas.map((reserva) => (
+    // Helper functions for safe rendering
+    const safeFormatDate = (dateStr) => {
+      try {
+        if (!dateStr) return "Fecha no disponible";
+        const date = parseISO(dateStr);
+        if (!Number.isFinite(date.getTime())) return "Fecha inválida";
+        return format(date, 'dd MMM yyyy HH:mm', { locale: es });
+      } catch (error) {
+        return "Error en formato de fecha";
+      }
+    };
+
+    const safeFormatNumber = (num) => {
+      try {
+        if (num === undefined || num === null) return "0";
+        const number = Number(num);
+        return !Number.isFinite(number) ? "0" : number.toLocaleString();
+      } catch (error) {
+        return "0";
+      }
+    };
+
+    return proximasReservas.map((reserva, index) => (
       <TouchableOpacity
-        key={reserva.id}
+        key={reserva.id || index}
         style={styles.reservaCard}
         onPress={() => {
           setSelectedReserva(reserva);
@@ -171,19 +237,19 @@ const OwnerHomeScreen = () => {
       >
         <View style={styles.reservaInfo}>
           <Text style={styles.reservaFecha}>
-            {format(parseISO(reserva.fechaHora), 'dd MMM yyyy HH:mm', { locale: es })}
+            {safeFormatDate(reserva.fechaHora)}
           </Text>
           <View style={styles.reservaDetalles}>
-            <Text style={styles.reservaDuracion}>Duración: {reserva.duracion} min</Text>
+            <Text style={styles.reservaDuracion}>Duración: {reserva.duracion || 0} min</Text>
             <Text style={styles.reservaPrecio}>
-              ${Number(reserva.precioTotal).toLocaleString()}
+              ${safeFormatNumber(reserva.precioTotal)}
             </Text>
           </View>
           <Text style={[
             styles.reservaEstado,
-            { color: reserva.estadoPago.toLowerCase() === 'pagado' ? '#4CAF50' : '#FFC107' }
+            { color: reserva.estadoPago && reserva.estadoPago.toLowerCase() === 'pagado' ? '#4CAF50' : '#FFC107' }
           ]}>
-            {reserva.estadoPago}
+            {reserva.estadoPago || 'Pendiente'}
           </Text>
         </View>
         <Icon name="chevron-forward" size={24} color="#888" />
@@ -191,7 +257,7 @@ const OwnerHomeScreen = () => {
     ));
   };
 
-  if (loading || !chartData) {
+  if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#1AFF92" />
@@ -238,7 +304,7 @@ const OwnerHomeScreen = () => {
               }}
             />
             <VictoryLine
-              data={chartData}
+              data={chartData || []}
               style={{
                 data: { stroke: '#1AFF92', strokeWidth: 2 },
               }}
@@ -249,7 +315,7 @@ const OwnerHomeScreen = () => {
             />
           </VictoryChart>
           <Text style={styles.chartFooter}>
-            {chartData.reduce((a, b) => a + b.y, 0)} canchas reservadas en total
+            {chartData && Array.isArray(chartData) ? chartData.reduce((a, b) => a + b.y, 0) : 0} canchas reservadas en total
           </Text>
         </View>
 
@@ -257,7 +323,7 @@ const OwnerHomeScreen = () => {
           <View style={styles.proximasReservasHeader}>
             <Text style={styles.proximasReservasTitle}>Últimas Reservas</Text>
             <Text style={styles.proximasReservasCount}>
-              Mostrando 5 de {reservas.length}
+              Mostrando {Math.min(5, reservas.length)} de {reservas.length}
             </Text>
           </View>
           {renderProximasReservas()}

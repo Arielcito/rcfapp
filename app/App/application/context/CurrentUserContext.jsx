@@ -18,7 +18,8 @@ export const CurrentUserProvider = ({ children }) => {
         AsyncStorage.getItem('userData'),
         AsyncStorage.getItem('auth_token')
       ]);
-
+      console.log('userData', userData);
+      console.log('token', token);
       if (userData && token) {
         const user = JSON.parse(userData);
         setCurrentUser(user);

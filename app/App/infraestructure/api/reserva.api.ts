@@ -1,5 +1,20 @@
 import api from '../config/api';
 import { format, isAfter, isBefore, startOfDay, endOfDay, parseISO } from 'date-fns';
+import { getAllAppointments } from './appointments.api';
+
+interface Reserva {
+  id: string;
+  canchaId: string;
+  userId: string;
+  fechaHora: Date | string;
+  duracion: number;
+  precioTotal: string;
+  estadoPago: string;
+  metodoPago: string;
+  fechaReserva: Date | string;
+  notasAdicionales: string;
+  pagoId: string | null;
+}
 
 interface ReservaDisponibilidad {
   canchaId: string;
@@ -39,8 +54,28 @@ interface ReservaResponse {
   };
 }
 
+interface Appointment {
+  userId?: string;
+  appointmentId: string | number;
+  appointmentDate: string;
+  appointmentTime: string;
+  estado: string;
+  email?: string;
+  duracion?: number;
+  precioTotal?: string | number;
+  metodoPago?: string;
+  place?: {
+    id?: string;
+    name?: string;
+    description?: string;
+    address?: string;
+    imageUrl?: string;
+    telefono?: string;
+  };
+}
+
 export const reservaApi = {
-  obtenerTodasReservas: async () => {
+  obtenerTodasReservas: async (): Promise<ReservaResponse[]> => {
     try {
       const response = await api.get('/reservas');
       return response.data.data;
@@ -50,12 +85,12 @@ export const reservaApi = {
     }
   },
 
-  filtrarReservasPorFecha: (reservas: ReservaResponse[], fecha: Date) => {
+  filtrarReservasPorFecha: (reservas: ReservaResponse[], fecha: Date): ReservaResponse[] => {
     const inicioDia = startOfDay(fecha);
     const finDia = endOfDay(fecha);
     
     return reservas.filter(reserva => {
-      const fechaReserva = parseISO(reserva.fechaHora);
+      const fechaReserva = parseISO(reserva.fechaHora as string);
       return isAfter(fechaReserva, inicioDia) && isBefore(fechaReserva, finDia);
     });
   },
@@ -72,7 +107,7 @@ export const reservaApi = {
     );
   },
 
-  obtenerReservasDelDia: async (fecha: Date) => {
+  obtenerReservasDelDia: async (fecha: Date): Promise<ReservaResponse[]> => {
     try {
       const todasLasReservas = await reservaApi.obtenerTodasReservas();
       return reservaApi.filtrarReservasPorFecha(todasLasReservas, fecha);
@@ -104,10 +139,10 @@ export const reservaApi = {
     }
   },
 
-  crearReserva: async (data: CreateReservaDTO) => {
+  crearReserva: async (data: CreateReservaDTO): Promise<Reserva> => {
     try {
       const response = await api.post('/reserva', data);
-      return response.data;
+      return response.data as Reserva;
     } catch (error) {
       console.error('Error al crear reserva:', error);
       throw error;
@@ -134,20 +169,20 @@ export const reservaApi = {
     }
   },
 
-  obtenerReservaPorId: async (id: string) => {
+  obtenerReservaPorId: async (id: string): Promise<Reserva> => {
     try {
       const response = await api.get(`/reserva/${id}`);
-      return response.data;
+      return response.data as Reserva;
     } catch (error) {
       console.error('Error al obtener reserva:', error);
       throw error;
     }
   },
 
-  actualizarReserva: async (id: string, data: Partial<CreateReservaDTO>) => {
+  actualizarReserva: async (id: string, data: Partial<CreateReservaDTO>): Promise<Reserva> => {
     try {
       const response = await api.put(`/reserva/${id}`, data);
-      return response.data;
+      return response.data as Reserva;
     } catch (error) {
       console.error('Error al actualizar reserva:', error);
       throw error;
@@ -160,7 +195,7 @@ export const reservaApi = {
       const response = await api.get('/reservas/user/bookings');
       console.log('Respuesta del servidor:', response.data);
 
-      return response.data.map((reserva: any) => ({
+      return response.data.map((reserva: Appointment) => ({
         appointmentId: reserva.appointmentId,
         appointmentDate: reserva.appointmentDate,
         appointmentTime: reserva.appointmentTime,
@@ -189,6 +224,55 @@ export const reservaApi = {
       }));
     } catch (error) {
       console.error('Error al obtener reservas del usuario:', error);
+      throw error;
+    }
+  },
+
+  obtenerReservasUsuarioFiltradas: async (userId: string) => {
+    try {
+      console.log('Obteniendo todas las reservas para filtrar por usuario');
+      const allAppointments = await getAllAppointments();
+      console.log('Appointments:', allAppointments);
+      // Cast the result to our interface
+      const typedAppointments = allAppointments as Appointment[];
+      
+      const filteredAppointments = userId 
+        ? typedAppointments.filter(app => app.userId === userId)
+        : typedAppointments;
+      
+      console.log(`Reservas filtradas para usuario con ID ${userId}: ${filteredAppointments.length}`);
+      
+      return filteredAppointments.map((reserva) => ({
+        appointmentId: reserva.appointmentId,
+        appointmentDate: reserva.appointmentDate,
+        appointmentTime: reserva.appointmentTime,
+        estado: reserva.estado.toLowerCase(),
+        duracion: 60, // Valor por defecto si no está disponible
+        precioTotal: '0', // Valor por defecto si no está disponible
+        imageUrl: 'https://example.com/placeholder.jpg',
+        place: {
+          name: 'Cancha',
+          description: 'Fútbol - Césped sintético',
+          imageUrl: 'https://example.com/placeholder.jpg',
+          telefono: '555-1234'
+        },
+        cancha: {
+          id: '1',
+          nombre: 'Cancha',
+          tipo: 'Fútbol',
+          tipoSuperficie: 'Césped sintético',
+          imageUrl: 'https://example.com/placeholder.jpg'
+        },
+        predio: {
+          id: '1',
+          nombre: 'Predio Deportivo',
+          direccion: 'Calle ejemplo 123',
+          telefono: '555-1234'
+        },
+        metodoPago: 'No especificado'
+      }));
+    } catch (error) {
+      console.error('Error al obtener y filtrar reservas del usuario:', error);
       throw error;
     }
   }

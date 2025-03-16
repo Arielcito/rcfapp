@@ -40,12 +40,10 @@ export default function HomeScreen() {
   const isTablet = width >= 768;
 
   const initializeDateAndTime = useCallback(() => {
-    console.log('🔄 [INIT] Iniciando inicialización de fecha y hora');
     const dates = getDays();
     const time = getTime();
     
     if (Array.isArray(dates) && dates.length > 0) {
-      console.log('📅 [INIT] Fecha inicial seleccionada:', dates[0].date);
       setNext7Days(dates);
       setSelectedDate(dates[0].date);
 
@@ -53,8 +51,6 @@ export default function HomeScreen() {
       const today = moment();
       const selectedDateObj = moment(dates[0].date);
       const esHoy = selectedDateObj.isSame(today, 'day');
-      
-      console.log('📅 [INIT] ¿Es fecha de hoy?:', esHoy);
 
       let horariosDisponibles = time;
       
@@ -69,15 +65,12 @@ export default function HomeScreen() {
         });
       }
 
-      console.log('⏰ [INIT] Cantidad de horarios disponibles:', horariosDisponibles.length);
       setTimeList(horariosDisponibles);
       
       if (horariosDisponibles.length > 0) {
         const horarioInicial = horariosDisponibles[0].time;
-        console.log('⏰ [INIT] Horario inicial seleccionado:', horarioInicial);
         setSelectedTime(horarioInicial);
       } else {
-        console.log('⏰ [INIT] No hay horarios disponibles para hoy');
         setSelectedTime(null);
       }
     }
@@ -124,7 +117,6 @@ export default function HomeScreen() {
   }, [next7Days, selectedDate, selectedTime, cachedPredios]);
 
   useEffect(() => {
-    console.log('🔄 [EFFECT] Iniciando efecto de carga inicial');
     const initialize = async () => {
       await loadPredios();
       initializeDateAndTime();
@@ -135,11 +127,6 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (selectedDate && selectedTime && cachedPredios) {
-      console.log('🔄 [EFFECT] Actualizando lista de lugares:', {
-        fecha: selectedDate,
-        hora: selectedTime,
-        hayPredios: !!cachedPredios
-      });
       updatePlaceList();
     }
   }, [selectedDate, selectedTime, cachedPredios, updatePlaceList]);
@@ -185,16 +172,13 @@ export default function HomeScreen() {
     
     const handleDatePress = () => {
       if (!item.date) return;
-      console.log('📅 [CAMBIO] Nueva fecha seleccionada:', item.date);
-      
+
       setSelectedDate(item.date);
       
       const time = getTime();
       const today = moment();
       const selectedDateObj = moment(item.date);
       const esHoy = selectedDateObj.isSame(today, 'day');
-      
-      console.log('📅 [CAMBIO] ¿Es fecha de hoy?:', esHoy);
       
       let horariosDisponibles = time;
       
@@ -209,20 +193,15 @@ export default function HomeScreen() {
         });
       }
 
-      console.log('⏰ [CAMBIO] Cantidad de horarios disponibles:', horariosDisponibles.length);
       setTimeList(horariosDisponibles);
       
       // Verificar si el horario actual sigue siendo válido
       const horaActualDisponible = horariosDisponibles.find(slot => slot.time === selectedTime);
       if (!horaActualDisponible && horariosDisponibles.length > 0) {
         const nuevoHorario = horariosDisponibles[0].time;
-        console.log('⏰ [CAMBIO] Nuevo horario seleccionado:', nuevoHorario);
         setSelectedTime(nuevoHorario);
       } else if (horariosDisponibles.length === 0) {
-        console.log('⏰ [CAMBIO] No hay horarios disponibles para esta fecha');
         setSelectedTime(null);
-      } else {
-        console.log('⏰ [CAMBIO] Se mantiene el horario actual:', selectedTime);
       }
     };
     

@@ -25,7 +25,7 @@ export default function OwnerProfileScreen() {
 
   const fetchUserProfile = async () => {
     try {
-      const response = await api.get('/users/profile')
+      const response = await api.get('/user/me')
       setUser(response.data)
     } catch (error) {
       console.log('Error al obtener perfil:', error)

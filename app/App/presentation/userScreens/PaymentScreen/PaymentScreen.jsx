@@ -414,6 +414,15 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
       {renderTransferenciaBancaria()}
       {renderCreditCardForm()}
 
+      {selectedPaymentMethod === "efectivo" && (
+        <View style={styles.voucherInfoContainer}>
+          <Ionicons name="information-circle-outline" size={24} color={Colors.PRIMARY} />
+          <Text style={styles.voucherInfoText}>
+            Al pagar en efectivo, podrás obtener un voucher digital para presentar en el predio como comprobante de tu reserva.
+          </Text>
+        </View>
+      )}
+
       <View style={styles.stickyButtonContainer}>
         <TouchableOpacity
           onPress={handlePayment}
@@ -635,5 +644,28 @@ const styles = StyleSheet.create({
     color: Colors.WHITE,
     fontFamily: "montserrat-medium",
     marginLeft: 8,
+  },
+  voucherInfoContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#E6F7FF',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 20,
+    alignItems: 'flex-start',
+  },
+  voucherInfoText: {
+    marginLeft: 10,
+    flex: 1,
+    color: Colors.PRIMARY,
+    fontFamily: "montserrat",
+    fontSize: 14,
+  },
+  stickyButtonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 10,
+    backgroundColor: Colors.WHITE,
   },
 });
