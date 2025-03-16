@@ -6,94 +6,138 @@ import { reservaApi } from '../../../infraestructure/api/reserva.api';
 import { format, parseISO, compareDesc, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Booking } from '../../../types/booking';
+import { ChartDataPoint, ReservaResponse, ContactInfo, OwnerHomeScreenState } from '../../../types/owner';
+import { ErrorBoundary } from '../../../components/ErrorBoundary';
 
 const screenWidth = Dimensions.get('window').width;
 
-const OwnerHomeScreen = () => {
-  const [loading, setLoading] = useState(true);
-  const [reservas, setReservas] = useState([]);
-  const [chartData, setChartData] = useState(null);
-  const [userName, setUserName] = useState('');
-  const [selectedReserva, setSelectedReserva] = useState(null);
-  const [modalVisible, setModalVisible] = useState(false);
+// Función auxiliar para logging
+const logError = (error: any, context: string) => {
+  if (__DEV__) {
+    console.error(`Error en ${context}:`, error);
+  } else {
+    // TODO: Implementar sistema de logging para producción
+    console.error(`Error en ${context}:`, error);
+  }
+};
 
-  const ordenarReservas = (reservasArray) => {
-    if (!Array.isArray(reservasArray)) return [];
+const OwnerHomeContent = () => {
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reservas, setReservas] = useState<Booking[]>([]);
+  const [chartData, setChartData] = useState<ChartDataPoint[] | null>(null);
+  const [userName, setUserName] = useState<string>('');
+  const [selectedReserva, setSelectedReserva] = useState<Booking | null>(null);
+  const [modalVisible, setModalVisible] = useState<boolean>(false);
+
+  const ordenarReservas = (reservasArray: Booking[]): Booking[] => {
+    if (!Array.isArray(reservasArray)) {
+      logError('reservasArray no es un array', 'ordenarReservas');
+      return [];
+    }
     return [...reservasArray].sort((a, b) => {
       try {
-        // Check if we should use fechaReserva or fechaHora
-        const dateFieldA = a.fechaReserva || a.fechaHora;
-        const dateFieldB = b.fechaReserva || b.fechaHora;
+        const dateFieldA = a.fechaHora;
+        const dateFieldB = b.fechaHora;
         
         if (!dateFieldA || !dateFieldB) return 0;
         return compareDesc(parseISO(dateFieldA), parseISO(dateFieldB));
       } catch (error) {
+        logError(error, 'ordenarReservas');
         return 0;
       }
     });
   };
 
-  const generarDatosGrafico = (reservas) => {
-    if (!Array.isArray(reservas)) return [];
+  const generarDatosGrafico = (reservas: Booking[]): ChartDataPoint[] => {
+    if (!Array.isArray(reservas)) {
+      logError('reservas no es un array', 'generarDatosGrafico');
+      return [];
+    }
     
-    const hoy = new Date();
-    const labels = Array.from({ length: 7 }, (_, i) => {
-      return format(subDays(hoy, 6 - i), 'EEE', { locale: es });
-    });
+    try {
+      const hoy = new Date();
+      const labels = Array.from({ length: 7 }, (_, i) => {
+        return format(subDays(hoy, 6 - i), 'EEE', { locale: es });
+      });
 
-    const datos = Array(7).fill(0);
-    for (const reserva of reservas) {
-      try {
-        if (!reserva.fechaHora) continue;
-        const fechaReserva = parseISO(reserva.fechaHora);
-        
-        // Check if date is valid
-        if (!Number.isFinite(fechaReserva.getTime())) continue;
-        
-        const diasAtras = Math.floor((hoy - fechaReserva) / (1000 * 60 * 60 * 24));
-        if (diasAtras >= 0 && diasAtras < 7) {
-          datos[6 - diasAtras]++;
+      const datos = Array(7).fill(0);
+      for (const reserva of reservas) {
+        try {
+          if (!reserva.fechaHora) continue;
+          const fechaReserva = parseISO(reserva.fechaHora);
+          
+          if (!Number.isFinite(fechaReserva.getTime())) continue;
+          
+          const diasAtras = Math.floor((hoy.getTime() - fechaReserva.getTime()) / (1000 * 60 * 60 * 24));
+          if (diasAtras >= 0 && diasAtras < 7) {
+            datos[6 - diasAtras]++;
+          }
+        } catch (error) {
+          logError(error, 'procesando fecha de reserva');
         }
+      }
+
+      return labels.map((label, index) => ({
+        x: label,
+        y: datos[index]
+      }));
+    } catch (error) {
+      logError(error, 'generarDatosGrafico');
+      return [];
+    }
+  };
+
+  const cargarDatosConRetry = async (intentos = 3) => {
+    for (let i = 0; i < intentos; i++) {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const storedName = await AsyncStorage.getItem('userName');
+        setUserName(storedName || '');
+
+        let todasLasReservas: Booking[] = [];
+        const response = await reservaApi.obtenerTodasReservas() as ReservaResponse;
+        
+        if (response) {
+          todasLasReservas = 'data' in response ? response.data : response;
+        }
+
+        if (!Array.isArray(todasLasReservas)) {
+          throw new Error('Formato de respuesta inválido');
+        }
+
+        const reservasOrdenadas = ordenarReservas(todasLasReservas);
+        setReservas(reservasOrdenadas);
+        setChartData(generarDatosGrafico(reservasOrdenadas));
+        break;
       } catch (error) {
-        // Skip this item if there's an error
+        logError(error, `Intento ${i + 1} de cargar datos`);
+        if (i === intentos - 1) {
+          setError('No se pudieron cargar los datos. Por favor, intenta de nuevo.');
+          setReservas([]);
+          setChartData([]);
+        } else {
+          await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+        }
+      } finally {
+        setLoading(false);
       }
     }
-
-    return labels.map((label, index) => ({
-      x: label,
-      y: datos[index]
-    }));
   };
 
   useEffect(() => {
-    cargarDatos();
+    cargarDatosConRetry();
   }, []);
 
-  const cargarDatos = async () => {
-    try {
-      setLoading(true);
-      const storedName = await AsyncStorage.getItem('userName');
-      setUserName(storedName || '');
-
-      const response = await reservaApi.obtenerTodasReservas();
-      const todasLasReservas = response.data || response;
-      const reservasOrdenadas = ordenarReservas(todasLasReservas);
-      
-      setReservas(reservasOrdenadas);
-      setChartData(generarDatosGrafico(reservasOrdenadas));
-      setLoading(false);
-    } catch (error) {
-      console.error('Error al cargar datos:', error);
-      setLoading(false);
-    }
-  };
-
-  const handleContactar = (tipo, valor) => {
+  const handleContactar = ({ tipo, valor }: ContactInfo) => {
     if (tipo === 'telefono') {
       const phoneNumber = Platform.OS === 'android' ? `tel:${valor}` : `telprompt:${valor}`;
-      Linking.openURL(phoneNumber);
+      Linking.openURL(phoneNumber).catch(err => console.error('Error al abrir enlace:', err));
     } else if (tipo === 'email') {
-      Linking.openURL(`mailto:${valor}`);
+      Linking.openURL(`mailto:${valor}`).catch(err => console.error('Error al abrir correo:', err));
     }
   };
 
@@ -101,7 +145,7 @@ const OwnerHomeScreen = () => {
     if (!selectedReserva) return null;
 
     // Helper function to safely format dates
-    const safeFormatDate = (dateStr) => {
+    const safeFormatDate = (dateStr: string | undefined): string => {
       try {
         if (!dateStr) return "Fecha no disponible";
         const date = parseISO(dateStr);
@@ -113,7 +157,7 @@ const OwnerHomeScreen = () => {
     };
 
     // Helper function to safely format numbers
-    const safeFormatNumber = (num) => {
+    const safeFormatNumber = (num: number | undefined | null): string => {
       try {
         if (num === undefined || num === null) return "0";
         const number = Number(num);
@@ -173,7 +217,7 @@ const OwnerHomeScreen = () => {
               <View style={styles.detalleSeccion}>
                 <Text style={styles.detalleLabel}>Precio</Text>
                 <Text style={styles.detallePrecio}>
-                  ${safeFormatNumber(selectedReserva.precioTotal)}
+                  ${safeFormatNumber(Number(selectedReserva.precioTotal))}
                 </Text>
               </View>
 
@@ -205,7 +249,7 @@ const OwnerHomeScreen = () => {
     const proximasReservas = reservas.slice(0, 5);
 
     // Helper functions for safe rendering
-    const safeFormatDate = (dateStr) => {
+    const safeFormatDate = (dateStr: string | undefined): string => {
       try {
         if (!dateStr) return "Fecha no disponible";
         const date = parseISO(dateStr);
@@ -216,7 +260,7 @@ const OwnerHomeScreen = () => {
       }
     };
 
-    const safeFormatNumber = (num) => {
+    const safeFormatNumber = (num: number | undefined | null): string => {
       try {
         if (num === undefined || num === null) return "0";
         const number = Number(num);
@@ -242,7 +286,7 @@ const OwnerHomeScreen = () => {
           <View style={styles.reservaDetalles}>
             <Text style={styles.reservaDuracion}>Duración: {reserva.duracion || 0} min</Text>
             <Text style={styles.reservaPrecio}>
-              ${safeFormatNumber(reserva.precioTotal)}
+              ${safeFormatNumber(Number(reserva.precioTotal))}
             </Text>
           </View>
           <Text style={[
@@ -257,10 +301,71 @@ const OwnerHomeScreen = () => {
     ));
   };
 
+  const renderChart = () => {
+    try {
+      return (
+        <VictoryChart
+          theme={VictoryTheme.material}
+          height={220}
+          width={Math.max(screenWidth - 60, 1)}
+          padding={{ top: 20, bottom: 40, left: 40, right: 20 }}
+          containerComponent={
+            <VictoryContainer 
+              responsive={true}
+            />
+          }
+        >
+          <VictoryAxis
+            tickFormat={(t) => t}
+            style={{
+              axis: { stroke: '#e3e3e3' },
+              tickLabels: { fontSize: 10, fill: '#888' }
+            }}
+          />
+          <VictoryAxis
+            dependentAxis
+            tickFormat={(t) => Math.round(t)}
+            style={{
+              axis: { stroke: '#e3e3e3' },
+              tickLabels: { fontSize: 10, fill: '#888' }
+            }}
+          />
+          <VictoryLine
+            data={chartData || []}
+            style={{
+              data: { stroke: '#1AFF92', strokeWidth: 2 },
+            }}
+            animate={{
+              duration: 2000,
+              onLoad: { duration: 1000 }
+            }}
+          />
+        </VictoryChart>
+      );
+    } catch (error) {
+      logError(error, 'Renderizado del gráfico');
+      return null;
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#1AFF92" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity 
+          style={styles.retryButton}
+          onPress={() => cargarDatosConRetry()}
+        >
+          <Text style={styles.retryButtonText}>Intentar de nuevo</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -281,39 +386,7 @@ const OwnerHomeScreen = () => {
         <View style={styles.chartContainer}>
           <Text style={styles.chartTitle}>Canchas reservadas</Text>
           <Text style={styles.chartSubtitle}>Última semana</Text>
-          <VictoryChart
-            theme={VictoryTheme.material}
-            height={220}
-            width={screenWidth - 60}
-            padding={{ top: 20, bottom: 40, left: 40, right: 20 }}
-            containerComponent={<VictoryContainer responsive={true} />}
-          >
-            <VictoryAxis
-              tickFormat={(t) => t}
-              style={{
-                axis: { stroke: '#e3e3e3' },
-                tickLabels: { fontSize: 10, fill: '#888' }
-              }}
-            />
-            <VictoryAxis
-              dependentAxis
-              tickFormat={(t) => Math.round(t)}
-              style={{
-                axis: { stroke: '#e3e3e3' },
-                tickLabels: { fontSize: 10, fill: '#888' }
-              }}
-            />
-            <VictoryLine
-              data={chartData || []}
-              style={{
-                data: { stroke: '#1AFF92', strokeWidth: 2 },
-              }}
-              animate={{
-                duration: 2000,
-                onLoad: { duration: 1000 }
-              }}
-            />
-          </VictoryChart>
+          {renderChart()}
           <Text style={styles.chartFooter}>
             {chartData && Array.isArray(chartData) ? chartData.reduce((a, b) => a + b.y, 0) : 0} canchas reservadas en total
           </Text>
@@ -331,6 +404,15 @@ const OwnerHomeScreen = () => {
       </ScrollView>
       {renderDetalleReserva()}
     </SafeAreaView>
+  );
+};
+
+// Componente wrapper con ErrorBoundary
+const OwnerHomeScreen = () => {
+  return (
+    <ErrorBoundary>
+      <OwnerHomeContent />
+    </ErrorBoundary>
   );
 };
 
@@ -553,6 +635,30 @@ const styles = StyleSheet.create({
   proximasReservasCount: {
     fontSize: 14,
     color: '#666',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#1AFF92',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

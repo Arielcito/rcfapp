@@ -35,8 +35,9 @@ export interface Booking {
   fechaHora: string;
   estadoPago: string;
   duracion: number;
-  precioTotal: number;
+  precioTotal: string | number;
   metodoPago?: string;
   cancha?: Cancha;
   predio?: Predio;
+  notasAdicionales?: string;
 } 
