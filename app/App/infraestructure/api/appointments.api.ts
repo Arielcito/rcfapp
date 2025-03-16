@@ -133,11 +133,6 @@ export const getAppointmentsByUser = async (): Promise<Appointment[]> => {
     // Intenta obtener los datos de la API
     const { data } = await api.get('/reservas/user/bookings');
 
-    if (!data || !Array.isArray(data)) {
-      console.warn('No se recibieron datos de reservas o formato inválido');
-      return [];
-    }
-
     console.log('Respuesta de reservas:', {
       totalReservas: data.length,
       primeraReserva: data[0] || null
@@ -178,27 +173,13 @@ export const getAllAppointments = async (): Promise<Appointment[]> => {
     console.log('Obteniendo todas las reservas');
     
     const { data } = await api.get('/reservas');
-
-    if (!data || !Array.isArray(data)) {
-      console.warn('No se recibieron datos de reservas o formato inválido');
-      return [];
-    }
-
+    console.log('data', data);
     console.log('Respuesta de todas las reservas:', {
-      totalReservas: data.length,
-      primeraReserva: data[0] || null
+      totalReservas: data.data.length,
+      primeraReserva: data.data[0] || null
     });
 
-    return data.map((appointment: ApiAppointment) => ({
-      appointmentId: typeof appointment.appointmentId === 'string' 
-        ? Number.parseInt(appointment.appointmentId, 10) 
-        : appointment.appointmentId,
-      appointmentDate: appointment.appointmentDate,
-      appointmentTime: appointment.appointmentTime,
-      estado: appointment.estado,
-      email: appointment.email || 'usuario@example.com',
-      pitch: appointment.pitch || 1
-    }));
+    return data.data;
   } catch (error: unknown) {
     console.error("Error detallado al obtener todas las reservas:", {
       mensaje: error instanceof Error ? error.message : 'Error desconocido',

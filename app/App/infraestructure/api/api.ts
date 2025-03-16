@@ -2,10 +2,14 @@ import axios from "axios";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import env from '../config/env';
 
+console.log('Configurando API con URL base:', env.apiUrl);
+
 export const api = axios.create({
   baseURL: env.apiUrl,
+  timeout: 10000,
   headers: {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
   },
 });
 
@@ -13,6 +17,8 @@ export const api = axios.create({
 api.interceptors.request.use(
   async (config) => {
     try {
+      const url = `${config.baseURL || ''}${config.url || ''}`;
+      console.log('Realizando petición a:', url);
       const token = await AsyncStorage.getItem('auth_token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -32,7 +38,7 @@ api.interceptors.request.use(
 // Interceptor para manejar errores de respuesta
 api.interceptors.response.use(
   (response) => {
-
+    console.log('Respuesta exitosa de:', response.config.url || 'URL desconocida');
     return response;
   },
   async (error) => {
@@ -40,6 +46,10 @@ api.interceptors.response.use(
       url: error.config?.url,
       status: error.response?.status,
       data: error.response?.data,
+      message: error.message,
+      code: error.code,
+      isAxiosError: error.isAxiosError,
+      baseURL: error.config?.baseURL,
       headers: error.config?.headers
     });
     

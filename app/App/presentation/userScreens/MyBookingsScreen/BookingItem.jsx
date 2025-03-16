@@ -37,6 +37,7 @@ export default function BookingItem({ place, setLoading }) {
         navigation.navigate("myBookingDescription", { place: place })
       }
       style={styles.container}
+      activeOpacity={0.7}
     >
       <View style={styles.contentContainer}>
         <Image source={{ uri: place.place.imageUrl }} style={styles.image} />
@@ -44,26 +45,22 @@ export default function BookingItem({ place, setLoading }) {
           <Text numberOfLines={1} style={styles.title}>
             {place.place.name}
           </Text>
-          <Text style={styles.description}>{place.place.description}</Text>
-          <Text style={styles.description}>{place.appointmentDate}</Text>
-          <Text style={styles.description}>{place.appointmentTime}</Text>
+
+          <View style={styles.dateTimeContainer}>
+            <Text style={styles.dateTime}>📅 {place.appointmentDate}</Text>
+            <Text style={styles.dateTime}>⏰ {place.appointmentTime}</Text>
+          </View>
           <View style={styles.bottomContainer}>
             <Pressable
               onPress={() => handleCancel(place?.appointmentId)}
               style={[
-                styles.dayButton,
-                place?.estado === "reservado"
-                  ? { backgroundColor: "red" }
-                  : { backgroundColor: "grey" },
+                styles.cancelButton,
+                {
+                  backgroundColor: place?.estado === "reservado" ? Colors.PRIMARY : "#E0E0E0",
+                },
               ]}
             >
-              <Text
-                style={{
-                  fontSize: 15,
-                  fontFamily: "montserrat",
-                  color: "#fff"
-                }}
-              >
+              <Text style={styles.cancelButtonText}>
                 {place?.estado === "reservado" ? "Cancelar" : "Cancelado"}
               </Text>
             </Pressable>
@@ -78,58 +75,69 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: Colors.WHITE,
     margin: 10,
-    borderRadius: 10,
+    borderRadius: 15,
     width: Dimensions.get("screen").width * 0.9,
     marginHorizontal: 20,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.23,
+    shadowRadius: 2.62,
   },
   contentContainer: {
     flexDirection: "row",
     borderRadius: 15,
+    overflow: "hidden",
   },
   image: {
     width: "40%",
-    borderTopLeftRadius: 15,
-    borderBottomLeftRadius: 15,
-    height: 140,
+    height: 160,
+    resizeMode: "cover",
   },
   textContainer: {
     width: "60%",
-    paddingLeft: 10,
+    padding: 12,
+    justifyContent: "space-between",
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: "montserrat-medium",
+    color: "#1A1A1A",
+    marginBottom: 4,
   },
   description: {
     color: Colors.GRAY,
     fontFamily: "montserrat",
-    marginBottom: 5,
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 8,
   },
-
-  price: {
-    fontSize: 16,
+  dateTimeContainer: {
+    marginBottom: 8,
+  },
+  dateTime: {
     fontFamily: "montserrat",
-    color: "#003366",
-    fontWeight: "bold",
+    fontSize: 14,
+    color: "#424242",
+    marginBottom: 4,
   },
-  button: {
-    padding: 6,
-    paddingHorizontal: 14,
-    backgroundColor: Colors.PRIMARY,
-    borderRadius: 6,
+  bottomContainer: {
+    alignItems: "flex-start",
   },
-  buttonText: {
-    fontFamily: "montserrat-medium",
-    fontSize: 15,
-    color: "white",
-  },
-  dayButton: {
-    borderWidth: 1,
-    borderRadius: 99,
-    padding: 5,
+  cancelButton: {
+    borderRadius: 25,
+    paddingVertical: 8,
     paddingHorizontal: 20,
     alignItems: "center",
-    marginRight: 10,
-    borderColor: Colors.GRAY,
+    justifyContent: "center",
+    minWidth: 100,
+  },
+  cancelButtonText: {
+    fontSize: 14,
+    fontFamily: "montserrat-medium",
+    color: "#FFF",
   },
 });

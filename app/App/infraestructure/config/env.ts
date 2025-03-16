@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 // API URL Configuration - Single source of truth
 const API_CONFIG = {
   DEV: {
-    ANDROID: 'http://192.168.1.38:3001/api',
+    ANDROID: 'http://192.168.1.52:3001/api',
     IOS: 'http://localhost:3001/api',
   },
   PROD: 'https://backoffice.xerato.io/rcf/api'

@@ -2,10 +2,24 @@ import { createContext, useState, useContext, useEffect } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from "../../infraestructure/api/api";
 
-export const CurrentUserContext = createContext(null);
+export interface User {
+  id: string;
+  email: string;
+  [key: string]: any;
+}
 
-export const CurrentUserProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null);
+interface CurrentUserContextType {
+  currentUser: User | null;
+  setCurrentUser: (userData: User) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
+  logout: () => Promise<void>;
+  isLoading: boolean;
+}
+
+export const CurrentUserContext = createContext<CurrentUserContextType | null>(null);
+
+export const CurrentUserProvider = ({ children }: { children: React.ReactNode }) => {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -32,7 +46,7 @@ export const CurrentUserProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (email: string, password: string): Promise<User> => {
     try {
       console.log('Iniciando login para:', email);
       const response = await api.post('/users/login', { email, password });
@@ -42,7 +56,7 @@ export const CurrentUserProvider = ({ children }) => {
         hasToken: !!response.data.token,
         headers: response.headers
       });
-
+      
       const { user, token } = response.data;
 
       if (!user || !token) {
@@ -60,7 +74,7 @@ export const CurrentUserProvider = ({ children }) => {
       console.log('Actualizando estado de usuario...');
       setCurrentUser(user);
       return user;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error detallado en login:', {
         mensaje: error.message,
         status: error.response?.status,
@@ -83,7 +97,7 @@ export const CurrentUserProvider = ({ children }) => {
     }
   };
 
-  const updateUserData = async (userData) => {
+  const updateUserData = async (userData: User) => {
     try {
       await AsyncStorage.setItem('userData', JSON.stringify(userData));
       setCurrentUser(userData);
@@ -114,4 +128,4 @@ export const useCurrentUser = () => {
     throw new Error('useCurrentUser debe ser usado dentro de CurrentUserProvider');
   }
   return context;
-};
+}; 
