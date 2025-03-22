@@ -42,3 +42,7 @@ server/drizzle
 server/drizzle.config.ts
 server/drizzle.config.ts
 server/drizzle.config.ts
+
+# Google Services
+app/GoogleService-Info.plist
+android/app/google-services.json
