@@ -50,11 +50,13 @@
       "ios": {
         "appleId": "arielserato@gmail.com",
         "ascAppId": "6476858051",
-        "appleTeamId": "5943JL6865"
+        "appleTeamId": "5943JL6865",
+        "language": "es-419"
       },
       "android": {
         "track": "production",
-        "releaseStatus": "completed"
+        "releaseStatus": "completed",
+        "serviceAccountKeyPath": "./pc-api-key.json"
       }
     }
   }

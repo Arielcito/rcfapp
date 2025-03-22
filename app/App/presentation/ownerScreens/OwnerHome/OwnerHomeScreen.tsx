@@ -6,8 +6,8 @@ import { reservaApi } from '../../../infraestructure/api/reserva.api';
 import { format, parseISO, compareDesc, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Booking } from '../../../types/booking';
-import { ChartDataPoint, ReservaResponse, ContactInfo, OwnerHomeScreenState } from '../../../types/owner';
+import type { Booking } from '../../../types/booking';
+import { type ChartDataPoint, type ReservaResponse, type ContactInfo, OwnerHomeScreenState } from '../../../types/owner';
 import { ErrorBoundary } from '../../../components/ErrorBoundary';
 
 const screenWidth = Dimensions.get('window').width;

@@ -9,6 +9,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import TabNavigation from "./App/presentation/navigations/TabUserNavigation";
 import TabNavigationOwner from "./App/presentation/navigations/TabOwnerNavigation";
 import { LoginStack } from "./App/presentation/navigations/LoginNavigation";
+import { TestMonitoring } from "./App/infraestructure/monitoring/TestMonitoring";
 
 import { UserLocationContext } from "./App/application/context/UserLocationContext";
 import { CurrentUserProvider, useCurrentUser } from "./App/application/context/CurrentUserContext";
@@ -16,6 +17,9 @@ import { CurrentPlaceContext } from "./App/application/context/CurrentPlaceConte
 
 import Colors from "./App/infraestructure/utils/Colors";
 import { fetchOwnerPlace } from "./App/infraestructure/api/places.api";
+import { initializeMonitoring } from "./App/infraestructure/monitoring/config";
+import { withPerformanceTracking, withErrorBoundary, logError } from "./App/infraestructure/monitoring/utils";
+import { monitoringConstants } from "./App/infraestructure/monitoring/config";
 
 // Prevenir que la pantalla de splash se oculte automáticamente
 SplashScreen.preventAutoHideAsync();
@@ -34,12 +38,24 @@ function AppContent() {
   useEffect(() => {
     async function prepare() {
       try {
-        await Promise.all([
-          loadFonts(),
-          loadLocation(),
-        ]);
+        await withPerformanceTracking(monitoringConstants.PERFORMANCE_METRICS.APP_LAUNCH, async () => {
+          await Promise.all([
+            loadFonts(),
+            loadLocation(),
+          ]);
+          
+          // Inicializar monitoreo después de cargar el usuario
+          if (currentUser) {
+            await initializeMonitoring(currentUser.id);
+          } else {
+            await initializeMonitoring();
+          }
+        });
       } catch (e) {
-        console.warn(e);
+        logError('Error durante la inicialización de la app', {
+          error: e,
+          userId: currentUser?.id
+        });
       } finally {
         setIsLoading(false);
       }
@@ -51,31 +67,47 @@ function AppContent() {
   useEffect(() => {
     async function loadOwnerPlace() {
       if (currentUser?.role === "OWNER") {
-        const place = await fetchOwnerPlace(currentUser.id);
-        setCurrentPlace(place);
+        await withErrorBoundary(async () => {
+          const place = await fetchOwnerPlace(currentUser.id);
+          setCurrentPlace(place);
+        }, {
+          userId: currentUser.id,
+          operation: 'fetchOwnerPlace'
+        });
       }
     }
     loadOwnerPlace();
   }, [currentUser]);
 
   const loadFonts = async () => {
-    await Font.loadAsync({
-      "montserrat": require("./App/presentation/assets/fonts/Montserrat-Regular.ttf"),
-      "montserrat-bold": require("./App/presentation/assets/fonts/Montserrat-Bold.ttf"),
-      "montserrat-medium": require("./App/presentation/assets/fonts/Montserrat-SemiBold.ttf"),
+    await withErrorBoundary(async () => {
+      await Font.loadAsync({
+        "montserrat": require("./App/presentation/assets/fonts/Montserrat-Regular.ttf"),
+        "montserrat-bold": require("./App/presentation/assets/fonts/Montserrat-Bold.ttf"),
+        "montserrat-medium": require("./App/presentation/assets/fonts/Montserrat-SemiBold.ttf"),
+      });
+      setFontsLoaded(true);
+    }, {
+      operation: 'loadFonts'
     });
-    setFontsLoaded(true);
   };
 
   const loadLocation = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== "granted") {
-      console.log("Permiso de ubicación denegado");
-      return;
-    }
+    await withErrorBoundary(async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        logError("Permiso de ubicación denegado", {
+          userId: currentUser?.id
+        });
+        return;
+      }
 
-    const location = await Location.getCurrentPositionAsync({});
-    setLocation(location.coords);
+      const location = await Location.getCurrentPositionAsync({});
+      setLocation(location.coords);
+    }, {
+      operation: 'loadLocation',
+      userId: currentUser?.id
+    });
   };
 
   const onLayoutRootView = useCallback(async () => {
@@ -95,6 +127,11 @@ function AppContent() {
           <ActivityIndicator size="large" color={Colors.PRIMARY} />
         </View>
       );
+    }
+
+    // Mostrar el componente de prueba en modo desarrollo
+    if (__DEV__) {
+      return <TestMonitoring />;
     }
 
     return (
