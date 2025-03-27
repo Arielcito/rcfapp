@@ -28,24 +28,36 @@ export const authenticateToken = (
   next: NextFunction
 ) => {
   console.log("[Auth] Iniciando verificación de token");
+  console.log("[Auth] Headers recibidos:", JSON.stringify(req.headers));
   
-  const token = req.headers.authorization?.split(' ')[1];
+  const authHeader = req.headers.authorization;
+  console.log("[Auth] Header de autorización:", authHeader);
+  
+  const token = authHeader?.split(' ')[1];
   
   if (!token) {
     console.log("[Auth] Token no encontrado");
     return res.status(401).json({ message: 'No autorizado' });
   }
 
+  console.log("[Auth] Token extraído:", token.substring(0, 10) + "...");
+
   try {
     const secretKey = process.env.JWT_SECRET || 'your-secret-key';
-    console.log("[Auth] Verificando token");
+    console.log("[Auth] Secret key utilizada (longitud):", secretKey.length);
+    console.log("[Auth] Verificando token con algoritmo:", jwt.decode(token, { complete: true })?.header?.alg);
     
     const decoded = jwt.verify(
       token, 
       secretKey
     ) as JWTPayload;
     
-    console.log("[Auth] Token verificado exitosamente");
+    console.log("[Auth] Token verificado exitosamente para usuario:", decoded.email);
+    console.log("[Auth] Payload del token:", JSON.stringify({
+      id: decoded.id,
+      email: decoded.email,
+      role: decoded.role
+    }));
 
     req.user = {
       id: decoded.id,
@@ -58,6 +70,20 @@ export const authenticateToken = (
     next();
   } catch (error: unknown) {
     console.log("[Auth] Error en verificación de token");
+    const errorObj = error instanceof Error ? 
+      { name: error.name, message: error.message, stack: error.stack } : 
+      { message: 'Error desconocido' };
+    
+    console.error("[Auth] Detalles del error:", JSON.stringify(errorObj));
+    
+    if (error instanceof jwt.JsonWebTokenError) {
+      if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({ message: 'Token expirado' });
+      } else if (error.name === 'NotBeforeError') {
+        return res.status(401).json({ message: 'Token aún no válido' });
+      }
+    }
+    
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
     res.status(401).json({ message: 'Token inválido', error: errorMessage });
   }

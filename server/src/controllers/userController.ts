@@ -98,6 +98,7 @@ export const login = async (
 
     const { user, token } = await userService.loginUser(email, password);
     logger.info(`Login exitoso para usuario: ${user.role}`);
+    logger.info(`Token generado (primeros 10 caracteres): ${token.substring(0, 10)}...`);
 
     // Establecer cookie con el token
     res.cookie('auth_token', token, {
@@ -107,7 +108,12 @@ export const login = async (
       maxAge: 24 * 60 * 60 * 1000 // 24 horas
     });
 
-    logger.info('Cookie establecida correctamente', { token });
+    logger.info('Cookie establecida correctamente');
+    logger.info('Respuesta siendo enviada con token en header y body');
+    
+    // Añadir el token al header de Authorization para mayor compatibilidad
+    res.setHeader('Authorization', `Bearer ${token}`);
+    
     res.json({ user, token });
   } catch (error) {
     logger.error('Error en login:', error);
@@ -168,7 +174,7 @@ export const getCurrentUser = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const userId = req.body.user?.id;
+    const userId = req.user?.id;
     logger.info(`Intento de obtener usuario actual. ID: ${userId}`);
 
     if (!userId) {

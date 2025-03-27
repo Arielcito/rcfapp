@@ -35,6 +35,14 @@ export const getPrediosByUsuarioId = async (usuarioId: string): Promise<Predio[]
   return result;
 };
 
+export const getPredioByOwnerId = async (ownerId: string): Promise<Predio | null> => {
+  const [predio] = await db.select()
+    .from(prediosSchema)
+    .where(eqOp(prediosSchema.usuarioId, ownerId)) as Predio[];
+
+  return predio || null;
+};
+
 export const updatePredio = async (id: string, predioData: PredioUpdateData): Promise<Predio | null> => {
   const [updatedPredio] = await db.update(prediosSchema)
     .set(predioData)

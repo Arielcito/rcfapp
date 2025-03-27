@@ -100,3 +100,29 @@ export const deletePredio = async (
     next(error);
   }
 };
+
+export const getPredioByOwnerId = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    
+    if (!id) {
+      res.status(400).json({ message: 'ID de dueño no proporcionado' });
+      return;
+    }
+
+    const predio = await predioService.getPredioByOwnerId(id);
+    
+    if (!predio) {
+      res.status(404).json({ message: 'No se encontró predio para este dueño' });
+      return;
+    }
+
+    res.json(predio);
+  } catch (error) {
+    next(error);
+  }
+};

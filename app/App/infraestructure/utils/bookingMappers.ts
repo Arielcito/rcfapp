@@ -10,7 +10,7 @@ export const mapBookingResponse = (booking: Booking): BookingResponse => {
     appointmentTime: fechaHora.format('HH:mm'),
     estado: booking.estadoPago.toLowerCase(),
     duracion: booking.duracion,
-    precioTotal: booking.precioTotal,
+    precioTotal: Number(booking.precioTotal),
     place: {
       name: booking.cancha?.nombre || 'Sin nombre',
       description: booking.cancha ? 
