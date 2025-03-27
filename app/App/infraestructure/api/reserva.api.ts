@@ -1,6 +1,7 @@
-import api from '../config/api';
+
 import { format, isAfter, isBefore, startOfDay, endOfDay, parseISO } from 'date-fns';
 import { getAllAppointments } from './appointments.api';
+import { api } from './api';
 
 interface Reserva {
   id: string;

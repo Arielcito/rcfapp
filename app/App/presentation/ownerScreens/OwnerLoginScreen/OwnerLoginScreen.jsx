@@ -4,9 +4,8 @@ import { TouchableOpacity } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import Colors from "../../../infraestructure/utils/Colors";
 import { useNavigation } from "@react-navigation/native";
-import { api } from "../../../infraestructure/api/api";
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useCurrentUser } from "../../../application/context/CurrentUserContext";
 
 const { width, height } = Dimensions.get('window');
 
@@ -19,6 +18,7 @@ export default function OwnerLoginScreen() {
   });
   
   const navigation = useNavigation();
+  const { login } = useCurrentUser();
   const image = require("../../assets/images/geometrias-circulares.png");
 
   function handleChange(text, eventName) {
@@ -30,41 +30,17 @@ export default function OwnerLoginScreen() {
     });
   }
 
-  async function Login() {
+  async function handleLogin() {
     const { email, pwd } = values;
     
     try {
-      const response = await api.post('/users/login', {
-        email: email.toLocaleLowerCase(),
-        password: pwd
-      });
-
-      const userData = response.data.user;
-      const token = response.data.token;
+      const user = await login(email.toLowerCase(), pwd);
       
       // Verificar si el usuario es propietario
-      if (userData.role !== 'OWNER') {
+      if (user.role !== 'OWNER') {
         alert('No tienes permisos de propietario');
         return;
       }
-
-      // Obtener el token de la cookie si está disponible
-      const cookieToken = response.headers?.['set-cookie']?.[0]?.split(';')[0]?.split('=')[1];
-      
-      // Guardar el token (preferir el de la cookie si está disponible)
-      const tokenToStore = cookieToken || token;
-      
-      if (!tokenToStore) {
-        throw new Error('No se recibió token de autenticación');
-      }
-
-      // Guardar datos en AsyncStorage
-      await Promise.all([
-        AsyncStorage.setItem('auth_token', tokenToStore),
-        AsyncStorage.setItem('userId', userData.id),
-        AsyncStorage.setItem('userRole', userData.role),
-        AsyncStorage.setItem('userName', userData.name || '')
-      ]);
 
       navigation.navigate("TabOwnerNavigation");
       
@@ -113,7 +89,7 @@ export default function OwnerLoginScreen() {
           />
           <TouchableOpacity
             style={styles.button}
-            onPress={() => Login()}
+            onPress={() => handleLogin()}
           >
             <Text style={styles.buttonText}>
               Entrar

@@ -4,12 +4,13 @@ import Colors from '../../../infraestructure/utils/Colors'
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import { api } from '../../../infraestructure/api/api'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useCurrentUser } from '../../../application/context/CurrentUserContext'
 
 export default function OwnerProfileScreen() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const navigation = useNavigation()
+  const { logout } = useCurrentUser()
 
   const menu = [
     {
@@ -25,7 +26,7 @@ export default function OwnerProfileScreen() {
 
   const fetchUserProfile = async () => {
     try {
-      const response = await api.get('/user/me')
+      const response = await api.get('/users/me')
       setUser(response.data)
     } catch (error) {
       console.log('Error al obtener perfil:', error)
@@ -47,23 +48,14 @@ export default function OwnerProfileScreen() {
           text: "Sí, cerrar sesión",
           onPress: async () => {
             try {
-              setLoading(true)
+              console.log('Iniciando proceso de cierre de sesión...');
+              setLoading(true);
               
-              // Cerrar sesión en el backend
-              await api.post('/users/logout')
+              console.log('Llamando a logout del contexto...');
+              await logout();
+              console.log('Logout completado exitosamente');
               
-              // Limpiar el almacenamiento local
-              await AsyncStorage.multiRemove([
-                'userToken', 
-                'userData', 
-                'userId',
-                'userRole'
-              ])
-              
-              // Limpiar headers de la API
-              api.defaults.headers.common.Authorization = ''
-              
-              // Redireccionar al inicio
+              console.log('Redirigiendo a welcomePage...');
               navigation.reset({
                 index: 0,
                 routes: [
@@ -71,21 +63,26 @@ export default function OwnerProfileScreen() {
                     name: 'welcomePage'
                   }
                 ]
-              })
+              });
             } catch (error) {
-              console.log('Error al cerrar sesión:', error)
+              console.error('Error detallado al cerrar sesión:', {
+                message: error.message,
+                stack: error.stack,
+                response: error.response?.data
+              });
               Alert.alert(
                 "Error",
                 "Hubo un problema al cerrar sesión. Por favor, intenta nuevamente."
-              )
+              );
             } finally {
-              setLoading(false)
+              setLoading(false);
+              console.log('Proceso de cierre de sesión finalizado');
             }
           }
         }
       ]
-    )
-  }
+    );
+  };
 
   return (
     <View>
