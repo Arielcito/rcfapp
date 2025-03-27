@@ -52,3 +52,5 @@ android/app/my-upload-key.keystore
 .expo
 dist/
 web-build/
+
+pc-api-key.json
