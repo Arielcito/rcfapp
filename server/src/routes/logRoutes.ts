@@ -1,6 +1,18 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { body } from 'express-validator';
 
+interface LogEntry {
+  level: 'ERROR' | 'WARN' | 'INFO' | 'DEBUG';
+  timestamp: string;
+  message: string;
+  data?: unknown;
+}
+
+interface ClientLogsRequest {
+  logs: LogEntry[];
+  component: string;
+  timestamp: string;
+}
 
 const router = express.Router();
 
@@ -10,7 +22,7 @@ router.post('/client-logs',
     body('component').isString(),
     body('timestamp').isString()
   ],
-  async (req, res) => {
+  async (req: Request<{}, {}, ClientLogsRequest>, res: Response) => {
     try {
       const { logs, component, timestamp } = req.body;
       
@@ -20,14 +32,15 @@ router.post('/client-logs',
       console.log(`Timestamp: ${timestamp}`);
       console.log('Logs:');
       
-      logs.forEach((log: any) => {
+      logs.forEach((log) => {
         const level = log.level.toUpperCase();
-        const color = {
+        const colorMap: Record<string, string> = {
           ERROR: '\x1b[31m', // Red
           WARN: '\x1b[33m',  // Yellow
           INFO: '\x1b[36m',  // Cyan
           DEBUG: '\x1b[35m'  // Magenta
-        }[level] || '\x1b[0m';
+        };
+        const color = colorMap[level] || '\x1b[0m';
         
         console.log(`${color}[${level}] ${log.timestamp} - ${log.message}${log.data ? '\n' + JSON.stringify(log.data, null, 2) : ''}\x1b[0m`);
       });
