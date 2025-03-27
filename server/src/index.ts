@@ -9,6 +9,7 @@ import reservaRoutes from './routes/reservaRoutes';
 import pagoRoutes from './routes/pagoRoutes';
 import movimientosRoutes from './routes/movimientos';
 import mercadoPagoRoutes from './routes/mercadoPagoRoutes';
+import logRoutes from './routes/logRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
@@ -44,6 +45,7 @@ app.use(`${BASE_PATH}/reservas`, reservaRoutes);
 app.use(`${BASE_PATH}/pagos`, pagoRoutes);
 app.use(`${BASE_PATH}/movimientos`, movimientosRoutes);
 app.use(`${BASE_PATH}/mercadopago`, mercadoPagoRoutes);
+app.use(`${BASE_PATH}/logs`, logRoutes);
 
 // Error handling con logging
 app.use((err: Error & { status?: number }, req: express.Request, res: express.Response, next: express.NextFunction) => {

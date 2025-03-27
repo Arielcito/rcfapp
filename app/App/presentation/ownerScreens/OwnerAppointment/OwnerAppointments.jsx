@@ -13,6 +13,9 @@ import AppointmentItem from "./AppointmentItem";
 import Divider from "../../components/Divider";
 import { reservaApi } from "../../../infraestructure/api/reserva.api";
 import { format, parseISO, compareDesc } from 'date-fns';
+import { logger } from '../../../infraestructure/utils/logger';
+
+const COMPONENT_NAME = 'OwnerAppointments';
 
 export default function OwnerAppointments() {
   const [next7Days, setNext7Days] = useState([]);
@@ -22,46 +25,87 @@ export default function OwnerAppointments() {
   const [reservasFiltradas, setReservasFiltradas] = useState([]);
 
   useEffect(() => {
+    logger.info(COMPONENT_NAME, 'Component mounted');
     const date = getDays();
+    logger.debug(COMPONENT_NAME, 'Next 7 days calculated', { date });
     setNext7Days(date);
   }, []);
 
   const ordenarReservas = (reservasArray) => {
-    return [...reservasArray].sort((a, b) => 
-      compareDesc(parseISO(a.fechaReserva), parseISO(b.fechaReserva))
-    );
+    try {
+      logger.debug(COMPONENT_NAME, 'Ordenando reservas', { reservasArray });
+      const sorted = [...reservasArray].sort((a, b) => 
+        compareDesc(parseISO(a.fechaReserva), parseISO(b.fechaReserva))
+      );
+      logger.info(COMPONENT_NAME, 'Reservas ordenadas exitosamente', { count: sorted.length });
+      return sorted;
+    } catch (error) {
+      logger.error(COMPONENT_NAME, 'Error al ordenar reservas', { error, reservasArray });
+      return reservasArray;
+    }
   };
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      logger.info(COMPONENT_NAME, 'Iniciando fetch de reservas');
       try {
         const response = await reservaApi.obtenerTodasReservas();
+        logger.debug(COMPONENT_NAME, 'Respuesta de API recibida', { response });
         const todasLasReservas = response.data || response;
         const reservasOrdenadas = ordenarReservas(todasLasReservas);
+        logger.info(COMPONENT_NAME, 'Reservas procesadas y ordenadas', { 
+          total: reservasOrdenadas.length,
+          sample: reservasOrdenadas.slice(0, 2)
+        });
         setReservas(reservasOrdenadas);
         setReservasFiltradas(reservasOrdenadas);
       } catch (error) {
+        logger.error(COMPONENT_NAME, 'Error al cargar reservas', { error });
         console.error('Error al cargar reservas:', error);
+      } finally {
+        setLoading(false);
+        logger.info(COMPONENT_NAME, 'Fetch de reservas completado');
       }
-      setLoading(false);
     }
     fetchData();
   }, []);
 
   useEffect(() => {
     if (selectedDate && reservas.length > 0) {
+      logger.debug(COMPONENT_NAME, 'Filtrando reservas por fecha', { selectedDate });
       const reservasDelDia = reservas.filter(reserva => {
-        const fechaReserva = format(parseISO(reserva.fechaHora), 'yyyy-MM-dd');
-        return fechaReserva === selectedDate;
+        try {
+          const fechaReserva = format(parseISO(reserva.fechaHora), 'yyyy-MM-dd');
+          return fechaReserva === selectedDate;
+        } catch (error) {
+          logger.error(COMPONENT_NAME, 'Error al procesar fecha de reserva', { 
+            error, 
+            reserva,
+            selectedDate 
+          });
+          return false;
+        }
+      });
+      logger.info(COMPONENT_NAME, 'Reservas filtradas por fecha', { 
+        selectedDate,
+        count: reservasDelDia.length 
       });
       setReservasFiltradas(reservasDelDia);
     } else {
+      logger.debug(COMPONENT_NAME, 'Mostrando todas las reservas', { 
+        selectedDate,
+        totalReservas: reservas.length 
+      });
       setReservasFiltradas(reservas);
     }
   }, [selectedDate, reservas]);
 
   const handleDateSelect = (fullDate) => {
+    logger.info(COMPONENT_NAME, 'Fecha seleccionada', { 
+      fullDate,
+      wasSelected: selectedDate === fullDate 
+    });
     if (selectedDate === fullDate) {
       setSelectedDate(null);
     } else {

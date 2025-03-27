@@ -9,15 +9,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Booking } from '../../../types/booking';
 import { ChartDataPoint, ReservaResponse, ContactInfo, OwnerHomeScreenState } from '../../../types/owner';
 import { ErrorBoundary } from '../../../components/ErrorBoundary';
+import { logger } from '../../../infraestructure/utils/logger';
 
+const COMPONENT_NAME = 'OwnerHomeScreen';
 const screenWidth = Dimensions.get('window').width;
 
 // Función auxiliar para logging
 const logError = (error: any, context: string) => {
+  logger.error(COMPONENT_NAME, `Error en ${context}`, { error });
   if (__DEV__) {
-    console.error(`Error en ${context}:`, error);
-  } else {
-    // TODO: Implementar sistema de logging para producción
     console.error(`Error en ${context}:`, error);
   }
 };
@@ -36,18 +36,29 @@ const OwnerHomeContent = () => {
       logError('reservasArray no es un array', 'ordenarReservas');
       return [];
     }
-    return [...reservasArray].sort((a, b) => {
-      try {
-        const dateFieldA = a.fechaHora;
-        const dateFieldB = b.fechaHora;
-        
-        if (!dateFieldA || !dateFieldB) return 0;
-        return compareDesc(parseISO(dateFieldA), parseISO(dateFieldB));
-      } catch (error) {
-        logError(error, 'ordenarReservas');
-        return 0;
-      }
-    });
+    try {
+      logger.debug(COMPONENT_NAME, 'Ordenando reservas', { reservasArray });
+      const sorted = [...reservasArray].sort((a, b) => {
+        try {
+          const dateFieldA = a.fechaHora;
+          const dateFieldB = b.fechaHora;
+          
+          if (!dateFieldA || !dateFieldB) {
+            logger.warn(COMPONENT_NAME, 'Fechas faltantes en reservas', { a, b });
+            return 0;
+          }
+          return compareDesc(parseISO(dateFieldA), parseISO(dateFieldB));
+        } catch (error) {
+          logError(error, 'ordenarReservas');
+          return 0;
+        }
+      });
+      logger.info(COMPONENT_NAME, 'Reservas ordenadas exitosamente', { count: sorted.length });
+      return sorted;
+    } catch (error) {
+      logError(error, 'ordenarReservas');
+      return [];
+    }
   };
 
   const generarDatosGrafico = (reservas: Booking[]): ChartDataPoint[] => {
@@ -57,6 +68,7 @@ const OwnerHomeContent = () => {
     }
     
     try {
+      logger.debug(COMPONENT_NAME, 'Generando datos para gráfico', { reservas });
       const hoy = new Date();
       const labels = Array.from({ length: 7 }, (_, i) => {
         return format(subDays(hoy, 6 - i), 'EEE', { locale: es });
@@ -65,10 +77,16 @@ const OwnerHomeContent = () => {
       const datos = Array(7).fill(0);
       for (const reserva of reservas) {
         try {
-          if (!reserva.fechaHora) continue;
+          if (!reserva.fechaHora) {
+            logger.warn(COMPONENT_NAME, 'Reserva sin fecha', { reserva });
+            continue;
+          }
           const fechaReserva = parseISO(reserva.fechaHora);
           
-          if (!Number.isFinite(fechaReserva.getTime())) continue;
+          if (!Number.isFinite(fechaReserva.getTime())) {
+            logger.warn(COMPONENT_NAME, 'Fecha inválida en reserva', { reserva });
+            continue;
+          }
           
           const diasAtras = Math.floor((hoy.getTime() - fechaReserva.getTime()) / (1000 * 60 * 60 * 24));
           if (diasAtras >= 0 && diasAtras < 7) {
@@ -79,10 +97,12 @@ const OwnerHomeContent = () => {
         }
       }
 
-      return labels.map((label, index) => ({
+      const result = labels.map((label, index) => ({
         x: label,
         y: datos[index]
       }));
+      logger.info(COMPONENT_NAME, 'Datos del gráfico generados', { result });
+      return result;
     } catch (error) {
       logError(error, 'generarDatosGrafico');
       return [];
@@ -94,12 +114,15 @@ const OwnerHomeContent = () => {
       try {
         setLoading(true);
         setError(null);
+        logger.info(COMPONENT_NAME, `Iniciando carga de datos (intento ${i + 1}/${intentos})`);
         
         const storedName = await AsyncStorage.getItem('userName');
+        logger.debug(COMPONENT_NAME, 'Nombre de usuario recuperado', { storedName });
         setUserName(storedName || '');
 
         let todasLasReservas: Booking[] = [];
         const response = await reservaApi.obtenerTodasReservas() as ReservaResponse;
+        logger.debug(COMPONENT_NAME, 'Respuesta de API recibida', { response });
         
         if (response) {
           todasLasReservas = 'data' in response ? response.data : response;
@@ -112,6 +135,10 @@ const OwnerHomeContent = () => {
         const reservasOrdenadas = ordenarReservas(todasLasReservas);
         setReservas(reservasOrdenadas);
         setChartData(generarDatosGrafico(reservasOrdenadas));
+        logger.info(COMPONENT_NAME, 'Datos cargados exitosamente', {
+          reservasCount: reservasOrdenadas.length,
+          chartDataPoints: chartData?.length
+        });
         break;
       } catch (error) {
         logError(error, `Intento ${i + 1} de cargar datos`);
@@ -129,15 +156,21 @@ const OwnerHomeContent = () => {
   };
 
   useEffect(() => {
+    logger.info(COMPONENT_NAME, 'Component mounted');
     cargarDatosConRetry();
   }, []);
 
   const handleContactar = ({ tipo, valor }: ContactInfo) => {
+    logger.info(COMPONENT_NAME, 'Intentando contactar', { tipo, valor });
     if (tipo === 'telefono') {
       const phoneNumber = Platform.OS === 'android' ? `tel:${valor}` : `telprompt:${valor}`;
-      Linking.openURL(phoneNumber).catch(err => console.error('Error al abrir enlace:', err));
+      Linking.openURL(phoneNumber).catch(err => {
+        logError(err, 'handleContactar - teléfono');
+      });
     } else if (tipo === 'email') {
-      Linking.openURL(`mailto:${valor}`).catch(err => console.error('Error al abrir correo:', err));
+      Linking.openURL(`mailto:${valor}`).catch(err => {
+        logError(err, 'handleContactar - email');
+      });
     }
   };
 
