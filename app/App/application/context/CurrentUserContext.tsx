@@ -1,6 +1,6 @@
 import { createContext, useState, useContext, useEffect } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api } from "../../infraestructure/api/api";
+import { api, TokenService } from "../../infraestructure/api/api";
 
 export interface User {
   id: string;
@@ -28,12 +28,12 @@ export const CurrentUserProvider = ({ children }: { children: React.ReactNode })
 
   const loadStoredUser = async () => {
     try {
-      const [userData, token] = await Promise.all([
-        AsyncStorage.getItem('userData'),
-        AsyncStorage.getItem('auth_token')
-      ]);
+      const token = await TokenService.getToken();
+      const userData = await AsyncStorage.getItem('userData');
+      
       console.log('userData', userData);
-      console.log('token', token);
+      console.log('token', token ? `${token.substring(0, 10)}...` : 'No hay token');
+      
       if (userData && token) {
         const user = JSON.parse(userData);
         setCurrentUser(user);
@@ -64,9 +64,20 @@ export const CurrentUserProvider = ({ children }: { children: React.ReactNode })
       }
 
       console.log('Guardando datos de sesión...');
-      await AsyncStorage.setItem('auth_token', token);
+      
+      const tokenSaved = await TokenService.setToken(token);
+      if (!tokenSaved) {
+        console.error('No se pudo guardar el token después de múltiples intentos');
+      }
+      
       await AsyncStorage.setItem('userData', JSON.stringify(user));
       await AsyncStorage.setItem('userId', user.id);
+
+      const storedUserData = await AsyncStorage.getItem('userData');
+      if (!storedUserData) {
+        console.error('Error: No se pudo verificar que los datos del usuario se guardaron');
+        await AsyncStorage.setItem('userData', JSON.stringify(user));
+      }
 
       console.log('Configurando headers de API...');
       api.defaults.headers.common.Authorization = `Bearer ${token}`;
@@ -100,7 +111,8 @@ export const CurrentUserProvider = ({ children }: { children: React.ReactNode })
       throw error;
     } finally {
       console.log('CurrentUserContext - Limpiando datos de sesión');
-      await AsyncStorage.multiRemove(['auth_token', 'userData', 'userId']);
+      await TokenService.removeToken();
+      await AsyncStorage.multiRemove(['userData', 'userId']);
       console.log('CurrentUserContext - Limpiando headers de API');
       api.defaults.headers.common.Authorization = '';
       console.log('CurrentUserContext - Actualizando estado de usuario');
