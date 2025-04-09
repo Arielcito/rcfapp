@@ -1,6 +1,6 @@
 import { createContext, useState, useContext, useEffect } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api, TokenService } from "../../infraestructure/api/api";
+import { api, TokenService, setTokenExpiredCallback } from "../../infraestructure/api/api";
 
 export interface User {
   id: string;
@@ -24,6 +24,10 @@ export const CurrentUserProvider = ({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     loadStoredUser();
+    setTokenExpiredCallback(() => {
+      console.log('Token expirado - Ejecutando logout automático');
+      logout();
+    });
   }, []);
 
   const loadStoredUser = async () => {

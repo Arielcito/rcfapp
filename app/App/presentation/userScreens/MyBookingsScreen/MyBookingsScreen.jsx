@@ -22,7 +22,7 @@ import moment from "moment";
 import Colors from "../../../infraestructure/utils/Colors";
 
 // Components
-import BookingItem from "./BookingItem";
+import AppointmentItem from '../../ownerScreens/OwnerAppointment/AppointmentItem';
 
 // Hooks
 import { useCurrentUser } from "../../../application/context/CurrentUserContext";
@@ -57,7 +57,7 @@ const BookingList = memo(({
   );
 
   const renderItem = useCallback(({ item }) => (
-    <BookingItem place={item} setLoading={setLoading} />
+    <AppointmentItem reserva={item} onUpdate={() => setLoading(true)} />
   ), [setLoading]);
 
   if (appointments.length === 0) {

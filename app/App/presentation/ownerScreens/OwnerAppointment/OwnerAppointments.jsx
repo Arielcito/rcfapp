@@ -163,12 +163,22 @@ export default function OwnerAppointments() {
       
       {!loading ? (
         <>
-          <Text style={styles.resultText}>
-            {selectedDate ? 
-              `Reservas para ${format(parseISO(selectedDate), 'dd/MM/yyyy')}` : 
-              'Todas las reservas'}
-            <Text style={styles.countText}> ({reservasFiltradas.length})</Text>
-          </Text>
+          <View style={styles.filterHeader}>
+            <Text style={styles.resultText}>
+              {selectedDate ? 
+                `Reservas para ${format(parseISO(selectedDate), 'dd/MM/yyyy')}` : 
+                'Todas las reservas'}
+              <Text style={styles.countText}> ({reservasFiltradas.length})</Text>
+            </Text>
+            {selectedDate && (
+              <TouchableOpacity 
+                style={styles.clearFilterButton}
+                onPress={() => setSelectedDate(null)}
+              >
+                <Text style={styles.clearFilterText}>Limpiar filtros</Text>
+              </TouchableOpacity>
+            )}
+          </View>
           <FlatList
             data={reservasFiltradas}
             horizontal={false}
@@ -262,5 +272,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     fontStyle: 'italic',
+  },
+  filterHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  clearFilterButton: {
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  clearFilterText: {
+    fontSize: 12,
+    color: '#666',
   },
 });

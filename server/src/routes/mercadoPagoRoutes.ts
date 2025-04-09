@@ -10,6 +10,7 @@ router.use(authenticateToken);
 
 // Configuración de Mercado Pago
 router.post('/config', mercadoPagoController.saveConfig);
+router.post('/config/env/:predioId', mercadoPagoController.saveEnvConfig);
 router.get('/public-key/:predioId', mercadoPagoController.getPublicKey);
 
 // Rutas para pagos

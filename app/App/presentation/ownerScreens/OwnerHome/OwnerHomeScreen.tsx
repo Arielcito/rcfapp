@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, ActivityIndicator, Dimensions, Modal, TouchableOpacity, Linking, Platform } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, ActivityIndicator, Dimensions, Modal, TouchableOpacity, Linking, Platform, Alert } from 'react-native';
 import { VictoryLine, VictoryChart, VictoryAxis, VictoryTheme, VictoryContainer } from 'victory-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { reservaApi } from '../../../infraestructure/api/reserva.api';
@@ -10,6 +10,8 @@ import { Booking } from '../../../types/booking';
 import { ChartDataPoint, ReservaResponse, ContactInfo, OwnerHomeScreenState } from '../../../types/owner';
 import { ErrorBoundary } from '../../../components/ErrorBoundary';
 import { logger } from '../../../infraestructure/utils/logger';
+import AppointmentItem from '../OwnerAppointment/AppointmentItem';
+import Colors from '../../../infraestructure/utils/Colors';
 
 const COMPONENT_NAME = 'OwnerHomeScreen';
 const screenWidth = Dimensions.get('window').width;
@@ -174,6 +176,28 @@ const OwnerHomeContent = () => {
     }
   };
 
+  const handleContactSupport = () => {
+    const phoneNumber = '+5491156569844';
+    const message = 'Hola vengo de la app de rcf';
+    const whatsappUrl = `whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
+    
+    Linking.canOpenURL(whatsappUrl)
+      .then(supported => {
+        if (supported) {
+          return Linking.openURL(whatsappUrl);
+        } else {
+          Alert.alert(
+            'Error',
+            'No se puede abrir WhatsApp. Por favor, instala la aplicación.'
+          );
+        }
+      })
+      .catch(err => {
+        logError(err, 'handleContactSupport');
+        Alert.alert('Error', 'No se pudo abrir WhatsApp');
+      });
+  };
+
   const renderDetalleReserva = () => {
     if (!selectedReserva) return null;
 
@@ -281,56 +305,12 @@ const OwnerHomeContent = () => {
     // Mostrar solo las próximas 5 reservas
     const proximasReservas = reservas.slice(0, 5);
 
-    // Helper functions for safe rendering
-    const safeFormatDate = (dateStr: string | undefined): string => {
-      try {
-        if (!dateStr) return "Fecha no disponible";
-        const date = parseISO(dateStr);
-        if (!Number.isFinite(date.getTime())) return "Fecha inválida";
-        return format(date, 'dd MMM yyyy HH:mm', { locale: es });
-      } catch (error) {
-        return "Error en formato de fecha";
-      }
-    };
-
-    const safeFormatNumber = (num: number | undefined | null): string => {
-      try {
-        if (num === undefined || num === null) return "0";
-        const number = Number(num);
-        return !Number.isFinite(number) ? "0" : number.toLocaleString();
-      } catch (error) {
-        return "0";
-      }
-    };
-
     return proximasReservas.map((reserva, index) => (
-      <TouchableOpacity
+      <AppointmentItem
         key={reserva.id || index}
-        style={styles.reservaCard}
-        onPress={() => {
-          setSelectedReserva(reserva);
-          setModalVisible(true);
-        }}
-      >
-        <View style={styles.reservaInfo}>
-          <Text style={styles.reservaFecha}>
-            {safeFormatDate(reserva.fechaHora)}
-          </Text>
-          <View style={styles.reservaDetalles}>
-            <Text style={styles.reservaDuracion}>Duración: {reserva.duracion || 0} min</Text>
-            <Text style={styles.reservaPrecio}>
-              ${safeFormatNumber(Number(reserva.precioTotal))}
-            </Text>
-          </View>
-          <Text style={[
-            styles.reservaEstado,
-            { color: reserva.estadoPago && reserva.estadoPago.toLowerCase() === 'pagado' ? '#4CAF50' : '#FFC107' }
-          ]}>
-            {reserva.estadoPago || 'Pendiente'}
-          </Text>
-        </View>
-        <Icon name="chevron-forward" size={24} color="#888" />
-      </TouchableOpacity>
+        reserva={reserva}
+        onUpdate={() => cargarDatosConRetry()}
+      />
     ));
   };
 
@@ -412,7 +392,12 @@ const OwnerHomeContent = () => {
         <View style={styles.header}>
           <View style={styles.profilePic} />
           <Text style={styles.greeting}>¡Hola{userName ? `, ${userName}` : ''}!</Text>
-          <Icon name="menu" size={24} color="#000" style={styles.menuIcon} />
+          <TouchableOpacity 
+            style={styles.supportButton}
+            onPress={handleContactSupport}
+          >
+            <Icon name="help-circle-outline" size={24} color={Colors.PRIMARY} />
+          </TouchableOpacity>
         </View>
         <Text style={styles.subGreeting}>Mira tus reservas de hoy</Text>
         
@@ -489,9 +474,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 10,
     color: '#333',
-  },
-  menuIcon: {
-    marginLeft: 'auto',
   },
   subGreeting: {
     fontSize: 16,
@@ -692,6 +674,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  supportButton: {
+    position: 'absolute',
+    right: 15,
+    top: 15,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
   },
 });
 
