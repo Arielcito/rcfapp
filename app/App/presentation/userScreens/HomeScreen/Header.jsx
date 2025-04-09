@@ -13,7 +13,7 @@ const Header = ({ isTablet }) => {
           ¡Hola{currentUser?.name ? `, ${currentUser.name}!` : '!'}
         </Text>
         <Text style={[styles.subGreeting, isTablet && styles.tabletSubGreeting]}>
-          ¿Dónde quieres jugar hoy?
+          ¿Dónde queres jugar hoy?
         </Text>
       </View>
     </View>

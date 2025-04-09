@@ -1,19 +1,70 @@
 import { View, Text, Pressable, StyleSheet, Modal, ScrollView, TouchableOpacity, Linking, Alert } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import Colors from "../../../infraestructure/utils/Colors";
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Icon from "react-native-vector-icons/Ionicons";
+import { getProfileInfo } from "../../../infraestructure/api/user.api";
+import { reservaApi } from "../../../infraestructure/api/reserva.api";
 
-export default function AppointmentItem({ reserva }) {
+export default function AppointmentItem({ reserva, onUpdate }) {
   const navigation = useNavigation();
   const [modalVisible, setModalVisible] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const fecha = parseISO(reserva.fechaHora);
   const hora = format(fecha, 'HH:mm', { locale: es });
   const fechaFormateada = format(fecha, 'dd/MM/yyyy', { locale: es });
   const estado = reserva.estadoPago.toLowerCase();
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setLoadingUser(true);
+        const userInfo = await getProfileInfo(reserva.userId);
+        setUserData(userInfo);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      } finally {
+        setLoadingUser(false);
+      }
+    };
+
+    if (reserva.userId) {
+      fetchUserData();
+    }
+  }, [reserva.userId]);
+
+  const handleUpdateStatus = async (newStatus) => {
+    try {
+      setUpdatingStatus(true);
+      await reservaApi.actualizarReserva(reserva.id, {
+        estadoPago: newStatus
+      });
+      
+      // Notificar al componente padre para actualizar la lista
+      if (onUpdate) {
+        onUpdate();
+      }
+      
+      Alert.alert(
+        'Éxito',
+        `Estado de pago actualizado a ${newStatus}`,
+        [{ text: 'OK', onPress: () => setModalVisible(false) }]
+      );
+    } catch (error) {
+      console.error('Error al actualizar estado:', error);
+      Alert.alert(
+        'Error',
+        'No se pudo actualizar el estado de pago'
+      );
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
 
   const handleWhatsApp = () => {
     const message = `Hola! Tengo una reserva en "${reserva.predio?.nombre}" para el ${fechaFormateada} a las ${hora}. Me gustaría consultar algunos detalles.`;
@@ -76,12 +127,42 @@ export default function AppointmentItem({ reserva }) {
 
               <View style={styles.detalleSeccion}>
                 <Text style={styles.detalleLabel}>Estado de Pago</Text>
-                <Text style={[
-                  styles.detalleValor,
-                  { color: reserva.estadoPago.toLowerCase() === 'pagado' ? '#4CAF50' : '#FFC107' }
-                ]}>
-                  {reserva.estadoPago}
-                </Text>
+                <View style={styles.statusContainer}>
+                  <Text style={[
+                    styles.detalleValor,
+                    { color: reserva.estadoPago.toLowerCase() === 'pagado' ? '#4CAF50' : '#FFC107' }
+                  ]}>
+                    {reserva.estadoPago}
+                  </Text>
+                  <View style={styles.statusButtons}>
+                    <TouchableOpacity
+                      style={[
+                        styles.statusButton,
+                        reserva.estadoPago.toLowerCase() === 'pagado' && styles.statusButtonActive
+                      ]}
+                      onPress={() => handleUpdateStatus('PAGADO')}
+                      disabled={updatingStatus || reserva.estadoPago.toLowerCase() === 'pagado'}
+                    >
+                      <Text style={[
+                        styles.statusButtonText,
+                        reserva.estadoPago.toLowerCase() === 'pagado' && styles.statusButtonTextActive
+                      ]}>Pagado</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.statusButton,
+                        reserva.estadoPago.toLowerCase() === 'pendiente' && styles.statusButtonActive
+                      ]}
+                      onPress={() => handleUpdateStatus('PENDIENTE')}
+                      disabled={updatingStatus || reserva.estadoPago.toLowerCase() === 'pendiente'}
+                    >
+                      <Text style={[
+                        styles.statusButtonText,
+                        reserva.estadoPago.toLowerCase() === 'pendiente' && styles.statusButtonTextActive
+                      ]}>Pendiente</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
 
               <View style={styles.detalleSeccion}>
@@ -94,6 +175,42 @@ export default function AppointmentItem({ reserva }) {
                 <Text style={styles.detallePrecio}>
                   ${Number(reserva.precioTotal).toLocaleString()}
                 </Text>
+              </View>
+
+              <View style={styles.separador} />
+
+              <View style={styles.detalleSeccion}>
+                <Text style={styles.detalleLabel}>Información del Usuario</Text>
+                {loadingUser ? (
+                  <View style={styles.loadingContainer}>
+                    <Text style={styles.loadingText}>Cargando información del usuario...</Text>
+                  </View>
+                ) : userData ? (
+                  <View style={styles.userInfoContainer}>
+                    <View style={styles.userInfoItem}>
+                      <Icon name="person-outline" size={20} color={Colors.PRIMARY} />
+                      <Text style={styles.userInfoText}>
+                        {userData.name || 'No disponible'}
+                      </Text>
+                    </View>
+                    <View style={styles.userInfoItem}>
+                      <Icon name="mail-outline" size={20} color={Colors.PRIMARY} />
+                      <Text style={styles.userInfoText}>
+                        {userData.email || 'No disponible'}
+                      </Text>
+                    </View>
+                    <View style={styles.userInfoItem}>
+                      <Icon name="call-outline" size={20} color={Colors.PRIMARY} />
+                      <Text style={styles.userInfoText}>
+                        {userData.telefono || 'No disponible'}
+                      </Text>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>No se pudo cargar la información del usuario</Text>
+                  </View>
+                )}
               </View>
 
               <View style={styles.separador} />
@@ -317,5 +434,62 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     marginLeft: 8,
+  },
+  userInfoContainer: {
+    backgroundColor: '#f8f8f8',
+    borderRadius: 8,
+    padding: 12,
+  },
+  userInfoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  userInfoText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#333',
+  },
+  loadingContainer: {
+    padding: 12,
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  errorContainer: {
+    padding: 12,
+    backgroundColor: '#fff3f3',
+    borderRadius: 8,
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#ff4444',
+  },
+  statusButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  statusButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: '#f0f0f0',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  statusButtonActive: {
+    backgroundColor: Colors.PRIMARY,
+    borderColor: Colors.PRIMARY,
+  },
+  statusButtonText: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
+  },
+  statusButtonTextActive: {
+    color: '#fff',
   },
 });

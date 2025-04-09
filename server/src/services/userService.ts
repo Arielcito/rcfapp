@@ -250,12 +250,7 @@ export const getCurrentUserById = async (userId: string) => {
   logger.info('=== Obteniendo usuario actual ===');
   logger.info(`Buscando usuario con ID: ${userId}`);
 
-  const [user] = await db.select({
-    id: users.id,
-    name: users.name,
-    email: users.email,
-    role: users.role
-  })
+  const [user] = await db.select()
   .from(users)
   .where(eq(users.id, userId));
 

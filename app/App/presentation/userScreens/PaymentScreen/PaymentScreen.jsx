@@ -24,7 +24,7 @@ import moment from "moment";
 import Colors from "../../../infraestructure/utils/Colors";
 import { useEffect } from "react";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import CashImage from "../../assets/images/cash.png";
+import CashImage from "../../assets/images/payment_cash.png";
 import { api } from "../../../infraestructure/api/api";
 import { useCurrentUser } from "../../../application/context/CurrentUserContext";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -189,6 +189,17 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
           break;
         }
         case "Mercado Pago": {
+          console.log("Iniciando proceso de pago con Mercado Pago");
+          console.log("Datos del predio:", { 
+            predioId: place.id, 
+            nombre: place.nombre 
+          });
+          console.log("Datos de la cancha:", { 
+            canchaId: cancha.id, 
+            nombre: cancha.nombre,
+            precio: cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora
+          });
+          
           const preferenceData = {
             predioId: place.id,
             items: [{
@@ -201,20 +212,42 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
             }],
             external_reference: `reserva_${Date.now()}`
           };
-
-          const { data: preference } = await mercadoPagoApi.createPreference(preferenceData);
           
-          if (!preference?.init_point) {
-            throw new Error("Error al procesar pago con Mercado Pago");
-          }
+          console.log("Datos de preferencia a enviar:", preferenceData);
 
-          const response = await openBrowserAsync(preference.init_point);
-          
-          if (response.type === "cancel") {
-            throw new Error("Pago cancelado por el usuario");
-          }
+          try {
+            const { data: preference } = await mercadoPagoApi.createPreference(preferenceData);
+            console.log("Respuesta de Mercado Pago:", preference);
+            
+            if (!preference?.init_point) {
+              throw new Error("Error al procesar pago con Mercado Pago");
+            }
 
-          await bookAppointment("Mercado Pago");
+            const response = await openBrowserAsync(preference.init_point);
+            console.log("Respuesta del navegador:", response);
+            
+            if (response.type === "cancel") {
+              throw new Error("Pago cancelado por el usuario");
+            }
+
+            await bookAppointment("Mercado Pago");
+          } catch (mpError) {
+            console.error("Error específico de Mercado Pago:", mpError);
+            console.error("Detalles del error:", {
+              message: mpError.message,
+              response: mpError.response?.data,
+              status: mpError.response?.status
+            });
+            
+            // Verificar si el error es porque el predio no tiene configurado Mercado Pago
+            const errorMessage = mpError.response?.data?.error || mpError.message;
+            if (errorMessage.includes("no tiene configurado Mercado Pago")) {
+              showMessage("Este predio no tiene configurado Mercado Pago. Por favor, elija otro método de pago.");
+              return;
+            }
+            
+            throw new Error(`Error con Mercado Pago: ${mpError.message}`);
+          }
           break;
         }
         case "efectivo": {
@@ -292,137 +325,145 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.heading}>Confirma tu reserva</Text>
-      <Text style={styles.subHeading}>{cancha.nombre}</Text>
-      
-      <View style={styles.appointmentCardContainer}>
+    <View style={styles.mainContainer}>
+      <ScrollView 
+        style={styles.container}
+        contentContainerStyle={styles.scrollContentContainer}
+      >
+        <Text style={styles.heading}>Confirma tu reserva</Text>
+        <Text style={styles.subHeading}>{cancha.nombre}</Text>
+        
+        <View style={styles.appointmentCardContainer}>
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionHeading}>Horario y Fecha</Text>
+            <View style={styles.scheduleContainer}>
+              <View style={styles.iconContainer}>
+                <Ionicons name="time-outline" size={24} color={Colors.PRIMARY} />
+              </View>
+              <Text style={styles.scheduleText}>
+                {selectedTime}hs - {endTime}hs
+              </Text>
+              <View style={styles.iconContainer}>
+                <Ionicons name="calendar-outline" size={24} color={Colors.PRIMARY} />
+              </View>
+              <Text style={styles.scheduleText}>{formatDate}</Text>
+            </View>
+          </View>
+        </View>
+
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionHeading}>Horario y Fecha</Text>
-          <View style={styles.scheduleContainer}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="time-outline" size={24} color={Colors.PRIMARY} />
+          <Text style={styles.sectionHeading}>Detalles de la Cancha</Text>
+          <View style={styles.billDetailsContainer}>
+            {cancha.tipo && (
+              <View style={styles.billRow}>
+                <Text style={styles.billDetailText}>Tipo:</Text>
+                <Text style={styles.billDetailAmount}>{cancha.tipo}</Text>
+              </View>
+            )}
+            {cancha.tipoSuperficie && (
+              <View style={styles.billRow}>
+                <Text style={styles.billDetailText}>Superficie:</Text>
+                <Text style={styles.billDetailAmount}>{cancha.tipoSuperficie}</Text>
+              </View>
+            )}
+            <View style={styles.billRow}>
+              <Text style={styles.billDetailText}>Dimensiones:</Text>
+              <Text style={styles.billDetailAmount}>{cancha.longitud}m x {cancha.ancho}m</Text>
             </View>
-            <Text style={styles.scheduleText}>
-              {selectedTime}hs - {endTime}hs
+          </View>
+        </View>
+
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionHeading}>Pago</Text>
+          <View style={styles.billDetailsContainer}>
+            <View style={styles.billRow}>
+              <Text style={styles.billDetailText}>Costo por hora:</Text>
+              <Text style={styles.billDetailAmount}>${cancha.precioPorHora}</Text>
+            </View>
+            {cancha.requiereSeña && (
+              <View style={styles.billRow}>
+                <Text style={styles.billDetailText}>Seña requerida:</Text>
+                <Text style={styles.billDetailAmount}>${cancha.montoSeña}</Text>
+              </View>
+            )}
+            <View style={[styles.billRow, styles.totalRow]}>
+              <Text style={styles.totalText}>Total a pagar:</Text>
+              <Text style={styles.totalAmount}>
+                ${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <Text style={styles.heading}>Método de Pago</Text>
+        <View style={styles.paymentMethodContainer}>
+          <TouchableOpacity
+            onPress={() => setSelectedPaymentMethod("efectivo")}
+            style={[
+              styles.paymentButton,
+              selectedPaymentMethod === "efectivo" && {
+                borderColor: Colors.PRIMARY,
+              },
+            ]}
+          >
+            <Ionicons name="cash-outline" size={30} color={Colors.PRIMARY} />
+            <Text style={styles.paymentMethodText}>Efectivo</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setSelectedPaymentMethod("transferencia")}
+            style={[
+              styles.paymentButton,
+              selectedPaymentMethod === "transferencia" && {
+                borderColor: Colors.PRIMARY,
+              },
+            ]}
+          >
+            <Ionicons name="card-outline" size={30} color={Colors.PRIMARY} />
+            <Text style={styles.paymentMethodText}>Transferencia</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setSelectedPaymentMethod("tarjeta")}
+            style={[
+              styles.paymentButton,
+              selectedPaymentMethod === "tarjeta" && {
+                borderColor: Colors.PRIMARY,
+              },
+            ]}
+          >
+            <Image source={CreditCardImage} style={styles.paymentImage} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setSelectedPaymentMethod("Mercado Pago")}
+            style={[
+              styles.paymentButton,
+              selectedPaymentMethod === "Mercado Pago" && {
+                borderColor: Colors.PRIMARY,
+              },
+            ]}
+          >
+            <Image source={MercadoPagoImage} style={styles.paymentImage} />
+          </TouchableOpacity>
+        </View>
+
+        {renderTransferenciaBancaria()}
+        {renderCreditCardForm()}
+
+        {selectedPaymentMethod === "efectivo" && (
+          <View style={styles.voucherInfoContainer}>
+            <Ionicons name="information-circle-outline" size={24} color={Colors.PRIMARY} />
+            <Text style={styles.voucherInfoText}>
+              Al pagar en efectivo, podrás obtener un voucher digital para presentar en el predio como comprobante de tu reserva.
             </Text>
-            <View style={styles.iconContainer}>
-              <Ionicons name="calendar-outline" size={24} color={Colors.PRIMARY} />
-            </View>
-            <Text style={styles.scheduleText}>{formatDate}</Text>
           </View>
-        </View>
-      </View>
-
-      <View style={styles.sectionContainer}>
-        <Text style={styles.sectionHeading}>Detalles de la Cancha</Text>
-        <View style={styles.billDetailsContainer}>
-          {cancha.tipo && (
-            <View style={styles.billRow}>
-              <Text style={styles.billDetailText}>Tipo:</Text>
-              <Text style={styles.billDetailAmount}>{cancha.tipo}</Text>
-            </View>
-          )}
-          {cancha.tipoSuperficie && (
-            <View style={styles.billRow}>
-              <Text style={styles.billDetailText}>Superficie:</Text>
-              <Text style={styles.billDetailAmount}>{cancha.tipoSuperficie}</Text>
-            </View>
-          )}
-          <View style={styles.billRow}>
-            <Text style={styles.billDetailText}>Dimensiones:</Text>
-            <Text style={styles.billDetailAmount}>{cancha.longitud}m x {cancha.ancho}m</Text>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.sectionContainer}>
-        <Text style={styles.sectionHeading}>Pago</Text>
-        <View style={styles.billDetailsContainer}>
-          <View style={styles.billRow}>
-            <Text style={styles.billDetailText}>Costo por hora:</Text>
-            <Text style={styles.billDetailAmount}>${cancha.precioPorHora}</Text>
-          </View>
-          {cancha.requiereSeña && (
-            <View style={styles.billRow}>
-              <Text style={styles.billDetailText}>Seña requerida:</Text>
-              <Text style={styles.billDetailAmount}>${cancha.montoSeña}</Text>
-            </View>
-          )}
-          <View style={[styles.billRow, styles.totalRow]}>
-            <Text style={styles.totalText}>Total a pagar:</Text>
-            <Text style={styles.totalAmount}>
-              ${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      <Text style={styles.heading}>Método de Pago</Text>
-      <View style={styles.paymentMethodContainer}>
-        <TouchableOpacity
-          onPress={() => setSelectedPaymentMethod("efectivo")}
-          style={[
-            styles.paymentButton,
-            selectedPaymentMethod === "efectivo" && {
-              borderColor: Colors.PRIMARY,
-            },
-          ]}
-        >
-          <Ionicons name="cash-outline" size={30} color={Colors.PRIMARY} />
-          <Text style={styles.paymentMethodText}>Efectivo</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => setSelectedPaymentMethod("transferencia")}
-          style={[
-            styles.paymentButton,
-            selectedPaymentMethod === "transferencia" && {
-              borderColor: Colors.PRIMARY,
-            },
-          ]}
-        >
-          <Ionicons name="card-outline" size={30} color={Colors.PRIMARY} />
-          <Text style={styles.paymentMethodText}>Transferencia</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => setSelectedPaymentMethod("tarjeta")}
-          style={[
-            styles.paymentButton,
-            selectedPaymentMethod === "tarjeta" && {
-              borderColor: Colors.PRIMARY,
-            },
-          ]}
-        >
-          <Image source={CreditCardImage} style={styles.paymentImage} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => setSelectedPaymentMethod("Mercado Pago")}
-          style={[
-            styles.paymentButton,
-            selectedPaymentMethod === "Mercado Pago" && {
-              borderColor: Colors.PRIMARY,
-            },
-          ]}
-        >
-          <Image source={MercadoPagoImage} style={styles.paymentImage} />
-        </TouchableOpacity>
-      </View>
-
-      {renderTransferenciaBancaria()}
-      {renderCreditCardForm()}
-
-      {selectedPaymentMethod === "efectivo" && (
-        <View style={styles.voucherInfoContainer}>
-          <Ionicons name="information-circle-outline" size={24} color={Colors.PRIMARY} />
-          <Text style={styles.voucherInfoText}>
-            Al pagar en efectivo, podrás obtener un voucher digital para presentar en el predio como comprobante de tu reserva.
-          </Text>
-        </View>
-      )}
-
+        )}
+        
+        {/* Espacio adicional para evitar que el contenido quede oculto detrás del botón fijo */}
+        <View style={{ height: 80 }} />
+      </ScrollView>
+      
       <View style={styles.stickyButtonContainer}>
         <TouchableOpacity
           onPress={handlePayment}
@@ -436,15 +477,22 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
           )}
         </TouchableOpacity>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 20,
+  mainContainer: {
     flex: 1,
     backgroundColor: Colors.LIGHT_GRAY,
+  },
+  container: {
+    flex: 1,
+    backgroundColor: Colors.LIGHT_GRAY,
+  },
+  scrollContentContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   heading: {
     fontSize: 24,
@@ -667,5 +715,12 @@ const styles = StyleSheet.create({
     right: 0,
     padding: 10,
     backgroundColor: Colors.WHITE,
+    borderTopWidth: 1,
+    borderTopColor: Colors.LIGHT_GRAY,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
 });

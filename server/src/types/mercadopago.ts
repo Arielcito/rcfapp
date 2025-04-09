@@ -2,6 +2,8 @@ export interface MercadoPagoConfigDTO {
   predioId: string;
   accessToken: string;
   publicKey: string;
+  clientId?: string;
+  clientSecret?: string;
   isTestMode?: boolean;
 }
 

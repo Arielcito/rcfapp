@@ -126,6 +126,8 @@ export const predioMercadoPagoConfig = pgTable('predio_mercadopago_config', {
   predioId: uuid('predio_id').notNull().references(() => predios.id).unique(),
   accessToken: varchar('access_token').notNull(),
   publicKey: varchar('public_key').notNull(),
+  clientId: varchar('client_id'),
+  clientSecret: varchar('client_secret'),
   isTestMode: boolean('is_test_mode').default(false),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),

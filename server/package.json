@@ -8,7 +8,8 @@
     "test": "vitest",
     "generate": "drizzle-kit generate:pg",
     "migrate": "tsx src/db/migrate.ts",
-    "seed": "tsx src/db/seed.ts"
+    "seed": "tsx src/db/seed.ts",
+    "seed:mercadopago": "ts-node src/db/seedMercadoPago.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

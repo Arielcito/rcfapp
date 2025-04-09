@@ -81,6 +81,12 @@ export const api = axios.create({
   },
 });
 
+let onTokenExpired: (() => void) | null = null;
+
+export const setTokenExpiredCallback = (callback: () => void) => {
+  onTokenExpired = callback;
+};
+
 // Interceptor para manejar tokens mejorado
 api.interceptors.request.use(
   async (config) => {
@@ -135,8 +141,10 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       console.log('Error 401 detectado - Removiendo token');
       console.log('Detalles de la respuesta 401:', JSON.stringify(error.response?.data));
-      // Usar TokenService en lugar de AsyncStorage directamente
       await TokenService.removeToken();
+      if (onTokenExpired) {
+        onTokenExpired();
+      }
     }
     return Promise.reject(error);
   }
