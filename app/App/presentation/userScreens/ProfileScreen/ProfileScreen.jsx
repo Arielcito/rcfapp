@@ -15,7 +15,6 @@ const ProfileScreen = () => {
   const [additionalData, setAdditionalData] = useState(null);
 
   useEffect(() => {
-    console.log('ProfileScreen - Usuario del contexto:', currentUser);
     if (currentUser) {
       setAdditionalData({
         name: currentUser.name,
@@ -26,12 +25,11 @@ const ProfileScreen = () => {
   }, [currentUser]);
 
   const signOut = async () => {
-    console.log('ProfileScreen - Iniciando cierre de sesión');
     try {
       await logout();
       navigator.navigate('userLoginStack');
     } catch (error) {
-      console.error("ProfileScreen - Error al cerrar sesión:", error);
+      console.error("Error al cerrar sesión:", error);
     }
   };
 
@@ -83,11 +81,14 @@ const ProfileScreen = () => {
         <TouchableOpacity style={styles.menuItem} onPress={() => signOut()}>
           <Text style={styles.menuText}>Cerrar sesión</Text>
         </TouchableOpacity>
+      </View>
+
+      <View style={styles.footer}>
         <TouchableOpacity 
-          style={[styles.menuItem, styles.deleteAccountItem]} 
+          style={styles.deleteAccountItem} 
           onPress={() => navigator.navigate("delete-account")}
         >
-          <Text style={[styles.menuText, styles.deleteAccountText]}>Eliminar cuenta</Text>
+          <Text style={styles.deleteAccountText}>Eliminar cuenta</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -156,29 +157,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textDecorationLine: "underline",
   },
-  statsContainer: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    marginTop: 15,
-    width: "100%",
-    flexDirection: "row",
-    justifyContent: "space-around",
-  },
-  statBox: {
-    alignItems: "center",
-  },
-  statLabel: {
-    color: "#0A4074",
-    fontSize: 12,
-  },
-  statValue: {
-    color: "#0A4074",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
   body: {
+    flex: 1,
     marginTop: 20,
     paddingHorizontal: 20,
   },
@@ -190,23 +170,16 @@ const styles = StyleSheet.create({
     color: "#000000",
   },
   footer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    height: 60,
+    padding: 20,
     borderTopWidth: 1,
     borderTopColor: "#E0E0E0",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 30,
   },
   deleteAccountItem: {
-    marginTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-    paddingTop: 20,
+    alignItems: 'center',
   },
   deleteAccountText: {
     color: '#FF3B30',
+    fontSize: 16,
   },
 });
 

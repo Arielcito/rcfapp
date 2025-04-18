@@ -1,18 +1,15 @@
 import { View, Text, ActivityIndicator, Image, FlatList, Pressable, Alert, ScrollView, StyleSheet, Linking } from 'react-native'
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import Colors from '../../../infraestructure/utils/Colors'
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
-import { api } from '../../../infraestructure/api/api'
 import { useCurrentUser } from '../../../application/context/CurrentUserContext'
-import { fetchOwnerPlace } from '../../../infraestructure/api/places.api'
+import { useCurrentPlace } from '../../../application/context/CurrentPlaceContext'
 
 export default function OwnerProfileScreen() {
-  const [user, setUser] = useState(null)
-  const [predio, setPredio] = useState(null)
-  const [loading, setLoading] = useState(true)
   const navigation = useNavigation()
-  const { logout } = useCurrentUser()
+  const { currentUser, logout } = useCurrentUser()
+  const { currentPlace, isLoading: isLoadingPlace } = useCurrentPlace()
 
   const menu = [
     {
@@ -27,28 +24,6 @@ export default function OwnerProfileScreen() {
     }
   ]
 
-  useEffect(() => {
-    fetchUserProfile()
-  }, [])
-
-  const fetchUserProfile = async () => {
-    try {
-      const response = await api.get('/users/me')
-      console.log(response.data);
-      setUser(response.data)
-      
-      if (response.data?.id) {
-        const predioData = await fetchOwnerPlace(response.data.id)
-        console.log(predioData);
-        setPredio(predioData)
-      }
-    } catch (error) {
-      console.log('Error al obtener perfil:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleSignOut = async () => {
     Alert.alert(
       "Cerrar sesión",
@@ -62,14 +37,7 @@ export default function OwnerProfileScreen() {
           text: "Sí, cerrar sesión",
           onPress: async () => {
             try {
-              console.log('Iniciando proceso de cierre de sesión...');
-              setLoading(true);
-              
-              console.log('Llamando a logout del contexto...');
               await logout();
-              console.log('Logout completado exitosamente');
-              
-              console.log('Redirigiendo a welcomePage...');
               navigation.reset({
                 index: 0,
                 routes: [
@@ -79,18 +47,11 @@ export default function OwnerProfileScreen() {
                 ]
               });
             } catch (error) {
-              console.error('Error detallado al cerrar sesión:', {
-                message: error.message,
-                stack: error.stack,
-                response: error.response?.data
-              });
+              console.error('Error al cerrar sesión:', error);
               Alert.alert(
                 "Error",
                 "Hubo un problema al cerrar sesión. Por favor, intenta nuevamente."
               );
-            } finally {
-              setLoading(false);
-              console.log('Proceso de cierre de sesión finalizado');
             }
           }
         }
@@ -121,7 +82,7 @@ export default function OwnerProfileScreen() {
   };
 
   const renderUserInfo = () => {
-    if (!user) return null;
+    if (!currentUser) return null;
 
     return (
       <View style={styles.userInfoContainer}>
@@ -129,8 +90,8 @@ export default function OwnerProfileScreen() {
           <View style={styles.avatarContainer}>
             <Ionicons name="person-circle" size={80} color={Colors.PRIMARY} />
           </View>
-          <Text style={styles.userName}>{user?.name || 'No disponible'}</Text>
-          <Text style={styles.userEmail}>{user?.email || 'No disponible'}</Text>
+          <Text style={styles.userName}>{currentUser?.name || 'No disponible'}</Text>
+          <Text style={styles.userEmail}>{currentUser?.email || 'No disponible'}</Text>
         </View>
 
         <View style={styles.infoSection}>
@@ -140,7 +101,7 @@ export default function OwnerProfileScreen() {
             <Ionicons name="person-outline" size={24} color={Colors.PRIMARY} />
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Nombre</Text>
-              <Text style={styles.infoValue}>{user?.name || 'No disponible'}</Text>
+              <Text style={styles.infoValue}>{currentUser?.name || 'No disponible'}</Text>
             </View>
           </View>
 
@@ -148,8 +109,8 @@ export default function OwnerProfileScreen() {
             <Ionicons name="mail-outline" size={24} color={Colors.PRIMARY} />
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Email</Text>
-              <Text style={styles.infoValue}>{user?.email || 'No disponible'}</Text>
-              {!user?.emailVerified && (
+              <Text style={styles.infoValue}>{currentUser?.email || 'No disponible'}</Text>
+              {!currentUser?.emailVerified && (
                 <Text style={styles.verificationText}>Email no verificado</Text>
               )}
             </View>
@@ -159,7 +120,7 @@ export default function OwnerProfileScreen() {
             <Ionicons name="call-outline" size={24} color={Colors.PRIMARY} />
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Teléfono</Text>
-              <Text style={styles.infoValue}>{user?.telefono || 'No disponible'}</Text>
+              <Text style={styles.infoValue}>{currentUser?.telefono || 'No disponible'}</Text>
             </View>
           </View>
 
@@ -167,35 +128,7 @@ export default function OwnerProfileScreen() {
             <Ionicons name="location-outline" size={24} color={Colors.PRIMARY} />
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Dirección</Text>
-              <Text style={styles.infoValue}>{user?.direccion || 'No disponible'}</Text>
-            </View>
-          </View>
-
-          <View style={styles.infoItem}>
-            <Ionicons name="calendar-outline" size={24} color={Colors.PRIMARY} />
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Fecha de Registro</Text>
-              <Text style={styles.infoValue}>
-                {new Date(user?.createdAt).toLocaleDateString('es-ES', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                }) || 'No disponible'}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.infoItem}>
-            <Ionicons name="time-outline" size={24} color={Colors.PRIMARY} />
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Última Actualización</Text>
-              <Text style={styles.infoValue}>
-                {new Date(user?.updatedAt).toLocaleDateString('es-ES', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                }) || 'No disponible'}
-              </Text>
+              <Text style={styles.infoValue}>{currentUser?.direccion || 'No disponible'}</Text>
             </View>
           </View>
         </View>
@@ -203,13 +136,15 @@ export default function OwnerProfileScreen() {
         <View style={styles.infoSection}>
           <Text style={styles.sectionTitle}>Información del Predio</Text>
           
-          {predio ? (
+          {isLoadingPlace ? (
+            <ActivityIndicator size="small" color={Colors.PRIMARY} />
+          ) : currentPlace ? (
             <>
               <View style={styles.infoItem}>
                 <Ionicons name="business-outline" size={24} color={Colors.PRIMARY} />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Nombre del Predio</Text>
-                  <Text style={styles.infoValue}>{predio?.nombre || 'No disponible'}</Text>
+                  <Text style={styles.infoValue}>{currentPlace?.nombre || 'No disponible'}</Text>
                 </View>
               </View>
 
@@ -217,7 +152,7 @@ export default function OwnerProfileScreen() {
                 <Ionicons name="location-outline" size={24} color={Colors.PRIMARY} />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Dirección</Text>
-                  <Text style={styles.infoValue}>{predio?.direccion || 'No disponible'}</Text>
+                  <Text style={styles.infoValue}>{currentPlace?.direccion || 'No disponible'}</Text>
                 </View>
               </View>
 
@@ -225,17 +160,16 @@ export default function OwnerProfileScreen() {
                 <Ionicons name="call-outline" size={24} color={Colors.PRIMARY} />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Teléfono</Text>
-                  <Text style={styles.infoValue}>{predio?.telefono || 'No disponible'}</Text>
+                  <Text style={styles.infoValue}>{currentPlace?.telefono || 'No disponible'}</Text>
                 </View>
               </View>
-
 
               <View style={styles.infoItem}>
                 <Ionicons name="time-outline" size={24} color={Colors.PRIMARY} />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Horario de Apertura</Text>
                   <Text style={styles.infoValue}>
-                    {predio?.horarioApertura ? new Date(predio.horarioApertura).toLocaleTimeString('es-ES', {
+                    {currentPlace?.horarioApertura ? new Date(currentPlace.horarioApertura).toLocaleTimeString('es-ES', {
                       hour: '2-digit',
                       minute: '2-digit',
                       hour12: false,
@@ -250,7 +184,7 @@ export default function OwnerProfileScreen() {
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Horario de Cierre</Text>
                   <Text style={styles.infoValue}>
-                    {predio?.horarioCierre ? new Date(predio.horarioCierre).toLocaleTimeString('es-ES', {
+                    {currentPlace?.horarioCierre ? new Date(currentPlace.horarioCierre).toLocaleTimeString('es-ES', {
                       hour: '2-digit',
                       minute: '2-digit',
                       hour12: false,
@@ -274,19 +208,12 @@ export default function OwnerProfileScreen() {
         <Text style={{ color: Colors.PRIMARY }}> Perfil</Text>
       </Text>
 
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size={'large'} color={Colors.PRIMARY} />
-        </View>
-      ) : (
-        renderUserInfo()
-      )}
+      {renderUserInfo()}
 
-      <FlatList
-        data={menu}
-        style={styles.menuContainer}
-        renderItem={({ item }) => (
+      <View style={styles.menuContainer}>
+        {menu.map((item) => (
           <Pressable
+            key={item.id}
             onPress={() =>
               item.id === 1 ? handleContactSupport()
                 : item.id === 2 ? handleSignOut()
@@ -296,8 +223,8 @@ export default function OwnerProfileScreen() {
             <Ionicons name={item.icon} size={40} color={Colors.PRIMARY} />
             <Text style={styles.menuItemText}>{item.name}</Text>
           </Pressable>
-        )}
-      />
+        ))}
+      </View>
     </ScrollView>
   )
 }
@@ -312,12 +239,6 @@ const styles = StyleSheet.create({
     fontFamily: 'montserrat-medium',
     fontSize: 30,
     marginTop: 30,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: 200,
   },
   userInfoContainer: {
     padding: 20,
