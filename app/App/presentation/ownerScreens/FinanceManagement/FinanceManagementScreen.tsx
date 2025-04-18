@@ -1,40 +1,95 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Platform, TouchableOpacity, Modal, TextInput, Button, Switch } from 'react-native';
-import Colors from '../../../infraestructure/utils/Colors';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, Platform, TouchableOpacity, Modal, TextInput, Button, Switch, ActivityIndicator } from 'react-native';
+import { Colors } from '../../../infraestructure/utils/Colors';
 import { Ionicons } from '@expo/vector-icons';
+import { FinanceService, FinanceEntry, FinanceCategory } from '../../../infraestructure/api/finance.api';
+import { useAuth } from '../../../infraestructure/context/AuthContext';
 
-interface FinanceEntry {
-  id: string;
-  type: 'income' | 'expense';
-  description: string;
-  amount: number;
-  date: string; // Consider using Date object later
-}
-
-// Mock Data for now
-const mockFinanceData: FinanceEntry[] = [
-  { id: '1', type: 'income', description: 'Reserva Cancha 1 - 18:00', amount: 50, date: '2024-07-25' },
-  { id: '2', type: 'expense', description: 'Compra de Pelotas', amount: 25, date: '2024-07-24' },
-  { id: '3', type: 'income', description: 'Reserva Cancha 2 - 20:00', amount: 60, date: '2024-07-23' },
-  { id: '4', type: 'expense', description: 'Limpieza', amount: 30, date: '2024-07-22' },
-];
-
-// Helper function to format date (similar to OwnerHomeScreen)
+// Helper function to format date
 const formatDate = (dateStr: string): string => {
   try {
-    const date = new Date(dateStr); // Using simple Date constructor for mock data
+    const date = new Date(dateStr);
     return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
   } catch (error) {
-    return dateStr; // Fallback
+    return dateStr;
   }
 };
 
 const FinanceManagementScreen = () => {
-  const [financeData, setFinanceData] = useState<FinanceEntry[]>(mockFinanceData);
+  const { user } = useAuth();
+  const [financeData, setFinanceData] = useState<FinanceEntry[]>([]);
+  const [categories, setCategories] = useState<FinanceCategory[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [isExpense, setIsExpense] = useState(false); // false = income, true = expense
+  const [isExpense, setIsExpense] = useState(false);
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      if (!user?.predioId) {
+        throw new Error('No se encontró el predio');
+      }
+      
+      const [movimientos, categorias] = await Promise.all([
+        FinanceService.getMovimientos(user.predioId),
+        FinanceService.getCategorias()
+      ]);
+      
+      setFinanceData(movimientos);
+      setCategories(categorias);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al cargar los datos');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSaveEntry = async () => {
+    try {
+      if (!user?.predioId) {
+        throw new Error('No se encontró el predio');
+      }
+
+      const numericAmount = parseFloat(amount);
+      if (description.trim() && !isNaN(numericAmount) && numericAmount > 0) {
+        const newEntry = await FinanceService.createMovimiento(user.predioId, {
+          type: isExpense ? 'expense' : 'income',
+          description: description.trim(),
+          amount: numericAmount,
+          predioId: user.predioId,
+          categoriaId: selectedCategory
+        });
+        
+        setFinanceData([newEntry, ...financeData]);
+        setModalVisible(false);
+        setDescription('');
+        setAmount('');
+        setSelectedCategory('');
+      } else {
+        setError('Por favor, ingresa una descripción y un monto válido.');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al guardar el movimiento');
+    }
+  };
+
+  const handleDeleteEntry = async (id: string) => {
+    try {
+      await FinanceService.deleteMovimiento(id);
+      setFinanceData(financeData.filter(entry => entry.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al eliminar el movimiento');
+    }
+  };
 
   // Calculate totals
   const totalIncome = financeData
@@ -51,26 +106,31 @@ const FinanceManagementScreen = () => {
     setIsExpense(false); // Default to income
     setDescription('');
     setAmount('');
+    setSelectedCategory('');
     setModalVisible(true);
   };
 
-  const handleSaveEntry = () => {
-    const numericAmount = parseFloat(amount);
-    if (description.trim() && !isNaN(numericAmount) && numericAmount > 0) {
-      const newEntry: FinanceEntry = {
-        id: Date.now().toString(), // Simple unique ID for mock
-        type: isExpense ? 'expense' : 'income',
-        description: description.trim(),
-        amount: numericAmount,
-        date: new Date().toISOString().split('T')[0], // Today's date
-      };
-      setFinanceData([newEntry, ...financeData]); // Add to the top
-      setModalVisible(false);
-    } else {
-      // Basic validation feedback
-      alert('Por favor, ingresa una descripción y un monto válido.');
-    }
-  };
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color={Colors.PRIMARY} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity 
+          style={styles.retryButton}
+          onPress={loadData}
+        >
+          <Text style={styles.retryButtonText}>Reintentar</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -110,9 +170,17 @@ const FinanceManagementScreen = () => {
                   <Text style={styles.itemDescription}>{item.description}</Text>
                   <Text style={styles.itemDate}>{formatDate(item.date)}</Text>
                 </View>
-                <Text style={[styles.itemAmount, item.type === 'income' ? styles.income : styles.expense]}>
-                  {item.type === 'income' ? '+' : '-'}${item.amount.toFixed(2)}
-                </Text>
+                <View style={styles.itemActions}>
+                  <Text style={[styles.itemAmount, item.type === 'income' ? styles.income : styles.expense]}>
+                    {item.type === 'income' ? '+' : '-'}${item.amount.toFixed(2)}
+                  </Text>
+                  <TouchableOpacity 
+                    onPress={() => handleDeleteEntry(item.id)}
+                    style={styles.deleteButton}
+                  >
+                    <Ionicons name="trash-outline" size={20} color={Colors.RED} />
+                  </TouchableOpacity>
+                </View>
               </View>
             ))
           ) : (
@@ -158,6 +226,30 @@ const FinanceManagementScreen = () => {
                     />
                     <Text style={[styles.switchLabel, isExpense && styles.activeSwitchLabel]}>Egreso</Text>
                 </View>
+              </View>
+
+              {/* Category Selection */}
+              <Text style={styles.modalLabel}>Categoría:</Text>
+              <View style={styles.categoryContainer}>
+                {categories
+                  .filter(cat => cat.type === (isExpense ? 'expense' : 'income'))
+                  .map(category => (
+                    <TouchableOpacity
+                      key={category.id}
+                      style={[
+                        styles.categoryButton,
+                        selectedCategory === category.id && styles.selectedCategory
+                      ]}
+                      onPress={() => setSelectedCategory(category.id)}
+                    >
+                      <Text style={[
+                        styles.categoryText,
+                        selectedCategory === category.id && styles.selectedCategoryText
+                      ]}>
+                        {category.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
               </View>
 
               {/* Description Input */}
@@ -441,6 +533,56 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
     fontFamily: "montserrat-bold",
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    color: Colors.RED,
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: Colors.PRIMARY,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+  },
+  retryButtonText: {
+    color: Colors.WHITE,
+    fontWeight: 'bold',
+  },
+  itemActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  deleteButton: {
+    marginLeft: 10,
+    padding: 5,
+  },
+  categoryContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 15,
+  },
+  categoryButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    backgroundColor: '#f0f0f0',
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  selectedCategory: {
+    backgroundColor: Colors.PRIMARY,
+  },
+  categoryText: {
+    color: Colors.GRAY,
+  },
+  selectedCategoryText: {
+    color: Colors.WHITE,
   },
 });
 
