@@ -27,16 +27,11 @@ export const authenticateToken = (
   res: Response,
   next: NextFunction
 ) => {
-  console.log("[Auth] Iniciando verificación de token");
-  console.log("[Auth] Headers recibidos:", JSON.stringify(req.headers));
-  
   const authHeader = req.headers.authorization;
-  console.log("[Auth] Header de autorización:", authHeader);
   
   const token = authHeader?.split(' ')[1];
   
   if (!token) {
-    console.log("[Auth] Token no encontrado");
     return res.status(401).json({ message: 'No autorizado' });
   }
 
@@ -44,20 +39,11 @@ export const authenticateToken = (
 
   try {
     const secretKey = process.env.JWT_SECRET || 'your-secret-key';
-    console.log("[Auth] Secret key utilizada (longitud):", secretKey.length);
-    console.log("[Auth] Verificando token con algoritmo:", jwt.decode(token, { complete: true })?.header?.alg);
-    
     const decoded = jwt.verify(
       token, 
       secretKey
     ) as JWTPayload;
-    
-    console.log("[Auth] Token verificado exitosamente para usuario:", decoded.email);
-    console.log("[Auth] Payload del token:", JSON.stringify({
-      id: decoded.id,
-      email: decoded.email,
-      role: decoded.role
-    }));
+  
 
     req.user = {
       id: decoded.id,
@@ -65,8 +51,7 @@ export const authenticateToken = (
       role: decoded.role,
       name: null
     };
-    
-    console.log("[Auth] Usuario autenticado");
+  
     next();
   } catch (error: unknown) {
     console.log("[Auth] Error en verificación de token");

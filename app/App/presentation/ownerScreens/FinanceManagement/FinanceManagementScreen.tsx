@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, Platform, TouchableOpacity, Modal, TextInput, Button, Switch, ActivityIndicator } from 'react-native';
-import { Colors } from '../../../infraestructure/utils/Colors';
+import Colors from '../../../infraestructure/utils/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { FinanceService, FinanceEntry, FinanceCategory } from '../../../infraestructure/api/finance.api';
-import { useAuth } from '../../../infraestructure/context/AuthContext';
+import { useCurrentUser } from '../../../application/context/CurrentUserContext';
+import { useCurrentPlace } from '../../../application/context/CurrentPlaceContext';
 
 // Helper function to format date
 const formatDate = (dateStr: string): string => {
@@ -16,7 +17,9 @@ const formatDate = (dateStr: string): string => {
 };
 
 const FinanceManagementScreen = () => {
-  const { user } = useAuth();
+  const { currentUser } = useCurrentUser();
+  const { currentPlace, isLoading: isLoadingPlace } = useCurrentPlace();
+  console.log('Current Place:', currentPlace); // Log current place data
   const [financeData, setFinanceData] = useState<FinanceEntry[]>([]);
   const [categories, setCategories] = useState<FinanceCategory[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -28,25 +31,34 @@ const FinanceManagementScreen = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('useEffect triggered, loading data...');
     loadData();
-  }, []);
+  }, [currentPlace]);
 
   const loadData = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      if (!user?.predioId) {
+      console.log('Loading data, predioId:', currentPlace?.id);
+      
+      if (!currentPlace?.id) {
+        console.error('No predioId found in currentPlace');
         throw new Error('No se encontró el predio');
       }
       
+      console.log('Fetching movimientos and categorias...');
       const [movimientos, categorias] = await Promise.all([
-        FinanceService.getMovimientos(user.predioId),
+        FinanceService.getMovimientos(currentPlace.id),
         FinanceService.getCategorias()
       ]);
+      
+      console.log('Movimientos loaded:', movimientos.length);
+      console.log('Categorias loaded:', categorias.length);
       
       setFinanceData(movimientos);
       setCategories(categorias);
     } catch (err) {
+      console.error('Error in loadData:', err);
       setError(err instanceof Error ? err.message : 'Error al cargar los datos');
     } finally {
       setIsLoading(false);
@@ -55,17 +67,30 @@ const FinanceManagementScreen = () => {
 
   const handleSaveEntry = async () => {
     try {
-      if (!user?.predioId) {
+      if (!currentPlace?.id) {
         throw new Error('No se encontró el predio');
       }
 
       const numericAmount = parseFloat(amount);
+      console.log('Amount input:', amount);
+      console.log('Parsed amount:', numericAmount);
+      console.log('Is NaN:', isNaN(numericAmount));
+      console.log('Is positive:', numericAmount > 0);
+
       if (description.trim() && !isNaN(numericAmount) && numericAmount > 0) {
-        const newEntry = await FinanceService.createMovimiento(user.predioId, {
+        console.log('Creating movimiento with data:', {
           type: isExpense ? 'expense' : 'income',
           description: description.trim(),
           amount: numericAmount,
-          predioId: user.predioId,
+          predioId: currentPlace.id,
+          categoriaId: selectedCategory
+        });
+
+        const newEntry = await FinanceService.createMovimiento(currentPlace.id, {
+          type: isExpense ? 'expense' : 'income',
+          description: description.trim(),
+          amount: numericAmount,
+          predioId: currentPlace.id,
           categoriaId: selectedCategory
         });
         
@@ -75,9 +100,14 @@ const FinanceManagementScreen = () => {
         setAmount('');
         setSelectedCategory('');
       } else {
+        console.log('Validation failed:', {
+          hasDescription: !!description.trim(),
+          isAmountValid: !isNaN(numericAmount) && numericAmount > 0
+        });
         setError('Por favor, ingresa una descripción y un monto válido.');
       }
     } catch (err) {
+      console.error('Error in handleSaveEntry:', err);
       setError(err instanceof Error ? err.message : 'Error al guardar el movimiento');
     }
   };
@@ -211,14 +241,14 @@ const FinanceManagementScreen = () => {
               </TouchableOpacity>
             </View>
 
-            <View style={styles.modalBody}>
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
               {/* Type Selector (Income/Expense) */}
               <View style={styles.typeSelectorContainer}>
                 <Text style={styles.modalLabel}>Tipo:</Text>
                 <View style={styles.switchContainer}>
                     <Text style={[styles.switchLabel, !isExpense && styles.activeSwitchLabel]}>Ingreso</Text>
                     <Switch
-                        trackColor={{ false: '#76c5a8', true: '#e87c7c' }} // Softer colors
+                        trackColor={{ false: '#76c5a8', true: '#e87c7c' }}
                         thumbColor={isExpense ? '#F44336' : '#4CAF50'}
                         ios_backgroundColor="#3e3e3e"
                         onValueChange={setIsExpense}
@@ -270,22 +300,22 @@ const FinanceManagementScreen = () => {
                 value={amount}
                 onChangeText={setAmount}
               />
+            </ScrollView>
 
-              {/* Action Buttons */}
-              <View style={styles.modalActions}>
-                <TouchableOpacity 
-                  style={[styles.modalButton, styles.cancelButton]}
-                  onPress={() => setModalVisible(false)}
-                >
-                  <Text style={styles.cancelButtonText}>Cancelar</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[styles.modalButton, styles.saveButton]}
-                  onPress={handleSaveEntry}
-                >
-                  <Text style={styles.saveButtonText}>Guardar</Text>
-                </TouchableOpacity>
-              </View>
+            {/* Action Buttons */}
+            <View style={styles.modalActions}>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.saveButton]}
+                onPress={handleSaveEntry}
+              >
+                <Text style={styles.saveButtonText}>Guardar</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -417,18 +447,19 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 20,
-    bottom: 20,
-    backgroundColor: Colors.PRIMARY, // Use PRIMARY color
+    bottom: 100,
+    backgroundColor: Colors.PRIMARY,
     width: 60,
     height: 60,
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 8, // Add shadow for FAB
+    elevation: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
+    zIndex: 1000,
   },
 
   // Modal Styles
@@ -442,10 +473,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
-    minHeight: '50%', // Adjust as needed
-    maxHeight: '80%',
+    height: '80%',
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 }, // Shadow for top edge
+    shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 10,
@@ -467,6 +497,7 @@ const styles = StyleSheet.create({
   },
   modalBody: {
     flex: 1,
+    marginBottom: 80, // Space for fixed buttons
   },
   modalLabel: {
     fontSize: 16,
@@ -506,8 +537,14 @@ const styles = StyleSheet.create({
   modalActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 'auto', // Push buttons to the bottom
-    paddingTop: 20,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 20,
+    backgroundColor: Colors.WHITE,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
   },
   modalButton: {
     flex: 1, // Make buttons take equal width

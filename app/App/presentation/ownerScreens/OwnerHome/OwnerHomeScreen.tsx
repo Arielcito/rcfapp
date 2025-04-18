@@ -11,7 +11,7 @@ import { ChartDataPoint, ReservaResponse, ContactInfo, OwnerHomeScreenState } fr
 import { ErrorBoundary } from '../../../components/ErrorBoundary';
 import { logger } from '../../../infraestructure/utils/logger';
 import AppointmentItem from '../OwnerAppointment/AppointmentItem';
-import {Colors} from '../../../infraestructure/utils/Colors';
+import Colors from '../../../infraestructure/utils/Colors';
 
 const COMPONENT_NAME = 'OwnerHomeScreen';
 const screenWidth = Dimensions.get('window').width;
