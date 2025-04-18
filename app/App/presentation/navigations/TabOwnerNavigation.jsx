@@ -9,6 +9,8 @@ import OwnerProfileScreen from "../ownerScreens/OwnerProfileScreen/OwnerProfileS
 import OwnerPitches from "../ownerScreens/OwnerPitches/OwnerPitches";
 import Colors from "../../infraestructure/utils/Colors";
 import OwnerHomeScreen from "../ownerScreens/OwnerHome/OwnerHomeScreen";
+import FinanceManagementScreen from "../ownerScreens/FinanceManagement/FinanceManagementScreen";
+
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
@@ -49,6 +51,17 @@ const AdminTabs = () => (
         tabBarActiveTintColor: Colors.PRIMARY,
         tabBarIcon: ({ color, size }) => (
           <Ionicons name="home" size={size} color={color} />
+        ),
+      }}
+    />
+    <Tab.Screen
+      name="finance"
+      component={FinanceManagementScreen}
+      options={{
+        tabBarLabel: "Flujo de Fondos",
+        tabBarActiveTintColor: Colors.PRIMARY,
+        tabBarIcon: ({ color, size }) => (
+          <Ionicons name="cash-outline" size={size} color={color} />
         ),
       }}
     />

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, SafeAreaView, ScrollView, ActivityIndicator, Di
 import { VictoryLine, VictoryChart, VictoryAxis, VictoryTheme, VictoryContainer } from 'victory-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { reservaApi } from '../../../infraestructure/api/reserva.api';
-import { format, parseISO, compareDesc, subDays } from 'date-fns';
+import { format, parseISO, compareDesc, subDays, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Booking } from '../../../types/booking';
@@ -32,6 +32,9 @@ const OwnerHomeContent = () => {
   const [userName, setUserName] = useState<string>('');
   const [selectedReserva, setSelectedReserva] = useState<Booking | null>(null);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [dateFilter, setDateFilter] = useState<'week' | 'month' | '3months'>('week');
+  const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'pending'>('all');
+  const [filterModalVisible, setFilterModalVisible] = useState<boolean>(false);
 
   const ordenarReservas = (reservasArray: Booking[]): Booking[] => {
     if (!Array.isArray(reservasArray)) {
@@ -72,17 +75,28 @@ const OwnerHomeContent = () => {
     try {
       logger.debug(COMPONENT_NAME, 'Generando datos para gráfico', { reservas });
       const hoy = new Date();
-      const labels = Array.from({ length: 7 }, (_, i) => {
-        return format(subDays(hoy, 6 - i), 'EEE', { locale: es });
+      const daysToShow = dateFilter === 'week' ? 7 : dateFilter === 'month' ? 30 : 90;
+      const labels = Array.from({ length: daysToShow }, (_, i) => {
+        const date = subDays(hoy, daysToShow - 1 - i);
+        return format(date, 'dd/MM', { locale: es });
       });
 
-      const datos = Array(7).fill(0);
+      const datos = Array(daysToShow).fill(0);
       for (const reserva of reservas) {
         try {
           if (!reserva.fechaHora) {
             logger.warn(COMPONENT_NAME, 'Reserva sin fecha', { reserva });
             continue;
           }
+
+          // Apply payment filter
+          if (paymentFilter !== 'all') {
+            const isPaid = reserva.estadoPago?.toLowerCase() === 'pagado';
+            if ((paymentFilter === 'paid' && !isPaid) || (paymentFilter === 'pending' && isPaid)) {
+              continue;
+            }
+          }
+
           const fechaReserva = parseISO(reserva.fechaHora);
           
           if (!Number.isFinite(fechaReserva.getTime())) {
@@ -91,8 +105,8 @@ const OwnerHomeContent = () => {
           }
           
           const diasAtras = Math.floor((hoy.getTime() - fechaReserva.getTime()) / (1000 * 60 * 60 * 24));
-          if (diasAtras >= 0 && diasAtras < 7) {
-            datos[6 - diasAtras]++;
+          if (diasAtras >= 0 && diasAtras < daysToShow) {
+            datos[daysToShow - 1 - diasAtras]++;
           }
         } catch (error) {
           logError(error, 'procesando fecha de reserva');
@@ -361,6 +375,91 @@ const OwnerHomeContent = () => {
     }
   };
 
+  const renderFilterModal = () => {
+    return (
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={filterModalVisible}
+        onRequestClose={() => setFilterModalVisible(false)}
+      >
+        <View style={styles.filterModalOverlay}>
+          <View style={styles.filterModalContent}>
+            <View style={styles.filterModalHeader}>
+              <Text style={styles.filterModalTitle}>Filtros</Text>
+              <TouchableOpacity 
+                onPress={() => setFilterModalVisible(false)}
+                style={styles.closeButton}
+              >
+                <Icon name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.filterModalBody}>
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Período</Text>
+                <View style={styles.filterOptions}>
+                  <TouchableOpacity
+                    style={[styles.filterOption, dateFilter === 'week' && styles.filterOptionActive]}
+                    onPress={() => setDateFilter('week')}
+                  >
+                    <Text style={[styles.filterOptionText, dateFilter === 'week' && styles.filterOptionTextActive]}>Última semana</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.filterOption, dateFilter === 'month' && styles.filterOptionActive]}
+                    onPress={() => setDateFilter('month')}
+                  >
+                    <Text style={[styles.filterOptionText, dateFilter === 'month' && styles.filterOptionTextActive]}>Último mes</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.filterOption, dateFilter === '3months' && styles.filterOptionActive]}
+                    onPress={() => setDateFilter('3months')}
+                  >
+                    <Text style={[styles.filterOptionText, dateFilter === '3months' && styles.filterOptionTextActive]}>Últimos 3 meses</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Estado de Pago</Text>
+                <View style={styles.filterOptions}>
+                  <TouchableOpacity
+                    style={[styles.filterOption, paymentFilter === 'all' && styles.filterOptionActive]}
+                    onPress={() => setPaymentFilter('all')}
+                  >
+                    <Text style={[styles.filterOptionText, paymentFilter === 'all' && styles.filterOptionTextActive]}>Todos</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.filterOption, paymentFilter === 'paid' && styles.filterOptionActive]}
+                    onPress={() => setPaymentFilter('paid')}
+                  >
+                    <Text style={[styles.filterOptionText, paymentFilter === 'paid' && styles.filterOptionTextActive]}>Pagados</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.filterOption, paymentFilter === 'pending' && styles.filterOptionActive]}
+                    onPress={() => setPaymentFilter('pending')}
+                  >
+                    <Text style={[styles.filterOptionText, paymentFilter === 'pending' && styles.filterOptionTextActive]}>Pendientes</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles.applyFiltersButton}
+                onPress={() => {
+                  setFilterModalVisible(false);
+                  cargarDatosConRetry();
+                }}
+              >
+                <Text style={styles.applyFiltersButtonText}>Aplicar Filtros</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -390,20 +489,46 @@ const OwnerHomeContent = () => {
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.header}>
-          <View style={styles.profilePic} />
-          <Text style={styles.greeting}>¡Hola{userName ? `, ${userName}` : ''}!</Text>
-          <TouchableOpacity 
-            style={styles.supportButton}
-            onPress={handleContactSupport}
-          >
-            <Icon name="help-circle-outline" size={24} color={Colors.PRIMARY} />
-          </TouchableOpacity>
+          <View style={styles.headerLeft}>
+            <View style={styles.profilePic} />
+            <Text style={styles.greeting}>¡Hola{userName ? `, ${userName}` : ''}!</Text>
+          </View>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity 
+              style={styles.filterButton}
+              onPress={() => setFilterModalVisible(true)}
+            >
+              <Icon name="filter" size={24} color={Colors.PRIMARY} />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.supportButton}
+              onPress={handleContactSupport}
+            >
+              <Icon name="help-circle-outline" size={24} color={Colors.PRIMARY} />
+            </TouchableOpacity>
+          </View>
         </View>
         <Text style={styles.subGreeting}>Mira tus reservas de hoy</Text>
         
         <View style={styles.chartContainer}>
-          <Text style={styles.chartTitle}>Canchas reservadas</Text>
-          <Text style={styles.chartSubtitle}>Última semana</Text>
+          <View style={styles.chartHeader}>
+            <View>
+              <Text style={styles.chartTitle}>Canchas reservadas</Text>
+              <Text style={styles.chartSubtitle}>
+                {dateFilter === 'week' ? 'Última semana' : 
+                 dateFilter === 'month' ? 'Último mes' : 'Últimos 3 meses'}
+              </Text>
+            </View>
+            <View style={styles.activeFilters}>
+              {paymentFilter !== 'all' && (
+                <View style={styles.activeFilterTag}>
+                  <Text style={styles.activeFilterText}>
+                    {paymentFilter === 'paid' ? 'Pagados' : 'Pendientes'}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
           {renderChart()}
           <Text style={styles.chartFooter}>
             {chartData && Array.isArray(chartData) ? chartData.reduce((a, b) => a + b.y, 0) : 0} canchas reservadas en total
@@ -421,6 +546,7 @@ const OwnerHomeContent = () => {
         </View>
       </ScrollView>
       {renderDetalleReserva()}
+      {renderFilterModal()}
     </SafeAreaView>
   );
 };
@@ -449,6 +575,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     padding: 20,
     backgroundColor: '#fff',
     borderBottomLeftRadius: 30,
@@ -462,6 +589,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   profilePic: {
     width: 40,
@@ -675,13 +807,117 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  supportButton: {
-    position: 'absolute',
-    right: 15,
-    top: 15,
-    padding: 8,
-    borderRadius: 20,
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  filterButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 22,
     backgroundColor: '#f0f0f0',
+  },
+  supportButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 22,
+    backgroundColor: '#f0f0f0',
+  },
+  filterModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  filterModalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+  },
+  filterModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  filterModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  filterModalBody: {
+    padding: 20,
+  },
+  filterSection: {
+    marginBottom: 25,
+  },
+  filterSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 15,
+  },
+  filterOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  filterOption: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+  },
+  filterOptionActive: {
+    backgroundColor: '#1AFF92',
+  },
+  filterOptionText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  filterOptionTextActive: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  applyFiltersButton: {
+    backgroundColor: '#1AFF92',
+    paddingVertical: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  applyFiltersButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  chartHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  activeFilters: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  activeFilterTag: {
+    backgroundColor: '#1AFF92',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+  },
+  activeFilterText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
 
