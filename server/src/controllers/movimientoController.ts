@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import * as movimientoService from '../services/movimientoService';
+import { MovimientoService } from '../services/movimientoService';
+import { HttpError } from '../utils/errors';
 import type { 
   MovimientoCajaCreationData, 
   MovimientoCajaUpdateData, 
@@ -8,14 +9,19 @@ import type {
   MetodoPago 
 } from '../types/movimiento';
 
+const movimientoService = new MovimientoService();
+
 // Obtener todas las categorías activas
-export const getCategorias = async (_req: Request, res: Response) => {
+export const getCategorias = async (req: Request, res: Response) => {
   try {
     const categorias = await movimientoService.getCategorias();
     res.json(categorias);
   } catch (error) {
-    console.error('Error al obtener categorías:', error);
-    res.status(500).json({ error: 'Error al obtener las categorías' });
+    if (error instanceof HttpError) {
+      res.status(error.statusCode).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
   }
 };
 
@@ -23,31 +29,44 @@ export const getCategorias = async (_req: Request, res: Response) => {
 export const getMovimientos = async (req: Request, res: Response) => {
   try {
     const { predioId } = req.params;
-    const filtros: MovimientoCajaFiltros = {
-      fechaDesde: req.query.fechaDesde ? new Date(req.query.fechaDesde as string) : undefined,
-      fechaHasta: req.query.fechaHasta ? new Date(req.query.fechaHasta as string) : undefined,
-      categoriaId: req.query.categoriaId as string,
-      tipo: req.query.tipo as TipoMovimiento,
-      metodoPago: req.query.metodoPago as MetodoPago,
+    const { fechaDesde, fechaHasta, categoriaId, tipo, metodoPago } = req.query;
+
+    const filtros = {
+      fechaDesde: fechaDesde ? new Date(fechaDesde as string) : undefined,
+      fechaHasta: fechaHasta ? new Date(fechaHasta as string) : undefined,
+      categoriaId: categoriaId as string | undefined,
+      tipo: tipo as 'INGRESO' | 'EGRESO' | undefined,
+      metodoPago: metodoPago as MetodoPago | undefined
     };
 
     const movimientos = await movimientoService.getMovimientos(predioId, filtros);
     res.json(movimientos);
   } catch (error) {
-    console.error('Error al obtener movimientos:', error);
-    res.status(500).json({ error: 'Error al obtener los movimientos' });
+    if (error instanceof HttpError) {
+      res.status(error.statusCode).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
   }
 };
 
 // Crear nuevo movimiento
 export const createMovimiento = async (req: Request, res: Response) => {
   try {
-    const movimientoData: MovimientoCajaCreationData = req.body;
-    const nuevoMovimiento = await movimientoService.createMovimiento(movimientoData);
-    res.status(201).json(nuevoMovimiento);
+    const { predioId } = req.params;
+    const movimientoData = {
+      ...req.body,
+      predioId
+    };
+
+    const movimiento = await movimientoService.createMovimiento(movimientoData);
+    res.status(201).json(movimiento);
   } catch (error) {
-    console.error('Error al crear movimiento:', error);
-    res.status(500).json({ error: 'Error al crear el movimiento' });
+    if (error instanceof HttpError) {
+      res.status(error.statusCode).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
   }
 };
 
@@ -55,18 +74,16 @@ export const createMovimiento = async (req: Request, res: Response) => {
 export const updateMovimiento = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const movimientoData: MovimientoCajaUpdateData = req.body;
-    
-    const movimientoActualizado = await movimientoService.updateMovimiento(id, movimientoData);
-    
-    if (!movimientoActualizado) {
-      return res.status(404).json({ error: 'Movimiento no encontrado' });
-    }
-    
-    res.json(movimientoActualizado);
+    const movimientoData = req.body;
+
+    const movimiento = await movimientoService.updateMovimiento(id, movimientoData);
+    res.json(movimiento);
   } catch (error) {
-    console.error('Error al actualizar movimiento:', error);
-    res.status(500).json({ error: 'Error al actualizar el movimiento' });
+    if (error instanceof HttpError) {
+      res.status(error.statusCode).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
   }
 };
 
@@ -77,8 +94,11 @@ export const deleteMovimiento = async (req: Request, res: Response) => {
     await movimientoService.deleteMovimiento(id);
     res.status(204).send();
   } catch (error) {
-    console.error('Error al eliminar movimiento:', error);
-    res.status(500).json({ error: 'Error al eliminar el movimiento' });
+    if (error instanceof HttpError) {
+      res.status(error.statusCode).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
   }
 };
 
@@ -86,13 +106,20 @@ export const deleteMovimiento = async (req: Request, res: Response) => {
 export const getResumenMovimientos = async (req: Request, res: Response) => {
   try {
     const { predioId } = req.params;
-    const fechaDesde = req.query.fechaDesde ? new Date(req.query.fechaDesde as string) : undefined;
-    const fechaHasta = req.query.fechaHasta ? new Date(req.query.fechaHasta as string) : undefined;
+    const { fechaDesde, fechaHasta } = req.query;
 
-    const resumen = await movimientoService.getResumenMovimientos(predioId, fechaDesde, fechaHasta);
+    const resumen = await movimientoService.getResumenMovimientos(
+      predioId,
+      fechaDesde ? new Date(fechaDesde as string) : undefined,
+      fechaHasta ? new Date(fechaHasta as string) : undefined
+    );
+
     res.json(resumen);
   } catch (error) {
-    console.error('Error al obtener resumen:', error);
-    res.status(500).json({ error: 'Error al obtener el resumen de movimientos' });
+    if (error instanceof HttpError) {
+      res.status(error.statusCode).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
   }
 }; 

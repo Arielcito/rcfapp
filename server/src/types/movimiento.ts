@@ -20,9 +20,11 @@ export interface MovimientoCaja {
   metodoPago: MetodoPago;
   fechaMovimiento: Date;
   comprobante?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
-export interface MovimientoCajaCreationData extends Omit<MovimientoCaja, 'id' | 'fechaMovimiento'> {
+export interface MovimientoCajaCreationData extends Omit<MovimientoCaja, 'id' | 'fechaMovimiento' | 'createdAt' | 'updatedAt'> {
   fechaMovimiento?: Date;
 }
 

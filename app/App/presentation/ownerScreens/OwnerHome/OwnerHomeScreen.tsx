@@ -11,7 +11,7 @@ import { ChartDataPoint, ReservaResponse, ContactInfo, OwnerHomeScreenState } fr
 import { ErrorBoundary } from '../../../components/ErrorBoundary';
 import { logger } from '../../../infraestructure/utils/logger';
 import AppointmentItem from '../OwnerAppointment/AppointmentItem';
-import Colors from '../../../infraestructure/utils/Colors';
+import {Colors} from '../../../infraestructure/utils/Colors';
 
 const COMPONENT_NAME = 'OwnerHomeScreen';
 const screenWidth = Dimensions.get('window').width;
@@ -78,7 +78,7 @@ const OwnerHomeContent = () => {
       const daysToShow = dateFilter === 'week' ? 7 : dateFilter === 'month' ? 30 : 90;
       const labels = Array.from({ length: daysToShow }, (_, i) => {
         const date = subDays(hoy, daysToShow - 1 - i);
-        return format(date, 'dd/MM', { locale: es });
+        return format(date, 'd', { locale: es });
       });
 
       const datos = Array(daysToShow).fill(0);
@@ -346,7 +346,13 @@ const OwnerHomeContent = () => {
             tickFormat={(t) => t}
             style={{
               axis: { stroke: '#e3e3e3' },
-              tickLabels: { fontSize: 10, fill: '#888' }
+              tickLabels: { 
+                fontSize: 8, 
+                fill: '#888',
+                angle: -45,
+                textAnchor: 'end',
+                padding: 5
+              }
             }}
           />
           <VictoryAxis
@@ -354,8 +360,11 @@ const OwnerHomeContent = () => {
             tickFormat={(t) => Math.round(t)}
             style={{
               axis: { stroke: '#e3e3e3' },
-              tickLabels: { fontSize: 10, fill: '#888' }
+              tickLabels: { fontSize: 10, fill: '#888' },
+              grid: { stroke: '#e3e3e3', strokeWidth: 0.5 }
             }}
+            tickValues={[0, 1, 2, 3, 4, 5]}
+            domain={{ y: [0, 5] }}
           />
           <VictoryLine
             data={chartData || []}
