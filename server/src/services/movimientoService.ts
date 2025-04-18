@@ -93,7 +93,8 @@ export class MovimientoService {
 
   async createMovimiento(data: MovimientoCajaCreationData): Promise<MovimientoCaja> {
     try {
-      this.validateMonto(data.monto);
+      const monto = typeof data.monto === 'string' ? Number(data.monto) : data.monto;
+      this.validateMonto(monto);
       if (!this.validateTipoMovimiento(data.tipo)) {
         throw new ValidationError('Tipo de movimiento inválido');
       }
@@ -104,7 +105,7 @@ export class MovimientoService {
       const [result] = await db.insert(movimientosCaja)
         .values({
           ...data,
-          monto: String(data.monto),
+          monto: String(monto),
           fechaMovimiento: data.fechaMovimiento || new Date()
         })
         .returning();

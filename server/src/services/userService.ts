@@ -39,8 +39,7 @@ export const getUsers = async (): Promise<User[]> => {
 
 export const getUserById = async (id: string): Promise<User | null> => {
   try {
-    console.log("Intentando obtener usuario con ID:", id);
-    
+
     // Consulta simplificada sin campos opcionales primero
     const [user] = await db
       .select()
@@ -51,8 +50,6 @@ export const getUserById = async (id: string): Promise<User | null> => {
       console.log("Usuario no encontrado");
       return null;
     }
-
-    console.log("Datos del usuario obtenidos (raw):", user);
     
     // Construir el objeto de respuesta con valores por defecto
     const userResponse = {
@@ -67,7 +64,6 @@ export const getUserById = async (id: string): Promise<User | null> => {
       updatedAt: user.updatedAt ?? null
     };
 
-    console.log("Objeto de usuario procesado:", userResponse);
     return userResponse;
   } catch (error) {
     console.error("Error detallado al obtener usuario:", {

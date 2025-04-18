@@ -43,17 +43,14 @@ export const TokenService = {
       
       // Si no existe, intentar recuperar del backup
       if (!token) {
-        console.log('Token principal no encontrado, probando backup');
         token = await AsyncStorage.getItem('auth_token_backup');
         
         // Si se recuperó del backup, restaurar el principal
         if (token) {
-          console.log('Token recuperado de backup, restaurando principal');
           await AsyncStorage.setItem('auth_token', token);
         }
       }
       
-      console.log('Token recuperado:', token ? `${token.substring(0, 10)}...` : 'No hay token');
       return token;
     } catch (error) {
       console.error('Error recuperando token:', error);
@@ -92,19 +89,16 @@ api.interceptors.request.use(
   async (config) => {
     try {
       const url = `${config.baseURL || ''}${config.url || ''}`;
-      console.log('Realizando petición a:', url);
       
       // Usar TokenService en lugar de AsyncStorage directamente
       const token = await TokenService.getToken();
       
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
-        console.log('Header de autorización configurado:', `Bearer ${token.substring(0, 10)}...`);
       } else {
         console.log('No se encontró token para la petición');
       }
       
-      console.log('Headers completos de la petición:', JSON.stringify(config.headers));
       return config;
     } catch (error) {
       console.error('Error al obtener token para request:', error);
@@ -121,9 +115,6 @@ api.interceptors.request.use(
 // Interceptor para manejar errores de respuesta
 api.interceptors.response.use(
   (response) => {
-    console.log('Respuesta exitosa de:', response.config.url || 'URL desconocida');
-    console.log('Status code:', response.status);
-    console.log('Headers de respuesta:', JSON.stringify(response.headers));
     return response;
   },
   async (error) => {
