@@ -2,12 +2,14 @@ import { api } from './api';
 
 export interface FinanceEntry {
   id: string;
-  type: 'income' | 'expense';
-  description: string;
-  amount: number;
-  date: string;
+  tipo: 'INGRESO' | 'EGRESO';
+  concepto: string;
+  descripcion?: string;
+  monto: number;
+  fechaMovimiento: string;
   predioId: string;
-  categoriaId?: string;
+  categoriaId: string;
+  metodoPago: 'EFECTIVO' | 'TRANSFERENCIA' | 'DEBITO' | 'CREDITO' | 'MERCADO_PAGO' | 'OTRO';
 }
 
 export interface FinanceSummary {

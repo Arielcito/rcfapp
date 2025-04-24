@@ -14,24 +14,14 @@ import {
 import { ValidationError, NotFoundError, DatabaseError } from '../utils/errors';
 
 export class MovimientoService {
-  private validateMonto(monto: number) {
-    if (isNaN(monto) || monto <= 0) {
-      throw new ValidationError('El monto debe ser un número positivo');
+  private validateUUID(uuid: string | null | undefined, fieldName: string, allowNull: boolean = false) {
+    if (allowNull && (uuid === null || uuid === undefined || uuid === '')) {
+      return;
     }
-  }
-
-  private validateFechas(fechaDesde?: Date, fechaHasta?: Date) {
-    if (fechaDesde && fechaHasta && fechaDesde > fechaHasta) {
-      throw new ValidationError('La fecha desde no puede ser mayor a la fecha hasta');
+    
+    if (!uuid || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uuid)) {
+      throw new ValidationError(`${fieldName} inválido`);
     }
-  }
-
-  private validateTipoMovimiento(tipo: string): tipo is TipoMovimiento {
-    return tipo === 'INGRESO' || tipo === 'EGRESO';
-  }
-
-  private validateMetodoPago(metodo: string): metodo is MetodoPago {
-    return ['EFECTIVO', 'TRANSFERENCIA', 'DEBITO', 'CREDITO', 'MERCADO_PAGO', 'OTRO'].includes(metodo);
   }
 
   async getCategorias(): Promise<CategoriaMovimiento[]> {
@@ -57,8 +47,9 @@ export class MovimientoService {
     filtros?: MovimientoCajaFiltros
   ): Promise<MovimientoCaja[]> {
     try {
-      if (filtros) {
-        this.validateFechas(filtros.fechaDesde, filtros.fechaHasta);
+      this.validateUUID(predioId, 'predioId');
+      if (filtros?.categoriaId) {
+        this.validateUUID(filtros.categoriaId, 'categoriaId', true);
       }
 
       const conditions = [eq(movimientosCaja.predioId, predioId)];
@@ -93,26 +84,22 @@ export class MovimientoService {
 
   async createMovimiento(data: MovimientoCajaCreationData): Promise<MovimientoCaja> {
     try {
-      const monto = typeof data.monto === 'string' ? Number(data.monto) : data.monto;
-      this.validateMonto(monto);
-      if (!this.validateTipoMovimiento(data.tipo)) {
-        throw new ValidationError('Tipo de movimiento inválido');
-      }
-      if (!this.validateMetodoPago(data.metodoPago)) {
-        throw new ValidationError('Método de pago inválido');
-      }
+      this.validateUUID(data.predioId, 'predioId');
+      this.validateUUID(data.categoriaId, 'categoriaId', true);
 
       const [result] = await db.insert(movimientosCaja)
         .values({
           ...data,
-          monto: String(monto),
-          fechaMovimiento: data.fechaMovimiento || new Date()
+          monto: String(data.monto),
+          fechaMovimiento: data.fechaMovimiento ? new Date(data.fechaMovimiento) : new Date(),
+          categoriaId: data.categoriaId || null
         })
         .returning();
 
       return this.mapMovimientoFromDB(result);
     } catch (error) {
       if (error instanceof ValidationError) throw error;
+      console.log(error);
       throw new DatabaseError('Error al crear el movimiento');
     }
   }
@@ -122,20 +109,15 @@ export class MovimientoService {
     data: MovimientoCajaUpdateData
   ): Promise<MovimientoCaja> {
     try {
-      if (data.monto) {
-        this.validateMonto(data.monto);
-      }
-      if (data.tipo && !this.validateTipoMovimiento(data.tipo)) {
-        throw new ValidationError('Tipo de movimiento inválido');
-      }
-      if (data.metodoPago && !this.validateMetodoPago(data.metodoPago)) {
-        throw new ValidationError('Método de pago inválido');
-      }
+      this.validateUUID(id, 'id');
+      if (data.predioId) this.validateUUID(data.predioId, 'predioId');
+      if (data.categoriaId) this.validateUUID(data.categoriaId, 'categoriaId', true);
 
       const [result] = await db.update(movimientosCaja)
         .set({
           ...data,
-          monto: data.monto ? String(data.monto) : undefined
+          monto: data.monto ? String(data.monto) : undefined,
+          categoriaId: data.categoriaId || null
         })
         .where(eq(movimientosCaja.id, id))
         .returning();
@@ -153,6 +135,8 @@ export class MovimientoService {
 
   async deleteMovimiento(id: string): Promise<void> {
     try {
+      this.validateUUID(id, 'id');
+      
       const result = await db.delete(movimientosCaja)
         .where(eq(movimientosCaja.id, id))
         .returning();
@@ -172,7 +156,7 @@ export class MovimientoService {
     fechaHasta?: Date
   ): Promise<ResumenMovimientos> {
     try {
-      this.validateFechas(fechaDesde, fechaHasta);
+      this.validateUUID(predioId, 'predioId');
 
       const movimientos = await db.select({
         id: movimientosCaja.id,
@@ -242,14 +226,14 @@ export class MovimientoService {
   }
 
   private mapMovimientoFromDB(mov: any): MovimientoCaja {
-    if (!mov.id || !mov.predioId || !mov.categoriaId) {
+    if (!mov.id || !mov.predioId) {
       throw new ValidationError('Datos del movimiento inválidos');
     }
 
     return {
       id: mov.id,
       predioId: mov.predioId,
-      categoriaId: mov.categoriaId,
+      categoriaId: mov.categoriaId || null,
       concepto: mov.concepto,
       descripcion: mov.descripcion || undefined,
       monto: Number(mov.monto),
