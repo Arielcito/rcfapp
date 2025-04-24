@@ -72,26 +72,15 @@ const FinanceManagementScreen = () => {
       }
 
       const numericAmount = parseFloat(amount);
-      console.log('Amount input:', amount);
-      console.log('Parsed amount:', numericAmount);
-      console.log('Is NaN:', isNaN(numericAmount));
-      console.log('Is positive:', numericAmount > 0);
-
       if (description.trim() && !isNaN(numericAmount) && numericAmount > 0) {
-        console.log('Creating movimiento with data:', {
-          type: isExpense ? 'expense' : 'income',
-          description: description.trim(),
-          amount: numericAmount,
-          predioId: currentPlace.id,
-          categoriaId: selectedCategory
-        });
-
         const newEntry = await FinanceService.createMovimiento(currentPlace.id, {
-          type: isExpense ? 'expense' : 'income',
-          description: description.trim(),
-          amount: numericAmount,
+          tipo: isExpense ? 'EGRESO' : 'INGRESO',
+          concepto: description.trim(),
+          monto: numericAmount,
           predioId: currentPlace.id,
-          categoriaId: selectedCategory
+          categoriaId: selectedCategory,
+          metodoPago: 'EFECTIVO',
+          fechaMovimiento: new Date().toISOString()
         });
         
         setFinanceData([newEntry, ...financeData]);
@@ -100,14 +89,9 @@ const FinanceManagementScreen = () => {
         setAmount('');
         setSelectedCategory('');
       } else {
-        console.log('Validation failed:', {
-          hasDescription: !!description.trim(),
-          isAmountValid: !isNaN(numericAmount) && numericAmount > 0
-        });
         setError('Por favor, ingresa una descripción y un monto válido.');
       }
     } catch (err) {
-      console.error('Error in handleSaveEntry:', err);
       setError(err instanceof Error ? err.message : 'Error al guardar el movimiento');
     }
   };
@@ -123,12 +107,12 @@ const FinanceManagementScreen = () => {
 
   // Calculate totals
   const totalIncome = financeData
-    .filter(entry => entry.type === 'income')
-    .reduce((sum, entry) => sum + entry.amount, 0);
+    .filter(entry => entry.tipo === 'INGRESO')
+    .reduce((sum, entry) => sum + (entry.monto || 0), 0);
 
   const totalExpenses = financeData
-    .filter(entry => entry.type === 'expense')
-    .reduce((sum, entry) => sum + entry.amount, 0);
+    .filter(entry => entry.tipo === 'EGRESO')
+    .reduce((sum, entry) => sum + (entry.monto || 0), 0);
 
   const balance = totalIncome - totalExpenses;
 
@@ -176,16 +160,20 @@ const FinanceManagementScreen = () => {
         <View style={styles.summaryContainer}>
           <View style={styles.summaryBox}>
             <Text style={styles.summaryLabel}>Ingresos</Text>
-            <Text style={[styles.summaryAmount, styles.income]}>${totalIncome.toFixed(2)}</Text>
+            <Text style={[styles.summaryAmount, styles.income]}>
+              ${(totalIncome || 0).toFixed(2)}
+            </Text>
           </View>
           <View style={styles.summaryBox}>
             <Text style={styles.summaryLabel}>Egresos</Text>
-            <Text style={[styles.summaryAmount, styles.expense]}>${totalExpenses.toFixed(2)}</Text>
+            <Text style={[styles.summaryAmount, styles.expense]}>
+              ${(totalExpenses || 0).toFixed(2)}
+            </Text>
           </View>
            <View style={styles.summaryBox}>
             <Text style={styles.summaryLabel}>Balance</Text>
             <Text style={[styles.summaryAmount, balance >= 0 ? styles.income : styles.expense]}>
-              ${balance.toFixed(2)}
+              ${(balance || 0).toFixed(2)}
             </Text>
           </View>
         </View>
@@ -197,12 +185,12 @@ const FinanceManagementScreen = () => {
             financeData.map((item) => (
               <View key={item.id} style={styles.listItem}>
                 <View style={styles.itemInfo}>
-                  <Text style={styles.itemDescription}>{item.description}</Text>
-                  <Text style={styles.itemDate}>{formatDate(item.date)}</Text>
+                  <Text style={styles.itemDescription}>{item.concepto}</Text>
+                  <Text style={styles.itemDate}>{formatDate(item.fechaMovimiento)}</Text>
                 </View>
                 <View style={styles.itemActions}>
-                  <Text style={[styles.itemAmount, item.type === 'income' ? styles.income : styles.expense]}>
-                    {item.type === 'income' ? '+' : '-'}${item.amount.toFixed(2)}
+                  <Text style={[styles.itemAmount, item.tipo === 'INGRESO' ? styles.income : styles.expense]}>
+                    {item.tipo === 'INGRESO' ? '+' : '-'}${(item.monto || 0).toFixed(2)}
                   </Text>
                   <TouchableOpacity 
                     onPress={() => handleDeleteEntry(item.id)}
