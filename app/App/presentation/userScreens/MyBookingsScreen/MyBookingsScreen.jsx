@@ -22,7 +22,7 @@ import moment from "moment";
 import Colors from "../../../infraestructure/utils/Colors";
 
 // Components
-import AppointmentItem from '../../ownerScreens/OwnerAppointment/AppointmentItem';
+import AppointmentItem from './AppointmentItem';
 
 // Hooks
 import { useCurrentUser } from "../../../application/context/CurrentUserContext";

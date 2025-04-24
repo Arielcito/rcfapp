@@ -1,4 +1,3 @@
-
 import { format, isAfter, isBefore, startOfDay, endOfDay, parseISO } from 'date-fns';
 import { getAllAppointments } from './appointments.api';
 import { api } from './api';
@@ -192,39 +191,53 @@ export const reservaApi = {
 
   obtenerReservasUsuario: async () => {
     try {
-      console.log('Obteniendo reservas del usuario');
+      console.log('🔍 [reserva.api] Iniciando obtenerReservasUsuario');
       const response = await api.get('/reservas/user/bookings');
-      console.log('Respuesta del servidor:', response.data);
+      console.log('📦 [reserva.api] Respuesta del servidor:', JSON.stringify(response.data, null, 2));
 
-      return response.data.map((reserva: Appointment) => ({
-        appointmentId: reserva.appointmentId,
-        appointmentDate: reserva.appointmentDate,
-        appointmentTime: reserva.appointmentTime,
-        estado: reserva.estado.toLowerCase(),
-        duracion: reserva.duracion || 60,
-        precioTotal: reserva.precioTotal || '0',
-        imageUrl: reserva.place?.imageUrl || 'https://example.com/placeholder.jpg',
-        place: {
-          ...reserva.place,
-          imageUrl: reserva.place?.imageUrl || 'https://example.com/placeholder.jpg'
-        },
-        cancha: {
-          id: reserva.place?.id || '',
-          nombre: reserva.place?.name || 'Sin nombre',
-          tipo: reserva.place?.description?.split('-')?.[0]?.trim() || 'Fútbol',
-          tipoSuperficie: reserva.place?.description?.split('-')?.[1]?.trim() || 'No especificado',
-          imageUrl: reserva.place?.imageUrl || 'https://example.com/placeholder.jpg'
-        },
-        predio: {
-          id: reserva.place?.id || '',
-          nombre: reserva.place?.name || 'Sin nombre',
-          direccion: reserva.place?.address || 'Sin dirección',
-          telefono: reserva.place?.telefono || 'Sin teléfono'
-        },
-        metodoPago: reserva.metodoPago
-      }));
+      return response.data.map((reserva: Appointment) => {
+        console.log('🔄 [reserva.api] Procesando reserva:', JSON.stringify(reserva, null, 2));
+        console.log('📝 [reserva.api] Description value:', reserva.place?.description);
+        
+        const description = reserva.place?.description || '';
+        console.log('🔍 [reserva.api] Description after fallback:', description);
+        
+        const [tipo = 'Fútbol', tipoSuperficie = 'No especificado'] = description ? description.split('-').map(s => s.trim()) : ['Fútbol', 'No especificado'];
+        console.log('🏷️ [reserva.api] Tipo y Superficie:', { tipo, tipoSuperficie });
+
+        const processedReserva = {
+          appointmentId: reserva.appointmentId,
+          appointmentDate: reserva.appointmentDate,
+          appointmentTime: reserva.appointmentTime,
+          estado: reserva.estado.toLowerCase(),
+          duracion: reserva.duracion || 60,
+          precioTotal: reserva.precioTotal || '0',
+          imageUrl: reserva.place?.imageUrl || 'https://example.com/placeholder.jpg',
+          place: {
+            ...reserva.place,
+            imageUrl: reserva.place?.imageUrl || 'https://example.com/placeholder.jpg'
+          },
+          cancha: {
+            id: reserva.place?.id || '',
+            nombre: reserva.place?.name || 'Sin nombre',
+            tipo,
+            tipoSuperficie,
+            imageUrl: reserva.place?.imageUrl || 'https://example.com/placeholder.jpg'
+          },
+          predio: {
+            id: reserva.place?.id || '',
+            nombre: reserva.place?.name || 'Sin nombre',
+            direccion: reserva.place?.address || 'Sin dirección',
+            telefono: reserva.place?.telefono || 'Sin teléfono'
+          },
+          metodoPago: reserva.metodoPago
+        };
+
+        console.log('✅ [reserva.api] Reserva procesada:', JSON.stringify(processedReserva, null, 2));
+        return processedReserva;
+      });
     } catch (error) {
-      console.error('Error al obtener reservas del usuario:', error);
+      console.error('❌ [reserva.api] Error al obtener reservas del usuario:', error);
       throw error;
     }
   },
@@ -233,7 +246,6 @@ export const reservaApi = {
     try {
       console.log('Obteniendo todas las reservas para filtrar por usuario');
       const allAppointments = await getAllAppointments();
-      console.log('Appointments:', allAppointments);
       // Cast the result to our interface
       const typedAppointments = allAppointments as Appointment[];
       
@@ -241,7 +253,6 @@ export const reservaApi = {
         ? typedAppointments.filter(app => app.userId === userId)
         : typedAppointments;
       
-      console.log(`Reservas filtradas para usuario con ID ${userId}: ${filteredAppointments.length}`);
       
       return filteredAppointments;
     } catch (error) {

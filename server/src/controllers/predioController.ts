@@ -108,7 +108,7 @@ export const getPredioByOwnerId = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    
+
     if (!id) {
       res.status(400).json({ message: 'ID de dueño no proporcionado' });
       return;

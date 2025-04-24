@@ -91,7 +91,6 @@ export class MovimientoService {
         .values({
           ...data,
           monto: String(data.monto),
-          fechaMovimiento: data.fechaMovimiento ? new Date(data.fechaMovimiento) : new Date(),
           categoriaId: data.categoriaId || null
         })
         .returning();

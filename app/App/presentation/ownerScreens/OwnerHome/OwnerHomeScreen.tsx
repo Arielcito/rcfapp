@@ -73,7 +73,6 @@ const OwnerHomeContent = () => {
     }
     
     try {
-      logger.debug(COMPONENT_NAME, 'Generando datos para gráfico', { reservas });
       const hoy = new Date();
       const daysToShow = dateFilter === 'week' ? 7 : dateFilter === 'month' ? 30 : 90;
       const labels = Array.from({ length: daysToShow }, (_, i) => {
@@ -117,7 +116,6 @@ const OwnerHomeContent = () => {
         x: label,
         y: datos[index]
       }));
-      logger.info(COMPONENT_NAME, 'Datos del gráfico generados', { result });
       return result;
     } catch (error) {
       logError(error, 'generarDatosGrafico');

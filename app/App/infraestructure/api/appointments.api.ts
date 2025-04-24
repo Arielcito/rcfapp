@@ -24,25 +24,6 @@ interface ApiAppointment {
   };
 }
 
-// Datos de ejemplo para desarrollo cuando la API no responde o hay problemas de autenticación
-const MOCK_APPOINTMENTS: Appointment[] = [
-  {
-    appointmentId: 1,
-    appointmentDate: '2023-07-15',
-    appointmentTime: '18:00',
-    estado: 'CONFIRMADO',
-    email: 'usuario@example.com',
-    pitch: 1
-  },
-  {
-    appointmentId: 2,
-    appointmentDate: '2023-07-20',
-    appointmentTime: '19:00',
-    estado: 'PENDIENTE',
-    email: 'usuario@example.com',
-    pitch: 2
-  }
-];
 
 export const createAppointment = async (appointmentData: {
   canchaId: string;
@@ -157,11 +138,6 @@ export const getAppointmentsByUser = async (): Promise<Appointment[]> => {
       data: (error instanceof AxiosError) ? error.response?.data : undefined
     });
     
-    // Si hay un error de autenticación (401), devolver datos de ejemplo
-    if (error instanceof AxiosError && error.response?.status === 401) {
-      console.log('Error de autenticación, devolviendo datos de ejemplo');
-      return MOCK_APPOINTMENTS;
-    }
     
     throw error;
   }
@@ -173,11 +149,7 @@ export const getAllAppointments = async (): Promise<Appointment[]> => {
     console.log('Obteniendo todas las reservas');
     
     const { data } = await api.get('/reservas');
-    console.log('data', data);
-    console.log('Respuesta de todas las reservas:', {
-      totalReservas: data.data.length,
-      primeraReserva: data.data[0] || null
-    });
+
 
     return data.data;
   } catch (error: unknown) {
@@ -188,12 +160,7 @@ export const getAllAppointments = async (): Promise<Appointment[]> => {
       headers: (error instanceof AxiosError) ? error.response?.headers : undefined,
       data: (error instanceof AxiosError) ? error.response?.data : undefined
     });
-    
-    // Si hay un error de autenticación (401), devolver datos de ejemplo
-    if (error instanceof AxiosError && error.response?.status === 401) {
-      console.log('Error de autenticación, devolviendo datos de ejemplo');
-      return MOCK_APPOINTMENTS;
-    }
+  
     
     throw error;
   }

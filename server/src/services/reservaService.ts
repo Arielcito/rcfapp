@@ -1,7 +1,11 @@
 import { db } from '../db';
-import { reservas as Reserva, pagos as Pago, canchas, predios } from '../db/schema';
+import { reservas as Reserva, pagos as Pago, canchas, predios, categoriaMovimiento } from '../db/schema';
 import { eq, sql, and, lt, gt } from 'drizzle-orm';
 import type { CreateReservaDTO, UpdateReservaDTO } from '../types/reserva';
+import { MovimientoService } from './movimientoService';
+import { TipoMovimiento, MetodoPago } from '../types/movimiento';
+
+const movimientoService = new MovimientoService();
 
 export class ReservaService {
   async getReservas() {
@@ -60,6 +64,29 @@ export class ReservaService {
       const [predio] = await db.select()
         .from(predios)
         .where(eq(predios.id, cancha.predioId));
+
+      // Crear movimiento de caja
+      if (data.precioTotal) {
+        // Obtener la categoría de Reservas
+        const [categoriaReservas] = await db.select()
+          .from(categoriaMovimiento)
+          .where(eq(categoriaMovimiento.nombre, 'Reservas'));
+
+        if (!categoriaReservas) {
+          throw new Error('No se encontró la categoría de Reservas');
+        }
+
+        await movimientoService.createMovimiento({
+          predioId: predio.id,
+          categoriaId: categoriaReservas.id,
+          concepto: `Reserva de cancha ${cancha.nombre}`,
+          descripcion: `Reserva para el ${fechaHora.toLocaleDateString()} a las ${fechaHora.toLocaleTimeString()}`,
+          monto: Number(data.precioTotal),
+          tipo: 'INGRESO' as TipoMovimiento,
+          metodoPago: (data.metodoPago || 'EFECTIVO') as MetodoPago,
+          fechaMovimiento: fechaHora
+        });
+      }
 
       // Combinar todos los datos
       const reservaCompleta = {

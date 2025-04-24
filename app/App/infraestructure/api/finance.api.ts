@@ -30,7 +30,7 @@ export const FinanceService = {
     return response.data;
   },
 
-  async createMovimiento(predioId: string, movimiento: Omit<FinanceEntry, 'id' | 'date'>): Promise<FinanceEntry> {
+  async createMovimiento(predioId: string, movimiento: Omit<FinanceEntry, 'id' | 'fechaMovimiento'>): Promise<FinanceEntry> {
     const response = await api.post(`/movimientos/predio/${predioId}`, movimiento);
     return response.data;
   },
