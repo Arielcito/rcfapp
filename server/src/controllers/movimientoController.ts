@@ -138,8 +138,7 @@ export const createMovimiento = async (req: Request, res: Response) => {
     const { predioId } = req.params;
     const movimientoData = {
       ...req.body,
-      predioId,
-      fechaMovimiento: req.body.fechaMovimiento ? new Date(req.body.fechaMovimiento) : new Date()
+      predioId
     };
 
     const movimiento = await movimientoService.createMovimiento(movimientoData);

@@ -21,6 +21,7 @@ export const CurrentPlaceProvider = ({ children }) => {
     try {
       setIsLoading(true);
       const placeData = await fetchOwnerPlace(currentUser.id);
+      console.log('placeData', placeData);
       setCurrentPlace(placeData);
     } catch (error) {
       console.log('Error al cargar predio:', error);

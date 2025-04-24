@@ -14,6 +14,7 @@ export const getPredios = async (): Promise<Place[]> => {
 export const fetchOwnerPlace = async (userId: string) => {
   try {
     const response = await api.get(`/users/${userId}`);
+    console.log('response', response.data);
     if (response.data && response.data.role === 'OWNER') {
       const predioResponse = await api.get(`/predios/owner/${userId}`);
       return predioResponse.data;

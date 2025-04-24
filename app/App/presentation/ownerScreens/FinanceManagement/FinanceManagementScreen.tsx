@@ -17,7 +17,6 @@ const formatDate = (dateStr: string): string => {
 };
 
 const FinanceManagementScreen = () => {
-  const { currentUser } = useCurrentUser();
   const { currentPlace, isLoading: isLoadingPlace } = useCurrentPlace();
   console.log('Current Place:', currentPlace); // Log current place data
   const [financeData, setFinanceData] = useState<FinanceEntry[]>([]);
@@ -79,8 +78,7 @@ const FinanceManagementScreen = () => {
           monto: numericAmount,
           predioId: currentPlace.id,
           categoriaId: selectedCategory,
-          metodoPago: 'EFECTIVO',
-          fechaMovimiento: new Date().toISOString()
+          metodoPago: 'EFECTIVO'
         });
         
         setFinanceData([newEntry, ...financeData]);
