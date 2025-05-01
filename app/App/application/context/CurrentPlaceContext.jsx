@@ -22,13 +22,11 @@ export const CurrentPlaceProvider = ({ children }) => {
     try {
       setIsLoading(true);
       setError(null);
-      console.log('currentUser', currentUser);
       
       let placeData;
       try {
         // Primero intentamos con el ID del usuario
         placeData = await fetchOwnerPlace(currentUser.id);
-        console.log('placeData', placeData);
       } catch (error) {
         if (error.response?.status === 404 && currentUser.predioTrabajo) {
           // Si falla con 404 y tenemos predioTrabajo, intentamos con ese
@@ -38,7 +36,6 @@ export const CurrentPlaceProvider = ({ children }) => {
         }
       }
       
-      console.log('placeData', placeData);
       setCurrentPlace(placeData);
     } catch (error) {
       console.error('Error al cargar predio:', error);

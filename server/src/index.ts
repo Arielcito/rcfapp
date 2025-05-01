@@ -20,7 +20,6 @@ const BASE_PATH = process.env.BASE_PATH || '/api';
 
 // Request logger middleware
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
 
@@ -44,39 +43,33 @@ app.use(cookieParser());
 app.use(express.json());
 
 // Routes with detailed logging
-console.log('Registering routes with base path:', BASE_PATH);
 app.use(`${BASE_PATH}/users`, userRoutes);
-console.log('✓ User routes registered at', `${BASE_PATH}/users`);
 
 app.use(`${BASE_PATH}/predios`, predioRoutes);
-console.log('✓ Predio routes registered at', `${BASE_PATH}/predios`);
 
 app.use(`${BASE_PATH}/canchas`, canchaRoutes);
-console.log('✓ Cancha routes registered at', `${BASE_PATH}/canchas`);
 
 app.use(`${BASE_PATH}/reservas`, reservaRoutes);
-console.log('✓ Reserva routes registered at', `${BASE_PATH}/reservas`);
 
 app.use(`${BASE_PATH}/pagos`, pagoRoutes);
-console.log('✓ Pago routes registered at', `${BASE_PATH}/pagos`);
 
 // Register routes that don't depend on predio context
 app.use(`${BASE_PATH}/movimientos`, movimientosRoutes);
-console.log('✓ Global movimientos routes registered at', `${BASE_PATH}/movimientos`);
-
-// Fix: Change this to match controller paths - controller expects /predios/{id}/movimientos
-// Movimientos are now accessed through /predios/:predioId/movimientos
-app.use(`${BASE_PATH}/predios/:predioId/movimientos`, movimientosRoutes);
-console.log('✓ Predio-specific movimientos routes registered at', `${BASE_PATH}/predios/:predioId/movimientos`);
 
 app.use(`${BASE_PATH}/mercadopago`, mercadoPagoRoutes);
-console.log('✓ MercadoPago routes registered at', `${BASE_PATH}/mercadopago`);
 
 app.use(`${BASE_PATH}/logs`, logRoutes);
-console.log('✓ Logs routes registered at', `${BASE_PATH}/logs`);
+
+// Health check endpoint
+app.get(`${BASE_PATH}/health`, (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
 
 // Log registered routes
-console.log('Registered routes:');
 app._router.stack.forEach((middleware: any) => {
   if (middleware.route) {
     // Routes directly registered on the app

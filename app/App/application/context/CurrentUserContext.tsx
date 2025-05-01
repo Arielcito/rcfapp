@@ -35,9 +35,6 @@ export const CurrentUserProvider = ({ children }: { children: React.ReactNode })
       const token = await TokenService.getToken();
       const userData = await AsyncStorage.getItem('userData');
       
-      console.log('userData', userData);
-      console.log('token', token ? `${token.substring(0, 10)}...` : 'No hay token');
-      
       if (userData && token) {
         const user = JSON.parse(userData);
         setCurrentUser(user);
@@ -52,22 +49,13 @@ export const CurrentUserProvider = ({ children }: { children: React.ReactNode })
 
   const login = async (email: string, password: string): Promise<User> => {
     try {
-      console.log('Iniciando login para:', email);
       const response = await api.post('/users/login', { email, password });
-      console.log('Respuesta de login:', {
-        success: !!response.data,
-        hasUser: !!response.data.user,
-        hasToken: !!response.data.token,
-        headers: response.headers
-      });
       
       const { user, token } = response.data;
 
       if (!user || !token) {
         throw new Error('Respuesta inválida del servidor');
       }
-
-      console.log('Guardando datos de sesión...');
       
       const tokenSaved = await TokenService.setToken(token);
       if (!tokenSaved) {
@@ -83,10 +71,7 @@ export const CurrentUserProvider = ({ children }: { children: React.ReactNode })
         await AsyncStorage.setItem('userData', JSON.stringify(user));
       }
 
-      console.log('Configurando headers de API...');
       api.defaults.headers.common.Authorization = `Bearer ${token}`;
-
-      console.log('Actualizando estado de usuario...');
       setCurrentUser(user);
       return user;
     } catch (error: any) {

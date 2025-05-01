@@ -5,6 +5,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import * as Location from "expo-location";
 import Toast from "react-native-toast-message";
 import * as SplashScreen from 'expo-splash-screen';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import TabNavigation from "./App/presentation/navigations/TabUserNavigation";
 import TabNavigationOwner from "./App/presentation/navigations/TabOwnerNavigation";
@@ -16,6 +17,9 @@ import { CurrentPlaceContext } from "./App/application/context/CurrentPlaceConte
 
 import Colors from "./App/infraestructure/utils/Colors";
 import { fetchOwnerPlace } from "./App/infraestructure/api/places.api";
+
+// Create a client
+const queryClient = new QueryClient();
 
 // Prevenir que la pantalla de splash se oculte automáticamente
 SplashScreen.preventAutoHideAsync();
@@ -126,9 +130,11 @@ function AppContent() {
 
 export default function App() {
   return (
-    <CurrentUserProvider>
-      <AppContent />
-    </CurrentUserProvider>
+    <QueryClientProvider client={queryClient}>
+      <CurrentUserProvider>
+        <AppContent />
+      </CurrentUserProvider>
+    </QueryClientProvider>
   );
 }
 

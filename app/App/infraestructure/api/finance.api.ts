@@ -42,19 +42,21 @@ const handleApiError = (error: AxiosError<ErrorResponse>): ApiError => {
     status: error.response?.status,
     data: error.response?.data,
     message: error.message,
+    url: error.config?.url,
+    method: error.config?.method,
     timestamp: new Date().toISOString()
   });
 
   if (error.response?.data) {
     return {
-      message: error.response.data.message || 'Error desconocido',
+      message: error.response.data.message || `Error: ${error.message}`,
       code: error.response.data.code,
       details: error.response.data.details
     };
   }
 
   return {
-    message: error.message || 'Error de conexión',
+    message: `Error de conexión: ${error.message}`,
     code: 'NETWORK_ERROR'
   };
 };
@@ -63,7 +65,9 @@ export const FinanceService = {
   async getMovimientos(predioId: string): Promise<FinanceEntry[]> {
     try {
       console.log(`[FinanceService] Fetching movements for predio: ${predioId}`);
-      const response = await api.get(`/movimientos/predio/${predioId}`);
+      const fullUrl = `${api.defaults.baseURL}/movimientos/${predioId}`;
+      console.log(`[FinanceService] Full request URL: ${fullUrl}`);
+      const response = await api.get(`/movimientos/${predioId}`);
       console.log(`[FinanceService] Successfully fetched movements for predio: ${predioId}`);
       return response.data;
     } catch (error) {
@@ -76,7 +80,7 @@ export const FinanceService = {
   async createMovimiento(predioId: string, movimiento: Omit<FinanceEntry, 'id' | 'fechaMovimiento'>): Promise<FinanceEntry> {
     try {
       console.log(`[FinanceService] Creating movement for predio: ${predioId}`, movimiento);
-      const response = await api.post(`/movimientos/predio/${predioId}`, movimiento);
+      const response = await api.post(`/predios/${predioId}/movimientos`, movimiento);
       console.log(`[FinanceService] Successfully created movement for predio: ${predioId}`);
       return response.data;
     } catch (error) {
@@ -114,7 +118,7 @@ export const FinanceService = {
   async getResumenMovimientos(predioId: string): Promise<FinanceSummary> {
     try {
       console.log(`[FinanceService] Fetching summary for predio: ${predioId}`);
-      const response = await api.get(`/movimientos/predio/${predioId}/resumen`);
+      const response = await api.get(`/predios/${predioId}/movimientos/resumen`);
       console.log(`[FinanceService] Successfully fetched summary for predio: ${predioId}`);
       return response.data;
     } catch (error) {
