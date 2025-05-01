@@ -26,11 +26,9 @@ const EditProfileScreen = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    console.log('EditProfileScreen - Cargando datos del usuario:', currentUser?.id);
     const fetchData = async () => {
       try {
         const userData = await getProfileInfo(currentUser.id);
-        console.log('EditProfileScreen - Datos obtenidos:', userData);
         setName(userData.nombre || "");
         setLastName(userData.apellido || "");
         setPhone(userData.telefono ? userData.telefono.toString() : "");
@@ -47,7 +45,6 @@ const EditProfileScreen = () => {
   const handleSave = async () => {
     try {
       setLoading(true);
-      console.log('EditProfileScreen - Guardando cambios para usuario:', currentUser?.id);
       
       const userData = {
         nombre: name,
@@ -59,7 +56,6 @@ const EditProfileScreen = () => {
       const response = await api.put(`/users/${currentUser.id}`, userData);
 
       if (response.status === 200) {
-        console.log('EditProfileScreen - Datos actualizados:', response.data);
         await setCurrentUser({
           ...currentUser,
           ...response.data

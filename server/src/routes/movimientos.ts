@@ -11,9 +11,6 @@ import { authenticateToken } from '../middleware/auth';
 
 const router = express.Router({ mergeParams: true }); // Important: mergeParams allows access to predioId
 
-// Log routes being set up
-console.log('Setting up movimientos routes');
-
 /**
  * @swagger
  * /api/movimientos/categorias:
@@ -27,14 +24,10 @@ console.log('Setting up movimientos routes');
  *         description: Error interno del servidor
  */
 router.get('/categorias', movimientoController.getCategorias);
-console.log('✓ GET /categorias route set up');
-
-// Rutas protegidas
-router.use(authenticateToken);
 
 /**
  * @swagger
- * /api/predios/{predioId}/movimientos:
+ * /api/movimientos/{predioId}:
  *   get:
  *     summary: Obtiene movimientos de caja con filtros opcionales
  *     tags: [Movimientos]
@@ -75,8 +68,7 @@ router.use(authenticateToken);
  *       500:
  *         description: Error interno del servidor
  */
-router.get('/', movimientoController.getMovimientos);
-console.log('✓ GET / route set up');
+router.get('/:predioId', movimientoController.getMovimientos);
 
 /**
  * @swagger
@@ -105,7 +97,6 @@ console.log('✓ GET / route set up');
  *         description: Error interno del servidor
  */
 router.post('/', movimientoController.createMovimiento);
-console.log('✓ POST / route set up');
 
 /**
  * @swagger
@@ -136,7 +127,6 @@ console.log('✓ POST / route set up');
  *         description: Error interno del servidor
  */
 router.put('/:id', movimientoController.updateMovimiento);
-console.log('✓ PUT /:id route set up');
 
 /**
  * @swagger
@@ -159,7 +149,6 @@ console.log('✓ PUT /:id route set up');
  *         description: Error interno del servidor
  */
 router.delete('/:id', movimientoController.deleteMovimiento);
-console.log('✓ DELETE /:id route set up');
 
 /**
  * @swagger
@@ -192,6 +181,5 @@ console.log('✓ DELETE /:id route set up');
  *         description: Error interno del servidor
  */
 router.get('/resumen', movimientoController.getResumenMovimientos);
-console.log('✓ GET /resumen route set up');
 
 export default router; 

@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, Platform, TouchableOpacity, Modal, TextInput, Button, Switch, ActivityIndicator } from 'react-native';
 import Colors from '../../../infraestructure/utils/Colors';
 import { Ionicons } from '@expo/vector-icons';
-import { FinanceService, FinanceEntry, FinanceCategory } from '../../../infraestructure/api/finance.api';
+import { FinanceService, FinanceEntry } from '../../../infraestructure/api/finance.api';
 import { useCurrentUser } from '../../../application/context/CurrentUserContext';
 import { useCurrentPlace } from '../../../application/context/CurrentPlaceContext';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // Helper function to format date
 const formatDate = (dateStr: string): string => {
@@ -18,83 +19,70 @@ const formatDate = (dateStr: string): string => {
 
 const FinanceManagementScreen = () => {
   const { currentPlace, isLoading: isLoadingPlace } = useCurrentPlace();
-  console.log('Current Place:', currentPlace); // Log current place data
-  const [financeData, setFinanceData] = useState<FinanceEntry[]>([]);
-  const [categories, setCategories] = useState<FinanceCategory[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [isExpense, setIsExpense] = useState(false);
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    console.log('useEffect triggered, loading data...');
-    loadData();
-  }, [currentPlace]);
-
-  const loadData = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
+  const { data: financeData = [], isLoading, error } = useQuery({
+    queryKey: ['movimientos', currentPlace?.id],
+    queryFn: () => {
       if (!currentPlace?.id) {
-        console.error('No predioId found in currentPlace');
         throw new Error('No se encontró el predio');
       }
-      
-      const [movimientos, categorias] = await Promise.all([
-        FinanceService.getMovimientos(currentPlace.id),
-        FinanceService.getCategorias()
-      ]);
-      
-      setFinanceData(movimientos);
-      setCategories(categorias);
-    } catch (err) {
-      console.error('Error in loadData:', err);
-      setError(err instanceof Error ? err.message : 'Error al cargar los datos');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      return FinanceService.getMovimientos(currentPlace.id);
+    },
+    enabled: !!currentPlace?.id,
+  });
+
+  const createMovimientoMutation = useMutation({
+    mutationFn: (movimiento: Omit<FinanceEntry, 'id' | 'fechaMovimiento'>) => {
+      if (!currentPlace?.id) {
+        throw new Error('No se encontró el predio');
+      }
+      return FinanceService.createMovimiento(currentPlace.id, movimiento);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['movimientos'] });
+      setModalVisible(false);
+      setDescription('');
+      setAmount('');
+    },
+  });
+
+  const deleteMovimientoMutation = useMutation({
+    mutationFn: (id: string) => FinanceService.deleteMovimiento(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['movimientos'] });
+    },
+  });
 
   const handleSaveEntry = async () => {
     try {
-      if (!currentPlace?.id) {
-        throw new Error('No se encontró el predio');
-      }
-
       const numericAmount = parseFloat(amount);
       if (description.trim() && !isNaN(numericAmount) && numericAmount > 0) {
-        const newEntry = await FinanceService.createMovimiento(currentPlace.id, {
+        await createMovimientoMutation.mutateAsync({
           tipo: isExpense ? 'EGRESO' : 'INGRESO',
           concepto: description.trim(),
           monto: numericAmount,
-          predioId: currentPlace.id,
-          categoriaId: selectedCategory,
+          predioId: currentPlace?.id || '',
+          categoriaId: '',
           metodoPago: 'EFECTIVO'
         });
-        
-        setFinanceData([newEntry, ...financeData]);
-        setModalVisible(false);
-        setDescription('');
-        setAmount('');
-        setSelectedCategory('');
       } else {
-        setError('Por favor, ingresa una descripción y un monto válido.');
+        throw new Error('Por favor, ingresa una descripción y un monto válido.');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al guardar el movimiento');
+      console.error('Error saving entry:', err);
     }
   };
 
   const handleDeleteEntry = async (id: string) => {
     try {
-      await FinanceService.deleteMovimiento(id);
-      setFinanceData(financeData.filter(entry => entry.id !== id));
+      await deleteMovimientoMutation.mutateAsync(id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al eliminar el movimiento');
+      console.error('Error deleting entry:', err);
     }
   };
 
@@ -113,31 +101,13 @@ const FinanceManagementScreen = () => {
     setIsExpense(false); // Default to income
     setDescription('');
     setAmount('');
-    setSelectedCategory('');
     setModalVisible(true);
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingPlace) {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <ActivityIndicator size="large" color={Colors.PRIMARY} />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.errorContainer}>
-        <Ionicons name="alert-circle-outline" size={60} color={Colors.RED} />
-        <Text style={styles.errorTitle}>¡Ups! Algo salió mal</Text>
-        <Text style={styles.errorMessage}>{error}</Text>
-        <TouchableOpacity 
-          style={styles.retryButton}
-          onPress={loadData}
-        >
-          <Ionicons name="refresh" size={20} color={Colors.WHITE} />
-          <Text style={styles.retryButtonText}>Reintentar</Text>
-        </TouchableOpacity>
       </View>
     );
   }
@@ -152,65 +122,43 @@ const FinanceManagementScreen = () => {
            <Text style={styles.title}>Flujo de Fondos</Text>
         </View>
 
-        {/* Summary Section - Styled similar to OwnerHomeScreen cards */}
+        {/* Summary Section - Show empty state for summary when no data */}
         <View style={styles.summaryContainer}>
           <View style={styles.summaryBox}>
             <Text style={styles.summaryLabel}>Ingresos</Text>
             <Text style={[styles.summaryAmount, styles.income]}>
-              ${(totalIncome || 0).toFixed(2)}
+              $0.00
             </Text>
           </View>
           <View style={styles.summaryBox}>
             <Text style={styles.summaryLabel}>Egresos</Text>
             <Text style={[styles.summaryAmount, styles.expense]}>
-              ${(totalExpenses || 0).toFixed(2)}
+              $0.00
             </Text>
           </View>
            <View style={styles.summaryBox}>
             <Text style={styles.summaryLabel}>Balance</Text>
-            <Text style={[styles.summaryAmount, balance >= 0 ? styles.income : styles.expense]}>
-              ${(balance || 0).toFixed(2)}
+            <Text style={[styles.summaryAmount, styles.income]}>
+              $0.00
             </Text>
           </View>
         </View>
 
-        {/* List Section - Styled similar to OwnerHomeScreen/OwnerAppointments lists */}
+        {/* List Section - Always show empty state when no data */}
         <View style={styles.listContainer}>
           <Text style={styles.listTitle}>Movimientos Recientes</Text>
-          {financeData.length > 0 ? (
-            financeData.map((item) => (
-              <View key={item.id} style={styles.listItem}>
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemDescription}>{item.concepto}</Text>
-                  <Text style={styles.itemDate}>{formatDate(item.fechaMovimiento)}</Text>
-                </View>
-                <View style={styles.itemActions}>
-                  <Text style={[styles.itemAmount, item.tipo === 'INGRESO' ? styles.income : styles.expense]}>
-                    {item.tipo === 'INGRESO' ? '+' : '-'}${(item.monto || 0).toFixed(2)}
-                  </Text>
-                  <TouchableOpacity 
-                    onPress={() => handleDeleteEntry(item.id)}
-                    style={styles.deleteButton}
-                  >
-                    <Ionicons name="trash-outline" size={20} color={Colors.RED} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))
-          ) : (
-            <View style={styles.emptyStateContainer}>
-              <Ionicons name="wallet-outline" size={60} color={Colors.GRAY} />
-              <Text style={styles.emptyStateTitle}>No hay movimientos registrados</Text>
-              <Text style={styles.emptyStateSubtitle}>Comienza agregando tu primer ingreso o egreso</Text>
-              <TouchableOpacity 
-                style={styles.emptyStateButton}
-                onPress={openAddModal}
-              >
-                <Ionicons name="add" size={20} color={Colors.WHITE} />
-                <Text style={styles.emptyStateButtonText}>Agregar Movimiento</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+          <View style={styles.emptyStateContainer}>
+            <Ionicons name="wallet-outline" size={60} color={Colors.GRAY} />
+            <Text style={styles.emptyStateTitle}>No hay movimientos registrados</Text>
+            <Text style={styles.emptyStateSubtitle}>Comienza agregando tu primer ingreso o egreso</Text>
+            <TouchableOpacity 
+              style={styles.emptyStateButton}
+              onPress={openAddModal}
+            >
+              <Ionicons name="add" size={20} color={Colors.WHITE} />
+              <Text style={styles.emptyStateButtonText}>Agregar Movimiento</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
       </ScrollView>
@@ -251,30 +199,6 @@ const FinanceManagementScreen = () => {
                     />
                     <Text style={[styles.switchLabel, isExpense && styles.activeSwitchLabel]}>Egreso</Text>
                 </View>
-              </View>
-
-              {/* Category Selection */}
-              <Text style={styles.modalLabel}>Categoría:</Text>
-              <View style={styles.categoryContainer}>
-                {categories
-                  .filter(cat => cat.type === (isExpense ? 'expense' : 'income'))
-                  .map(category => (
-                    <TouchableOpacity
-                      key={category.id}
-                      style={[
-                        styles.categoryButton,
-                        selectedCategory === category.id && styles.selectedCategory
-                      ]}
-                      onPress={() => setSelectedCategory(category.id)}
-                    >
-                      <Text style={[
-                        styles.categoryText,
-                        selectedCategory === category.id && styles.selectedCategoryText
-                      ]}>
-                        {category.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
               </View>
 
               {/* Description Input */}
@@ -397,40 +321,6 @@ const styles = StyleSheet.create({
     color: Colors.BLACK,
     marginBottom: 15,
     fontFamily: "montserrat-bold", // Consistent font
-  },
-  listItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 15, // Increased padding
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0', // Light separator
-  },
-  itemInfo: {
-    flex: 1, // Take available space
-    marginRight: 10,
-  },
-   itemDescription: {
-    fontSize: 16,
-    color: Colors.BLACK,
-    marginBottom: 3,
-    fontFamily: "montserrat-regular", // Consistent font
-  },
-  itemDate: {
-    fontSize: 12,
-    color: Colors.GRAY,
-    fontFamily: "montserrat-regular", // Consistent font
-  },
-  itemAmount: {
-    fontSize: 16,
-    fontWeight: '600',
-    fontFamily: "montserrat-bold", // Consistent font
-  },
-  income: {
-    color: '#4CAF50', // Standard green for income
-  },
-  expense: {
-    color: '#F44336', // Standard red for expense
   },
   emptyStateContainer: {
     alignItems: 'center',
@@ -598,72 +488,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    backgroundColor: Colors.WHITE,
+  income: {
+    color: '#4CAF50', // Standard green for income
   },
-  errorTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: Colors.BLACK,
-    marginTop: 16,
-    marginBottom: 8,
-    fontFamily: "montserrat-bold",
-  },
-  errorMessage: {
-    fontSize: 16,
-    color: Colors.GRAY,
-    textAlign: 'center',
-    marginBottom: 24,
-    fontFamily: "montserrat-regular",
-  },
-  retryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.PRIMARY,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: Colors.WHITE,
-    marginLeft: 8,
-    fontSize: 16,
-    fontWeight: 'bold',
-    fontFamily: "montserrat-bold",
-  },
-  itemActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  deleteButton: {
-    marginLeft: 10,
-    padding: 5,
-  },
-  categoryContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 15,
-  },
-  categoryButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
-    backgroundColor: '#f0f0f0',
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  selectedCategory: {
-    backgroundColor: Colors.PRIMARY,
-  },
-  categoryText: {
-    color: Colors.GRAY,
-  },
-  selectedCategoryText: {
-    color: Colors.WHITE,
+  expense: {
+    color: '#F44336', // Standard red for expense
   },
 });
 

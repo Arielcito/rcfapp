@@ -38,9 +38,7 @@ export const getUserById = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    console.log("req.params.id", req.params.id);
     const user = await userService.getUserById(req.params.id);
-    console.log("user", user);
     if (!user) {
       res.status(404).json({ message: 'User not found' });
       return;
@@ -88,35 +86,24 @@ export const login = async (
 ): Promise<void> => {
   try {
     const { email, password } = req.body;
-    logger.info(`Intento de login para email: ${email}`);
 
     if (!email || !password) {
-      logger.warn('Intento de login sin email o password');
       res.status(400).json({ message: 'Email y contraseña son requeridos' });
       return;
     }
 
     const { user, token } = await userService.loginUser(email, password);
-    logger.info(`Login exitoso para usuario: ${user.role}`);
-    logger.info(`Token generado (primeros 10 caracteres): ${token.substring(0, 10)}...`);
 
-    // Establecer cookie con el token
     res.cookie('auth_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 24 * 60 * 60 * 1000 // 24 horas
+      maxAge: 24 * 60 * 60 * 1000
     });
-
-    logger.info('Cookie establecida correctamente');
-    logger.info('Respuesta siendo enviada con token en header y body');
     
-    // Añadir el token al header de Authorization para mayor compatibilidad
     res.setHeader('Authorization', `Bearer ${token}`);
-    
     res.json({ user, token });
   } catch (error) {
-    logger.error('Error en login:', error);
     next(error);
   }
 };
@@ -128,18 +115,14 @@ export const register = async (
 ): Promise<void> => {
   try {
     const userData: UserCreationData = req.body;
-    logger.info('Intento de registro con datos:', { ...userData, password: '***' });
 
     if (!userData.email || !userData.password || !userData.name) {
-      logger.warn('Intento de registro con campos faltantes');
       res.status(400).json({ message: 'Todos los campos son requeridos' });
       return;
     }
 
     const { user, token } = await userService.registerUser(userData);
-    logger.info(`Registro exitoso para usuario: ${user.id}`);
 
-    // Establecer cookie con el token
     res.cookie('auth_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -147,10 +130,8 @@ export const register = async (
       maxAge: 24 * 60 * 60 * 1000
     });
 
-    logger.info('Cookie establecida correctamente para nuevo usuario');
     res.status(201).json({ user });
   } catch (error) {
-    logger.error('Error en registro:', error);
     next(error);
   }
 };
@@ -175,19 +156,15 @@ export const getCurrentUser = async (
 ): Promise<void> => {
   try {
     const userId = req.user?.id;
-    logger.info(`Intento de obtener usuario actual. ID: ${userId}`);
 
     if (!userId) {
-      logger.warn('Intento de obtener usuario actual sin ID');
       res.status(401).json({ message: 'No autorizado' });
       return;
     }
 
     const user = await userService.getCurrentUserById(userId);
-    logger.info(`Usuario actual obtenido correctamente: ${user.id}`);
     res.json(user);
   } catch (error) {
-    logger.error('Error al obtener usuario actual:', error);
     next(error);
   }
 };
@@ -196,7 +173,6 @@ export const checkEmail = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
 
-    // Verificar si el email ya existe usando drizzle
     const existingUser = await db.select()
       .from(users)
       .where(eq(users.email, email.toLowerCase()))
@@ -213,7 +189,6 @@ export const checkEmail = async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('Error al verificar email:', error);
     return res.status(500).json({
       message: 'Error al verificar el email'
     });
