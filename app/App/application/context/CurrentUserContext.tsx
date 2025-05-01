@@ -102,10 +102,8 @@ export const CurrentUserProvider = ({ children }: { children: React.ReactNode })
 
   const logout = async () => {
     try {
-      console.log('CurrentUserContext - Iniciando proceso de logout');
-      console.log('CurrentUserContext - Haciendo llamada a /users/auth/logout');
       await api.post('/users/auth/logout');
-      console.log('CurrentUserContext - Respuesta de logout recibida');
+
     } catch (error: any) {
       console.error('CurrentUserContext - Error en logout:', {
         message: error?.message || 'Error desconocido',
@@ -114,14 +112,10 @@ export const CurrentUserProvider = ({ children }: { children: React.ReactNode })
       });
       throw error;
     } finally {
-      console.log('CurrentUserContext - Limpiando datos de sesión');
       await TokenService.removeToken();
       await AsyncStorage.multiRemove(['userData', 'userId']);
-      console.log('CurrentUserContext - Limpiando headers de API');
       api.defaults.headers.common.Authorization = '';
-      console.log('CurrentUserContext - Actualizando estado de usuario');
       setCurrentUser(null);
-      console.log('CurrentUserContext - Proceso de logout completado');
     }
   };
 

@@ -111,32 +111,3 @@ api.interceptors.request.use(
     return Promise.reject(error);
   }
 );
-
-// Interceptor para manejar errores de respuesta
-api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  async (error) => {
-    console.error('Error en respuesta:', {
-      url: error.config?.url,
-      status: error.response?.status,
-      data: error.response?.data,
-      message: error.message,
-      code: error.code,
-      isAxiosError: error.isAxiosError,
-      baseURL: error.config?.baseURL,
-      headers: error.config?.headers
-    });
-    
-    if (error.response?.status === 401) {
-      console.log('Error 401 detectado - Removiendo token');
-      console.log('Detalles de la respuesta 401:', JSON.stringify(error.response?.data));
-      await TokenService.removeToken();
-      if (onTokenExpired) {
-        onTokenExpired();
-      }
-    }
-    return Promise.reject(error);
-  }
-);
