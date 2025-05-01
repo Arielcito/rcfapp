@@ -18,6 +18,12 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 const BASE_PATH = process.env.BASE_PATH || '/api';
 
+// Request logger middleware
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
 // Configuración de CORS
 const allowedOrigins = ['http://localhost:3000', 'http://localhost:3002', 'https://rcfapp.com.ar'];
 app.use(cors({
@@ -37,15 +43,55 @@ app.use(cors({
 app.use(cookieParser());
 app.use(express.json());
 
-// Routes
+// Routes with detailed logging
+console.log('Registering routes with base path:', BASE_PATH);
 app.use(`${BASE_PATH}/users`, userRoutes);
+console.log('✓ User routes registered at', `${BASE_PATH}/users`);
+
 app.use(`${BASE_PATH}/predios`, predioRoutes);
+console.log('✓ Predio routes registered at', `${BASE_PATH}/predios`);
+
 app.use(`${BASE_PATH}/canchas`, canchaRoutes);
+console.log('✓ Cancha routes registered at', `${BASE_PATH}/canchas`);
+
 app.use(`${BASE_PATH}/reservas`, reservaRoutes);
+console.log('✓ Reserva routes registered at', `${BASE_PATH}/reservas`);
+
 app.use(`${BASE_PATH}/pagos`, pagoRoutes);
+console.log('✓ Pago routes registered at', `${BASE_PATH}/pagos`);
+
+// Register routes that don't depend on predio context
 app.use(`${BASE_PATH}/movimientos`, movimientosRoutes);
+console.log('✓ Global movimientos routes registered at', `${BASE_PATH}/movimientos`);
+
+// Fix: Change this to match controller paths - controller expects /predios/{id}/movimientos
+// Movimientos are now accessed through /predios/:predioId/movimientos
+app.use(`${BASE_PATH}/predios/:predioId/movimientos`, movimientosRoutes);
+console.log('✓ Predio-specific movimientos routes registered at', `${BASE_PATH}/predios/:predioId/movimientos`);
+
 app.use(`${BASE_PATH}/mercadopago`, mercadoPagoRoutes);
+console.log('✓ MercadoPago routes registered at', `${BASE_PATH}/mercadopago`);
+
 app.use(`${BASE_PATH}/logs`, logRoutes);
+console.log('✓ Logs routes registered at', `${BASE_PATH}/logs`);
+
+// Log registered routes
+console.log('Registered routes:');
+app._router.stack.forEach((middleware: any) => {
+  if (middleware.route) {
+    // Routes directly registered on the app
+    console.log(`${middleware.route.stack[0].method.toUpperCase()} ${middleware.route.path}`);
+  } else if (middleware.name === 'router') {
+    // Router middleware
+    middleware.handle.stack.forEach((handler: any) => {
+      if (handler.route) {
+        const baseRoute = handler.route.path;
+        const method = handler.route.stack[0].method.toUpperCase();
+        console.log(`${method} ${middleware.regexp} -> ${baseRoute}`);
+      }
+    });
+  }
+});
 
 // Error handling con logging
 app.use((err: Error & { status?: number }, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -58,6 +104,12 @@ app.use((err: Error & { status?: number }, req: express.Request, res: express.Re
   res.status(err.status || 500).json({
     message: err.message || 'Error interno del servidor'
   });
+});
+
+// Catch-all route for debugging
+app.use('*', (req, res) => {
+  console.log(`No route found for ${req.method} ${req.originalUrl}`);
+  res.status(404).json({ message: `Ruta no encontrada: ${req.method} ${req.originalUrl}` });
 });
 
 app.listen(PORT, () => {

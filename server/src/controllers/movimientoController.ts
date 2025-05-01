@@ -12,7 +12,15 @@ import type {
 const movimientoService = new MovimientoService();
 
 const logResponse = (method: string, path: string, status: number, data: any) => {
-  console.log(`[${method}] ${path} - Status: ${status}`, data);
+  console.log(`[${method}] ${path} - Status: ${status}`, data ? typeof data === 'object' ? 'Response data' : data : '');
+};
+
+// Improved function to log requests
+const logRequest = (method: string, url: string, params: any, query: any, body: any) => {
+  console.log(`[${new Date().toISOString()}] REQUEST: ${method} ${url}`);
+  if (Object.keys(params).length) console.log('  Params:', params);
+  if (Object.keys(query).length) console.log('  Query:', query);
+  if (body && Object.keys(body).length) console.log('  Body:', JSON.stringify(body).substring(0, 200) + (JSON.stringify(body).length > 200 ? '...' : ''));
 };
 
 /**
@@ -29,6 +37,7 @@ const logResponse = (method: string, path: string, status: number, data: any) =>
  */
 export const getCategorias = async (req: Request, res: Response) => {
   try {
+    logRequest('GET', req.originalUrl, req.params, req.query, req.body);
     const categorias = await movimientoService.getCategorias();
     logResponse('GET', '/api/movimientos/categorias', 200, categorias);
     res.json(categorias);
@@ -85,6 +94,7 @@ export const getCategorias = async (req: Request, res: Response) => {
  */
 export const getMovimientos = async (req: Request, res: Response) => {
   try {
+    logRequest('GET', req.originalUrl, req.params, req.query, req.body);
     const { predioId } = req.params;
     const { fechaDesde, fechaHasta, categoriaId, tipo, metodoPago } = req.query;
 
@@ -135,6 +145,7 @@ export const getMovimientos = async (req: Request, res: Response) => {
  */
 export const createMovimiento = async (req: Request, res: Response) => {
   try {
+    logRequest('POST', req.originalUrl, req.params, req.query, req.body);
     const { predioId } = req.params;
     const movimientoData = {
       ...req.body,
@@ -182,6 +193,7 @@ export const createMovimiento = async (req: Request, res: Response) => {
  */
 export const updateMovimiento = async (req: Request, res: Response) => {
   try {
+    logRequest('PUT', req.originalUrl, req.params, req.query, req.body);
     const { id } = req.params;
     const movimientoData = req.body;
 
@@ -218,6 +230,7 @@ export const updateMovimiento = async (req: Request, res: Response) => {
  */
 export const deleteMovimiento = async (req: Request, res: Response) => {
   try {
+    logRequest('DELETE', req.originalUrl, req.params, req.query, req.body);
     const { id } = req.params;
     await movimientoService.deleteMovimiento(id);
     logResponse('DELETE', `/api/movimientos/${id}`, 204, null);
@@ -262,6 +275,7 @@ export const deleteMovimiento = async (req: Request, res: Response) => {
  */
 export const getResumenMovimientos = async (req: Request, res: Response) => {
   try {
+    logRequest('GET', req.originalUrl, req.params, req.query, req.body);
     const { predioId } = req.params;
     const { fechaDesde, fechaHasta } = req.query;
 
