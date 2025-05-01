@@ -20,6 +20,7 @@ class Logger {
   private readonly LOG_BATCH_SIZE = 10;
   private readonly LOG_BATCH_INTERVAL = 5000; // 5 segundos
   private batchTimeout: NodeJS.Timeout | null = null;
+  private disabled: boolean = true; // Flag to disable logging
 
   private constructor() {
     // Iniciar el envío periódico de logs
@@ -99,21 +100,25 @@ class Logger {
   }
 
   info(component: string, message: string, data?: any) {
+    if (this.disabled) return;
     const entry = this.formatMessage('info', component, message, data);
     this.addLog(entry);
   }
 
   warn(component: string, message: string, data?: any) {
+    if (this.disabled) return;
     const entry = this.formatMessage('warn', component, message, data);
     this.addLog(entry);
   }
 
   error(component: string, message: string, data?: any) {
+    if (this.disabled) return;
     const entry = this.formatMessage('error', component, message, data);
     this.addLog(entry);
   }
 
   debug(component: string, message: string, data?: any) {
+    if (this.disabled) return;
     const entry = this.formatMessage('debug', component, message, data);
     this.addLog(entry);
   }

@@ -57,7 +57,7 @@ const FinanceManagementScreen = () => {
       setFinanceData(movimientos);
       setCategories(categorias);
     } catch (err) {
-      console.error('Error in loadData:', err);
+      console.error('Error in loadData:', err instanceof Error ? err.message : 'Error desconocido');
       setError(err instanceof Error ? err.message : 'Error al cargar los datos');
     } finally {
       setIsLoading(false);
@@ -132,12 +132,15 @@ const FinanceManagementScreen = () => {
 
   if (error) {
     return (
-      <View style={[styles.container, styles.centerContent]}>
-        <Text style={styles.errorText}>{error}</Text>
+      <View style={styles.errorContainer}>
+        <Ionicons name="alert-circle-outline" size={60} color={Colors.RED} />
+        <Text style={styles.errorTitle}>¡Ups! Algo salió mal</Text>
+        <Text style={styles.errorMessage}>{error}</Text>
         <TouchableOpacity 
           style={styles.retryButton}
           onPress={loadData}
         >
+          <Ionicons name="refresh" size={20} color={Colors.WHITE} />
           <Text style={styles.retryButtonText}>Reintentar</Text>
         </TouchableOpacity>
       </View>
@@ -200,7 +203,18 @@ const FinanceManagementScreen = () => {
               </View>
             ))
           ) : (
-            <Text style={styles.emptyText}>No hay movimientos registrados.</Text>
+            <View style={styles.emptyStateContainer}>
+              <Ionicons name="wallet-outline" size={60} color={Colors.GRAY} />
+              <Text style={styles.emptyStateTitle}>No hay movimientos registrados</Text>
+              <Text style={styles.emptyStateSubtitle}>Comienza agregando tu primer ingreso o egreso</Text>
+              <TouchableOpacity 
+                style={styles.emptyStateButton}
+                onPress={openAddModal}
+              >
+                <Ionicons name="add" size={20} color={Colors.WHITE} />
+                <Text style={styles.emptyStateButtonText}>Agregar Movimiento</Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
 
@@ -423,12 +437,40 @@ const styles = StyleSheet.create({
   expense: {
     color: '#F44336', // Standard red for expense
   },
-  emptyText: {
-    textAlign: 'center',
-    marginTop: 20,
-    fontSize: 16,
+  emptyStateContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.BLACK,
+    marginTop: 16,
+    marginBottom: 8,
+    fontFamily: "montserrat-bold",
+  },
+  emptyStateSubtitle: {
+    fontSize: 14,
     color: Colors.GRAY,
-    fontFamily: "montserrat-regular", // Consistent font
+    textAlign: 'center',
+    marginBottom: 24,
+    fontFamily: "montserrat-regular",
+  },
+  emptyStateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.PRIMARY,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  emptyStateButtonText: {
+    color: Colors.WHITE,
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: 'bold',
+    fontFamily: "montserrat-bold",
   },
   fab: {
     position: 'absolute',
@@ -561,21 +603,42 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  errorText: {
-    color: Colors.RED,
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    backgroundColor: Colors.WHITE,
+  },
+  errorTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: Colors.BLACK,
+    marginTop: 16,
+    marginBottom: 8,
+    fontFamily: "montserrat-bold",
+  },
+  errorMessage: {
     fontSize: 16,
+    color: Colors.GRAY,
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
+    fontFamily: "montserrat-regular",
   },
   retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: Colors.PRIMARY,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 5,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
   },
   retryButtonText: {
     color: Colors.WHITE,
+    marginLeft: 8,
+    fontSize: 16,
     fontWeight: 'bold',
+    fontFamily: "montserrat-bold",
   },
   itemActions: {
     flexDirection: 'row',

@@ -7,32 +7,58 @@ export const CurrentPlaceContext = createContext();
 export const CurrentPlaceProvider = ({ children }) => {
   const [currentPlace, setCurrentPlace] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const { currentUser } = useCurrentUser();
 
   useEffect(() => {
-    if (currentUser?.id) {
+    if (currentUser?.id || currentUser?.predioTrabajo) {
       loadPlace();
     } else {
       setIsLoading(false);
     }
-  }, [currentUser?.id]);
+  }, [currentUser?.id, currentUser?.predioTrabajo]);
 
   const loadPlace = async () => {
     try {
       setIsLoading(true);
-      const placeData = await fetchOwnerPlace(currentUser.id);
+      setError(null);
+      console.log('currentUser', currentUser);
+      
+      let placeData;
+      try {
+        // Primero intentamos con el ID del usuario
+        placeData = await fetchOwnerPlace(currentUser.id);
+        console.log('placeData', placeData);
+      } catch (error) {
+        if (error.response?.status === 404 && currentUser.predioTrabajo) {
+          // Si falla con 404 y tenemos predioTrabajo, intentamos con ese
+          placeData = await fetchOwnerPlace(currentUser.predioTrabajo);
+        } else {
+          throw error;
+        }
+      }
+      
       console.log('placeData', placeData);
       setCurrentPlace(placeData);
     } catch (error) {
-      console.log('Error al cargar predio:', error);
+      console.error('Error al cargar predio:', error);
+      if (error.response?.status === 404) {
+        setError('No se encontró el predio asociado a tu cuenta. Por favor, contacta al administrador.');
+      } else {
+        setError('Error al cargar el predio. Por favor, intenta nuevamente más tarde.');
+      }
       setCurrentPlace(null);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const retryLoadPlace = () => {
+    loadPlace();
+  };
+
   return (
-    <CurrentPlaceContext.Provider value={{ currentPlace, isLoading, loadPlace }}>
+    <CurrentPlaceContext.Provider value={{ currentPlace, isLoading, error, loadPlace: retryLoadPlace }}>
       {children}
     </CurrentPlaceContext.Provider>
   );

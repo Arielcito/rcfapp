@@ -24,12 +24,30 @@ export class MovimientoService {
     }
   }
 
+  private logError(operation: string, error: any, context?: any) {
+    console.error(`[MovimientoService] Error in ${operation}:`, {
+      error: error.message,
+      stack: error.stack,
+      context,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  private logOperation(operation: string, data?: any) {
+    console.log(`[MovimientoService] ${operation}`, {
+      data,
+      timestamp: new Date().toISOString()
+    });
+  }
+
   async getCategorias(): Promise<CategoriaMovimiento[]> {
     try {
+      this.logOperation('getCategorias');
       const result = await db.select()
         .from(categoriaMovimiento)
         .where(eq(categoriaMovimiento.activo, true));
 
+      this.logOperation('getCategorias success', { count: result.length });
       return result.map(cat => ({
         id: cat.id,
         nombre: cat.nombre,
@@ -38,6 +56,7 @@ export class MovimientoService {
         activo: cat.activo || false
       }));
     } catch (error) {
+      this.logError('getCategorias', error);
       throw new DatabaseError('Error al obtener las categorías');
     }
   }
@@ -47,6 +66,7 @@ export class MovimientoService {
     filtros?: MovimientoCajaFiltros
   ): Promise<MovimientoCaja[]> {
     try {
+      this.logOperation('getMovimientos', { predioId, filtros });
       this.validateUUID(predioId, 'predioId');
       if (filtros?.categoriaId) {
         this.validateUUID(filtros.categoriaId, 'categoriaId', true);
@@ -75,8 +95,10 @@ export class MovimientoService {
         .where(and(...conditions))
         .orderBy(movimientosCaja.fechaMovimiento);
 
+      this.logOperation('getMovimientos success', { count: result.length });
       return result.map(this.mapMovimientoFromDB);
     } catch (error) {
+      this.logError('getMovimientos', error, { predioId, filtros });
       if (error instanceof ValidationError) throw error;
       throw new DatabaseError('Error al obtener los movimientos');
     }
@@ -84,6 +106,7 @@ export class MovimientoService {
 
   async createMovimiento(data: MovimientoCajaCreationData): Promise<MovimientoCaja> {
     try {
+      this.logOperation('createMovimiento', { predioId: data.predioId });
       this.validateUUID(data.predioId, 'predioId');
       this.validateUUID(data.categoriaId, 'categoriaId', true);
 
@@ -95,10 +118,11 @@ export class MovimientoService {
         })
         .returning();
 
+      this.logOperation('createMovimiento success', { id: result.id });
       return this.mapMovimientoFromDB(result);
     } catch (error) {
+      this.logError('createMovimiento', error, { predioId: data.predioId });
       if (error instanceof ValidationError) throw error;
-      console.log(error);
       throw new DatabaseError('Error al crear el movimiento');
     }
   }
@@ -108,6 +132,7 @@ export class MovimientoService {
     data: MovimientoCajaUpdateData
   ): Promise<MovimientoCaja> {
     try {
+      this.logOperation('updateMovimiento', { id, data });
       this.validateUUID(id, 'id');
       if (data.predioId) this.validateUUID(data.predioId, 'predioId');
       if (data.categoriaId) this.validateUUID(data.categoriaId, 'categoriaId', true);
@@ -125,8 +150,10 @@ export class MovimientoService {
         throw new NotFoundError(`Movimiento con id ${id} no encontrado`);
       }
 
+      this.logOperation('updateMovimiento success', { id });
       return this.mapMovimientoFromDB(result);
     } catch (error) {
+      this.logError('updateMovimiento', error, { id, data });
       if (error instanceof ValidationError || error instanceof NotFoundError) throw error;
       throw new DatabaseError('Error al actualizar el movimiento');
     }
@@ -134,6 +161,7 @@ export class MovimientoService {
 
   async deleteMovimiento(id: string): Promise<void> {
     try {
+      this.logOperation('deleteMovimiento', { id });
       this.validateUUID(id, 'id');
       
       const result = await db.delete(movimientosCaja)
@@ -143,7 +171,10 @@ export class MovimientoService {
       if (!result.length) {
         throw new NotFoundError(`Movimiento con id ${id} no encontrado`);
       }
+
+      this.logOperation('deleteMovimiento success', { id });
     } catch (error) {
+      this.logError('deleteMovimiento', error, { id });
       if (error instanceof NotFoundError) throw error;
       throw new DatabaseError('Error al eliminar el movimiento');
     }
@@ -155,6 +186,7 @@ export class MovimientoService {
     fechaHasta?: Date
   ): Promise<ResumenMovimientos> {
     try {
+      this.logOperation('getResumenMovimientos', { predioId, fechaDesde, fechaHasta });
       this.validateUUID(predioId, 'predioId');
 
       const movimientos = await db.select({
@@ -177,8 +209,10 @@ export class MovimientoService {
         )
       );
 
+      this.logOperation('getResumenMovimientos success', { count: movimientos.length });
       return this.calculateResumen(movimientos);
     } catch (error) {
+      this.logError('getResumenMovimientos', error, { predioId, fechaDesde, fechaHasta });
       if (error instanceof ValidationError) throw error;
       throw new DatabaseError('Error al obtener el resumen de movimientos');
     }
