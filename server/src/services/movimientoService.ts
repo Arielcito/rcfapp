@@ -27,17 +27,23 @@ export class MovimientoService {
   private logError(operation: string, error: any, context?: any) {
     console.error(`[MovimientoService] Error in ${operation}:`, {
       error: error.message,
-      stack: error.stack,
-      context,
-      timestamp: new Date().toISOString()
+      context: context ? { 
+        predioId: context.predioId,
+        id: context.id 
+      } : undefined
     });
   }
 
   private logOperation(operation: string, data?: any) {
-    console.log(`[MovimientoService] ${operation}`, {
-      data,
-      timestamp: new Date().toISOString()
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[MovimientoService] ${operation}`, {
+        data: data ? {
+          count: data.count,
+          id: data.id,
+          predioId: data.predioId
+        } : undefined
+      });
+    }
   }
 
   async getCategorias(): Promise<CategoriaMovimiento[]> {

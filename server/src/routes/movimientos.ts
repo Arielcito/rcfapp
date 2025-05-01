@@ -9,7 +9,10 @@ import { authenticateToken } from '../middleware/auth';
  *   description: API para gestionar movimientos de caja
  */
 
-const router = express.Router();
+const router = express.Router({ mergeParams: true }); // Important: mergeParams allows access to predioId
+
+// Log routes being set up
+console.log('Setting up movimientos routes');
 
 /**
  * @swagger
@@ -24,13 +27,14 @@ const router = express.Router();
  *         description: Error interno del servidor
  */
 router.get('/categorias', movimientoController.getCategorias);
+console.log('✓ GET /categorias route set up');
 
 // Rutas protegidas
 router.use(authenticateToken);
 
 /**
  * @swagger
- * /api/movimientos/predio/{predioId}:
+ * /api/predios/{predioId}/movimientos:
  *   get:
  *     summary: Obtiene movimientos de caja con filtros opcionales
  *     tags: [Movimientos]
@@ -71,11 +75,12 @@ router.use(authenticateToken);
  *       500:
  *         description: Error interno del servidor
  */
-router.get('/predio/:predioId', movimientoController.getMovimientos);
+router.get('/', movimientoController.getMovimientos);
+console.log('✓ GET / route set up');
 
 /**
  * @swagger
- * /api/movimientos/predio/{predioId}:
+ * /api/predios/{predioId}/movimientos:
  *   post:
  *     summary: Crea un nuevo movimiento de caja
  *     tags: [Movimientos]
@@ -99,7 +104,8 @@ router.get('/predio/:predioId', movimientoController.getMovimientos);
  *       500:
  *         description: Error interno del servidor
  */
-router.post('/predio/:predioId', movimientoController.createMovimiento);
+router.post('/', movimientoController.createMovimiento);
+console.log('✓ POST / route set up');
 
 /**
  * @swagger
@@ -130,6 +136,7 @@ router.post('/predio/:predioId', movimientoController.createMovimiento);
  *         description: Error interno del servidor
  */
 router.put('/:id', movimientoController.updateMovimiento);
+console.log('✓ PUT /:id route set up');
 
 /**
  * @swagger
@@ -152,10 +159,11 @@ router.put('/:id', movimientoController.updateMovimiento);
  *         description: Error interno del servidor
  */
 router.delete('/:id', movimientoController.deleteMovimiento);
+console.log('✓ DELETE /:id route set up');
 
 /**
  * @swagger
- * /api/movimientos/predio/{predioId}/resumen:
+ * /api/predios/{predioId}/movimientos/resumen:
  *   get:
  *     summary: Obtiene un resumen de movimientos de caja
  *     tags: [Movimientos]
@@ -183,6 +191,7 @@ router.delete('/:id', movimientoController.deleteMovimiento);
  *       500:
  *         description: Error interno del servidor
  */
-router.get('/predio/:predioId/resumen', movimientoController.getResumenMovimientos);
+router.get('/resumen', movimientoController.getResumenMovimientos);
+console.log('✓ GET /resumen route set up');
 
 export default router; 

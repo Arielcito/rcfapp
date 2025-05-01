@@ -38,26 +38,21 @@ const FinanceManagementScreen = () => {
     try {
       setIsLoading(true);
       setError(null);
-      console.log('Loading data, predioId:', currentPlace?.id);
-      
+
       if (!currentPlace?.id) {
         console.error('No predioId found in currentPlace');
         throw new Error('No se encontró el predio');
       }
       
-      console.log('Fetching movimientos and categorias...');
       const [movimientos, categorias] = await Promise.all([
         FinanceService.getMovimientos(currentPlace.id),
         FinanceService.getCategorias()
       ]);
       
-      console.log('Movimientos loaded:', movimientos.length);
-      console.log('Categorias loaded:', categorias.length);
-      
       setFinanceData(movimientos);
       setCategories(categorias);
     } catch (err) {
-      console.error('Error in loadData:', err instanceof Error ? err.message : 'Error desconocido');
+      console.error('Error in loadData:', err);
       setError(err instanceof Error ? err.message : 'Error al cargar los datos');
     } finally {
       setIsLoading(false);

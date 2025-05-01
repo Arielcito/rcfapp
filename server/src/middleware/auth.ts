@@ -35,8 +35,6 @@ export const authenticateToken = (
     return res.status(401).json({ message: 'No autorizado' });
   }
 
-  console.log("[Auth] Token extraído:", token.substring(0, 10) + "...");
-
   try {
     const secretKey = process.env.JWT_SECRET || 'your-secret-key';
     const decoded = jwt.verify(
@@ -44,7 +42,6 @@ export const authenticateToken = (
       secretKey
     ) as JWTPayload;
   
-
     req.user = {
       id: decoded.id,
       email: decoded.email,
@@ -54,13 +51,6 @@ export const authenticateToken = (
   
     next();
   } catch (error: unknown) {
-    console.log("[Auth] Error en verificación de token");
-    const errorObj = error instanceof Error ? 
-      { name: error.name, message: error.message, stack: error.stack } : 
-      { message: 'Error desconocido' };
-    
-    console.error("[Auth] Detalles del error:", JSON.stringify(errorObj));
-    
     if (error instanceof jwt.JsonWebTokenError) {
       if (error.name === 'TokenExpiredError') {
         return res.status(401).json({ message: 'Token expirado' });
