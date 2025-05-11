@@ -96,7 +96,7 @@ router.get('/:predioId', movimientoController.getMovimientos);
  *       500:
  *         description: Error interno del servidor
  */
-router.post('/', movimientoController.createMovimiento);
+router.post('/predios/:predioId/movimientos', movimientoController.createMovimiento);
 
 /**
  * @swagger
