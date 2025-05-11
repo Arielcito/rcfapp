@@ -122,43 +122,60 @@ const FinanceManagementScreen = () => {
            <Text style={styles.title}>Flujo de Fondos</Text>
         </View>
 
-        {/* Summary Section - Show empty state for summary when no data */}
+        {/* Summary Section */}
         <View style={styles.summaryContainer}>
           <View style={styles.summaryBox}>
             <Text style={styles.summaryLabel}>Ingresos</Text>
             <Text style={[styles.summaryAmount, styles.income]}>
-              $0.00
+              ${totalIncome.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
             </Text>
           </View>
           <View style={styles.summaryBox}>
             <Text style={styles.summaryLabel}>Egresos</Text>
             <Text style={[styles.summaryAmount, styles.expense]}>
-              $0.00
+              ${totalExpenses.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
             </Text>
           </View>
-           <View style={styles.summaryBox}>
+          <View style={styles.summaryBox}>
             <Text style={styles.summaryLabel}>Balance</Text>
-            <Text style={[styles.summaryAmount, styles.income]}>
-              $0.00
+            <Text style={[styles.summaryAmount, balance >= 0 ? styles.income : styles.expense]}>
+              ${balance.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
             </Text>
           </View>
         </View>
 
-        {/* List Section - Always show empty state when no data */}
+        {/* List Section */}
         <View style={styles.listContainer}>
           <Text style={styles.listTitle}>Movimientos Recientes</Text>
-          <View style={styles.emptyStateContainer}>
-            <Ionicons name="wallet-outline" size={60} color={Colors.GRAY} />
-            <Text style={styles.emptyStateTitle}>No hay movimientos registrados</Text>
-            <Text style={styles.emptyStateSubtitle}>Comienza agregando tu primer ingreso o egreso</Text>
-            <TouchableOpacity 
-              style={styles.emptyStateButton}
-              onPress={openAddModal}
-            >
-              <Ionicons name="add" size={20} color={Colors.WHITE} />
-              <Text style={styles.emptyStateButtonText}>Agregar Movimiento</Text>
-            </TouchableOpacity>
-          </View>
+          {financeData.length > 0 ? (
+            financeData.map((entry) => (
+              <View key={entry.id} style={styles.movementItem}>
+                <View style={styles.movementHeader}>
+                  <Text style={styles.movementConcept}>{entry.concepto}</Text>
+                  <Text style={[styles.movementAmount, entry.tipo === 'INGRESO' ? styles.income : styles.expense]}>
+                    ${entry.monto.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                  </Text>
+                </View>
+                <View style={styles.movementDetails}>
+                  <Text style={styles.movementDate}>{formatDate(entry.fechaMovimiento)}</Text>
+                  <Text style={styles.movementType}>{entry.tipo}</Text>
+                </View>
+              </View>
+            ))
+          ) : (
+            <View style={styles.emptyStateContainer}>
+              <Ionicons name="wallet-outline" size={60} color={Colors.GRAY} />
+              <Text style={styles.emptyStateTitle}>No hay movimientos registrados</Text>
+              <Text style={styles.emptyStateSubtitle}>Comienza agregando tu primer ingreso o egreso</Text>
+              <TouchableOpacity 
+                style={styles.emptyStateButton}
+                onPress={openAddModal}
+              >
+                <Ionicons name="add" size={20} color={Colors.WHITE} />
+                <Text style={styles.emptyStateButtonText}>Agregar Movimiento</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
       </ScrollView>
@@ -493,6 +510,44 @@ const styles = StyleSheet.create({
   },
   expense: {
     color: '#F44336', // Standard red for expense
+  },
+  movementItem: {
+    backgroundColor: '#f8f8f8',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 10,
+  },
+  movementHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  movementConcept: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: Colors.BLACK,
+    fontFamily: "montserrat-bold",
+  },
+  movementAmount: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    fontFamily: "montserrat-bold",
+  },
+  movementDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  movementDate: {
+    fontSize: 14,
+    color: Colors.GRAY,
+    fontFamily: "montserrat-regular",
+  },
+  movementType: {
+    fontSize: 14,
+    color: Colors.GRAY,
+    fontFamily: "montserrat-regular",
   },
 });
 

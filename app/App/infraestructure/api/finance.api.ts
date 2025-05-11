@@ -67,9 +67,9 @@ export const FinanceService = {
       console.log(`[FinanceService] Fetching movements for predio: ${predioId}`);
       const fullUrl = `${api.defaults.baseURL}/movimientos/${predioId}`;
       console.log(`[FinanceService] Full request URL: ${fullUrl}`);
-      const response = await api.get(`/movimientos/${predioId}`);
-      console.log(`[FinanceService] Successfully fetched movements for predio: ${predioId}`);
-      return response.data;
+      const {data: response} = await api.get(`/movimientos/${predioId}`);
+      console.log(`[FinanceService] Successfully fetched movements for predio: ${JSON.stringify(response)}`);
+      return response;
     } catch (error) {
       const apiError = handleApiError(error as AxiosError<ErrorResponse>);
       console.error(`[FinanceService] Error fetching movements for predio ${predioId}:`, apiError);
@@ -80,7 +80,7 @@ export const FinanceService = {
   async createMovimiento(predioId: string, movimiento: Omit<FinanceEntry, 'id' | 'fechaMovimiento'>): Promise<FinanceEntry> {
     try {
       console.log(`[FinanceService] Creating movement for predio: ${predioId}`, movimiento);
-      const response = await api.post(`/predios/${predioId}/movimientos`, movimiento);
+      const response = await api.post(`/movimientos/predios/${predioId}/movimientos`, movimiento);
       console.log(`[FinanceService] Successfully created movement for predio: ${predioId}`);
       return response.data;
     } catch (error) {

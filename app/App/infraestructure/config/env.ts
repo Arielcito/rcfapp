@@ -4,16 +4,17 @@ import { Platform } from 'react-native';
 const API_CONFIG = {
   DEV: {
     ANDROID: 'http://192.168.1.52:3001/api',
-    IOS: 'http://localhost:3001/api',
+    IOS: 'http://localhost:3001/rcf/api',
   },
   PROD: 'https://backoffice.xerato.io/rcf/api'
 };
 
 const getApiUrl = () => {
-  if (Platform.OS === 'android') {
+  if(Platform.OS === 'android') {
     return API_CONFIG.DEV.ANDROID;
+  } else {
+    return API_CONFIG.DEV.IOS;
   }
-  return API_CONFIG.DEV.IOS;
 };
 
 const ENV = {
