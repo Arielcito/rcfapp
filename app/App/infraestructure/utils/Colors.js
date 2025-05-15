@@ -6,5 +6,18 @@ export default{
   WHITE_TRANSP: 'rgba(255, 255, 255, 0.7)',
   BLUE: '#003366',
   RED: '#F44336',
-  GREEN: '#00CC44'
+  GREEN: '#00CC44',
+  YELLOW: '#FFEB3B',
+  ORANGE: '#FF9800',
+  PURPLE: '#9C27B0',
+  PINK: '#E91E63',
+  BROWN: '#795548',
+  GRAY: '#666666',
+  ERROR: '#F44336',
+  SUCCESS: '#4CAF50',
+  WARNING: '#FF9800',
+  INFO: '#2196F3',
+  LIGHT_GRAY: '#F5F5F5',
+  DARK_GRAY: '#212121',
+  
 };

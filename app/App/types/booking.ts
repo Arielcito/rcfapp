@@ -22,6 +22,16 @@ export interface Cancha {
   tipo: string | null;
   tipoSuperficie: string | null;
   imagenUrl?: string;
+  caracteristicas: string[];
+  precioPorHora: number;
+  requiereSeña: boolean;
+  montoSeña: number;
+  longitud: number;
+  ancho: number;
+  estado: string;
+  predioId: string;
+  numero: number;
+  tipo_superficie: string;
 }
 
 export interface Predio {
