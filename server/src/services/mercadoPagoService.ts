@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { predioMercadoPagoConfig } from '../db/schema';
+import { predioMercadoPagoConfig, reservas } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import type { MercadoPagoConfigDTO, CreatePreferenceDTO } from '../types/mercadopago';
 import { MercadoPagoConfig, Payment, Preference } from 'mercadopago';
@@ -7,20 +7,19 @@ import { decrypt, encrypt } from '../utils/encryption';
 
 export class MercadoPagoService {
   private async getConfigByPredioId(predioId: string) {
-    console.log(`Buscando configuración de Mercado Pago para el predio: ${predioId}`);
+    console.log(`[MercadoPagoService] Buscando configuración de Mercado Pago para el predio: ${predioId}`);
     
     const config = await db.select()
       .from(predioMercadoPagoConfig)
       .where(eq(predioMercadoPagoConfig.predioId, predioId))
       .limit(1);
 
-    console.log(`Resultado de la búsqueda:`, config);
-
     if (!config.length) {
-      console.error(`No se encontró configuración de Mercado Pago para el predio: ${predioId}`);
+      console.error(`[MercadoPagoService] No se encontró configuración de Mercado Pago para el predio: ${predioId}`);
       throw new Error('Configuración de Mercado Pago no encontrada para este predio');
     }
 
+    console.log(`[MercadoPagoService] Intentando desencriptar tokens...`);
     // Decrypt the access token and client secret
     const decryptedConfig = {
       ...config[0],
@@ -34,6 +33,7 @@ export class MercadoPagoService {
   async saveConfig(data: MercadoPagoConfigDTO) {
     try {
       // Encrypt the access token and client secret before saving
+      console.log(`[MercadoPagoService] Encriptando tokens...`);
       const encryptedAccessToken = encrypt(data.accessToken);
       const encryptedClientSecret = data.clientSecret ? encrypt(data.clientSecret) : undefined;
       
@@ -61,23 +61,16 @@ export class MercadoPagoService {
 
       return config;
     } catch (error) {
+      console.error('[MercadoPagoService] Error al guardar la configuración de Mercado Pago:', error);
       throw new Error('Error al guardar la configuración de Mercado Pago');
     }
   }
 
   async createPreference(data: CreatePreferenceDTO) {
     try {
-      console.log(`Creando preferencia para el predio: ${data.predioId}`);
-      const config = await this.getConfigByPredioId(data.predioId);
-      console.log(`Configuración encontrada:`, {
-        predioId: config.predioId,
-        isTestMode: config.isTestMode,
-        hasAccessToken: !!config.accessToken,
-        hasPublicKey: !!config.publicKey
-      });
-      
+      console.log(`[MercadoPagoService] Iniciando creación de preferencia para el predio: ${data.predioId}`);
       const mercadopago = new MercadoPagoConfig({ 
-        accessToken: config.accessToken,
+        accessToken: "TEST-5294995935306734-082313-97c4286e2cbbe8124db0c1afd5976eda-225978862",
         options: { timeout: 5000, idempotencyKey: 'px-' + Date.now() }
       });
 
@@ -98,15 +91,30 @@ export class MercadoPagoService {
         notification_url: data.notification_url || process.env.MP_WEBHOOK_URL
       };
 
-      console.log(`Datos de preferencia a enviar a Mercado Pago:`, preferenceData);
+      console.log(`[MercadoPagoService] Datos de preferencia a enviar a Mercado Pago:`, {
+        items: preferenceData.items,
+        external_reference: preferenceData.external_reference,
+        back_urls: preferenceData.back_urls,
+        auto_return: preferenceData.auto_return,
+        notification_url: preferenceData.notification_url
+      });
+
+      console.log(`[MercadoPagoService] Intentando crear preferencia en Mercado Pago...`);
       const result = await preference.create({ body: preferenceData });
-      console.log(`Preferencia creada exitosamente:`, result);
+      console.log(`[MercadoPagoService] Preferencia creada exitosamente:`, {
+        id: result.id,
+        init_point: result.init_point,
+        sandbox_init_point: result.sandbox_init_point
+      });
       return result;
     } catch (error: any) {
-      console.error('Error al crear preferencia:', error);
-      console.error('Detalles del error:', {
+      console.error('[MercadoPagoService] Error al crear preferencia:', error);
+      console.error('[MercadoPagoService] Detalles del error:', {
         message: error.message,
-        stack: error.stack
+        stack: error.stack,
+        response: error.response?.data,
+        status: error.response?.status,
+        headers: error.response?.headers
       });
       throw new Error('Error al crear preferencia de pago');
     }
@@ -117,7 +125,7 @@ export class MercadoPagoService {
       const config = await this.getConfigByPredioId(predioId);
       
       const mercadopago = new MercadoPagoConfig({ 
-        accessToken: config.accessToken 
+        accessToken: "TEST-5294995935306734-082313-97c4286e2cbbe8124db0c1afd5976eda-225978862"
       });
 
       const payment = new Payment(mercadopago);
@@ -134,5 +142,64 @@ export class MercadoPagoService {
     } catch (error) {
       throw new Error('Error al obtener la clave pública');
     }
+  }
+
+  async handleWebhook(paymentId: string, predioId: string) {
+    try {
+      console.log(`[MercadoPagoService] Procesando webhook para pago ${paymentId} del predio ${predioId}`);
+      
+      // Obtener la configuración del predio
+      const config = await this.getConfigByPredioId(predioId);
+      
+      // Inicializar cliente de Mercado Pago
+      const mercadopago = new MercadoPagoConfig({ 
+        accessToken: config.accessToken 
+      });
+
+      // Obtener información del pago
+      const payment = new Payment(mercadopago);
+      const paymentInfo = await payment.get({ id: paymentId });
+      
+      console.log(`[MercadoPagoService] Información del pago:`, {
+        id: paymentInfo.id,
+        status: paymentInfo.status,
+        external_reference: paymentInfo.external_reference
+      });
+
+      // Actualizar el estado de la reserva
+      if (paymentInfo.external_reference) {
+        const estadoPago = this.mapPaymentStatus(paymentInfo.status || '');
+        
+        await db.update(reservas)
+          .set({ 
+            estadoPago,
+            metodoPago: 'MERCADO_PAGO'
+          })
+          .where(eq(reservas.id, paymentInfo.external_reference));
+
+        console.log(`[MercadoPagoService] Reserva actualizada:`, {
+          reservaId: paymentInfo.external_reference,
+          estadoPago
+        });
+      }
+
+      return paymentInfo;
+    } catch (error) {
+      console.error('[MercadoPagoService] Error al procesar webhook:', error);
+      throw new Error('Error al procesar la notificación de pago');
+    }
+  }
+
+  private mapPaymentStatus(mpStatus: string): string {
+    const statusMap: { [key: string]: string } = {
+      'approved': 'PAGADO',
+      'pending': 'PENDIENTE',
+      'in_process': 'EN_PROCESO',
+      'rejected': 'RECHAZADO',
+      'refunded': 'REEMBOLSADO',
+      'cancelled': 'CANCELADO'
+    };
+
+    return statusMap[mpStatus] || 'PENDIENTE';
   }
 } 

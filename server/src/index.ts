@@ -69,23 +69,6 @@ app.get(`${BASE_PATH}/health`, (req, res) => {
   });
 });
 
-// Log registered routes
-app._router.stack.forEach((middleware: any) => {
-  if (middleware.route) {
-    // Routes directly registered on the app
-    console.log(`${middleware.route.stack[0].method.toUpperCase()} ${middleware.route.path}`);
-  } else if (middleware.name === 'router') {
-    // Router middleware
-    middleware.handle.stack.forEach((handler: any) => {
-      if (handler.route) {
-        const baseRoute = handler.route.path;
-        const method = handler.route.stack[0].method.toUpperCase();
-        console.log(`${method} ${middleware.regexp} -> ${baseRoute}`);
-      }
-    });
-  }
-});
-
 // Error handling con logging
 app.use((err: Error & { status?: number }, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Error:', {

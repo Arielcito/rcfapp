@@ -27,20 +27,35 @@ export const authenticateToken = (
   res: Response,
   next: NextFunction
 ) => {
+  console.log('[Auth] Iniciando middleware de autenticación');
+  console.log('[Auth] Headers recibidos:', {
+    authorization: req.headers.authorization ? 'Presente' : 'Ausente',
+    'content-type': req.headers['content-type'],
+    'user-agent': req.headers['user-agent']
+  });
+
   const authHeader = req.headers.authorization;
-  
   const token = authHeader?.split(' ')[1];
-  
+
   if (!token) {
-    return res.status(401).json({ message: 'No autorizado' });
+    console.error('[Auth] Token no encontrado en los headers');
+    return res.status(401).json({ 
+      success: false,
+      message: 'No autorizado - Token no proporcionado' 
+    });
   }
 
   try {
+    console.log('[Auth] Verificando token...');
     const secretKey = process.env.JWT_SECRET || 'your-secret-key';
-    const decoded = jwt.verify(
-      token, 
-      secretKey
-    ) as JWTPayload;
+    console.log('[Auth] Secret key presente:', !!secretKey);
+    
+    const decoded = jwt.verify(token, secretKey) as JWTPayload;
+    console.log('[Auth] Token decodificado exitosamente:', {
+      id: decoded.id,
+      email: decoded.email,
+      role: decoded.role
+    });
   
     req.user = {
       id: decoded.id,
@@ -49,31 +64,70 @@ export const authenticateToken = (
       name: null
     };
   
+    console.log('[Auth] Usuario autenticado exitosamente');
     next();
   } catch (error: unknown) {
+    console.error('[Auth] Error en la autenticación:', error);
+    
     if (error instanceof jwt.JsonWebTokenError) {
+      console.error('[Auth] Error específico de JWT:', {
+        name: error.name,
+        message: error.message
+      });
+
       if (error.name === 'TokenExpiredError') {
-        return res.status(401).json({ message: 'Token expirado' });
+        return res.status(401).json({ 
+          success: false,
+          message: 'Token expirado',
+          error: 'El token de autenticación ha expirado'
+        });
       } else if (error.name === 'NotBeforeError') {
-        return res.status(401).json({ message: 'Token aún no válido' });
+        return res.status(401).json({ 
+          success: false,
+          message: 'Token aún no válido',
+          error: 'El token no es válido en este momento'
+        });
       }
     }
     
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-    res.status(401).json({ message: 'Token inválido', error: errorMessage });
+    console.error('[Auth] Error no manejado:', errorMessage);
+    res.status(401).json({ 
+      success: false,
+      message: 'Token inválido', 
+      error: errorMessage 
+    });
   }
 };
 
 export const authorizeRole = (roles: Role[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
+    console.log('[Auth] Verificando roles:', {
+      rolesRequeridos: roles,
+      rolUsuario: req.user?.role
+    });
+
     if (!req.user) {
-      return res.status(401).json({ message: 'No autorizado' });
+      console.error('[Auth] Usuario no encontrado en la request');
+      return res.status(401).json({ 
+        success: false,
+        message: 'No autorizado - Usuario no autenticado' 
+      });
     }
 
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: 'No tienes permiso para realizar esta acción' });
+      console.error('[Auth] Rol no autorizado:', {
+        rolUsuario: req.user.role,
+        rolesPermitidos: roles
+      });
+      return res.status(403).json({ 
+        success: false,
+        message: 'No tienes permiso para realizar esta acción',
+        error: 'Rol no autorizado'
+      });
     }
 
+    console.log('[Auth] Rol autorizado correctamente');
     next();
   };
 };
