@@ -2,7 +2,7 @@ import { View, Text } from "react-native";
 import { Image } from 'expo-image';
 import React from "react";
 
-export default function ApointmentFieldInfo({ place }) {
+export default function ApointmentFieldInfo({ place }: { place: any }) {
   return (
     <View>
       <View

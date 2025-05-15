@@ -21,6 +21,20 @@ import Colors from "../../../infraestructure/utils/Colors";
 import { FIREBASE_AUTH } from "../../../infraestructure/config/FirebaseConfig";
 import CaracteristicItem from "../../components/CaracteristicItem";
 import { api } from "../../../infraestructure/api/api";
+import { Cancha, Predio } from "../../../types/booking";
+
+interface ExtendedPredio extends Predio {
+  direccion?: string;
+}
+
+interface BookingSectionProps {
+  place?: ExtendedPredio;
+  preselectedDate?: string | Date;
+  preselectedTime?: string;
+  onCanchaSelect?: (cancha: Cancha) => void;
+  onDateSelect?: (date: moment.Moment) => void;
+  onTimeSelect?: (time: string) => void;
+}
 
 // Constantes para formatos de fecha y hora
 const DATE_FORMATS = {
@@ -31,7 +45,7 @@ const DATE_FORMATS = {
 
 // Utilidad para manejo de fechas y horas
 const DateTimeUtils = {
-  parseDate: (dateString) => {
+  parseDate: (dateString: string | Date | null) => {
     if (!dateString) return null;
     
     // Si ya es un objeto moment válido, lo devolvemos
@@ -52,7 +66,7 @@ const DateTimeUtils = {
     return null;
   },
 
-  parseTime: (timeString) => {
+  parseTime: (timeString: string | null) => {
     if (!timeString) return null;
     try {
       const [hours, minutes] = timeString.split(':');
@@ -63,7 +77,7 @@ const DateTimeUtils = {
     }
   },
 
-  calculateEndTime: (startTime) => {
+  calculateEndTime: (startTime: string | null) => {
     if (!startTime) return null;
     try {
       return moment(startTime, DATE_FORMATS.TIME)
@@ -75,7 +89,7 @@ const DateTimeUtils = {
     }
   },
 
-  formatDisplayDate: (date) => {
+  formatDisplayDate: (date: string | Date | moment.Moment | null) => {
     if (!date) return null;
     try {
       const momentDate = moment.isMoment(date) ? date : moment(date);
@@ -86,7 +100,7 @@ const DateTimeUtils = {
     }
   },
 
-  formatApiDate: (date) => {
+  formatApiDate: (date: string | Date | null) => {
     if (!date) return null;
     try {
       const momentDate = moment.isMoment(date) ? date : moment(date);
@@ -102,14 +116,17 @@ export default function BookingSection({
   place,
   preselectedDate,
   preselectedTime,
-}) {
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedTime, setSelectedTime] = useState(null);
-  const [endTime, setEndTime] = useState(null);
+  onCanchaSelect,
+  onDateSelect,
+  onTimeSelect,
+}: BookingSectionProps) {
+  const [selectedDate, setSelectedDate] = useState<moment.Moment | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [endTime, setEndTime] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [canchas, setCanchas] = useState([]);
-  const [selectedCancha, setSelectedCancha] = useState(null);
+  const [selectedCancha, setSelectedCancha] = useState<Cancha | null>(null);
   const navigator = useNavigation();
 
   const auth = FIREBASE_AUTH;
@@ -133,11 +150,14 @@ export default function BookingSection({
       const parsedDate = moment(preselectedDate);
       if (parsedDate.isValid()) {
         setSelectedDate(parsedDate);
+        onDateSelect?.(parsedDate);
       } else {
         setSelectedDate(moment());
+        onDateSelect?.(moment());
       }
     } else {
       setSelectedDate(moment());
+      onDateSelect?.(moment());
     }
 
     // Manejo del horario
@@ -145,6 +165,7 @@ export default function BookingSection({
       const parsedTime = DateTimeUtils.parseTime(preselectedTime);
       if (parsedTime) {
         setSelectedTime(parsedTime);
+        onTimeSelect?.(parsedTime);
         const calculatedEndTime = DateTimeUtils.calculateEndTime(parsedTime);
         setEndTime(calculatedEndTime);
       }
@@ -159,10 +180,14 @@ export default function BookingSection({
   const fetchCanchas = async () => {
     try {
       setLoading(true);
+      if (!place?.id) {
+        throw new Error("ID de predio no disponible");
+      }
       const response = await api.get(`/canchas/predio/${place.id}`);
       if (response.data && response.data.length > 0) {
         setCanchas(response.data);
         setSelectedCancha(response.data[0]);
+        onCanchaSelect?.(response.data[0]);
         // Log relevante para debugging
         console.log('BookingSection - Cancha seleccionada:', {
           id: response.data[0].id,
@@ -180,13 +205,16 @@ export default function BookingSection({
     }
   };
 
-  const renderCanchaItem = ({ item }) => (
+  const renderCanchaItem = ({ item }: { item: Cancha }) => (
     <TouchableOpacity
       style={[
         styles.canchaItem,
         selectedCancha?.id === item.id && styles.selectedCanchaItem,
       ]}
-      onPress={() => setSelectedCancha(item)}
+      onPress={() => {
+        setSelectedCancha(item);
+        onCanchaSelect?.(item);
+      }}
     >
       <Text style={styles.canchaText}>Cancha {item.numero}</Text>
       <Text style={styles.canchaDetail}>{item.nombre}</Text>
@@ -195,6 +223,8 @@ export default function BookingSection({
   );
 
   const handleWhatsApp = () => {
+    if (!place) return;
+    
     const message = `Hola! Vi tu predio "${place.nombre}" en RCF App y me gustaría obtener más información.`;
     const phoneNumber = place.telefono?.replace(/\D/g, '') || '';
     
@@ -243,7 +273,7 @@ export default function BookingSection({
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.contentContainer}>
-          <SubHeading subHeadingTitle={"Seleccionar Cancha"} seeAll={false} />
+          <SubHeading subHeadingTitle={"Seleccionar Cancha"} seelAll={false} />
           <FlatList
             data={canchas}
             renderItem={renderCanchaItem}
@@ -253,7 +283,7 @@ export default function BookingSection({
             style={styles.canchasList}
           />
 
-          <SubHeading subHeadingTitle={"Detalles de la Reserva"} seeAll={false} />
+          <SubHeading subHeadingTitle={"Detalles de la Reserva"} seelAll={false} />
           <View style={styles.detailsContainer}>
             <View style={styles.detailItem}>
               <Ionicons name="calendar-outline" size={24} color={Colors.PRIMARY} />
@@ -269,7 +299,7 @@ export default function BookingSection({
             </View>
             <View style={styles.detailItem}>
               <Ionicons name="location-outline" size={24} color={Colors.PRIMARY} />
-              <Text style={styles.detailText}>{place.direccion}</Text>
+              <Text style={styles.detailText}>{place?.direccion || 'Dirección no disponible'}</Text>
             </View>
             {selectedCancha && (
               <>
@@ -289,23 +319,25 @@ export default function BookingSection({
             )}
           </View>
 
-          <SubHeading subHeadingTitle={"Características"} seeAll={false} />
-          {selectedCancha && (
-            <FlatList
-              data={selectedCancha.caracteristicas || []}
-              horizontal={true}
-              showsHorizontalScrollIndicator={false}
-              renderItem={({ item }) => <CaracteristicItem name={item} />}
-              keyExtractor={(item, index) => index.toString()}
-              style={styles.caracteristicsList}
-            />
+          {selectedCancha && selectedCancha.caracteristicas && (
+            <>
+              <SubHeading subHeadingTitle={"Características"} seelAll={false} />
+              <FlatList
+                data={selectedCancha.caracteristicas || []}
+                horizontal={true}
+                showsHorizontalScrollIndicator={false}
+                renderItem={({ item }) => <CaracteristicItem name={item} />}
+                keyExtractor={(item, index) => index.toString()}
+                style={styles.caracteristicsList}
+              />
+            </>
           )}
 
-          <SubHeading subHeadingTitle={"Contacto"} seeAll={false} />
+          <SubHeading subHeadingTitle={"Contacto"} seelAll={false} />
           <View style={styles.contactContainer}>
             <View style={styles.phoneContainer}>
               <Ionicons name="call-outline" size={24} color={Colors.PRIMARY} />
-              <Text style={styles.phoneText}>{place.telefono || 'No disponible'}</Text>
+              <Text style={styles.phoneText}>{place?.telefono || 'No disponible'}</Text>
             </View>
             <TouchableOpacity
               style={styles.whatsappButton}
@@ -315,60 +347,8 @@ export default function BookingSection({
               <Text style={styles.whatsappButtonText}>Contactar por WhatsApp</Text>
             </TouchableOpacity>
           </View>
-
-          <SubHeading subHeadingTitle={"Notas"} seeAll={false} />
-          <TextInput
-            numberOfLines={3}
-            onChangeText={(value) => setNotes(value)}
-            style={styles.notesInput}
-            placeholder="Algo que quieras agregar..."
-          />
         </View>
-        <View style={styles.bottomSpacing} />
       </ScrollView>
-
-      <View style={styles.stickyButtonContainer}>
-        <TouchableOpacity
-          onPress={() => {
-            // Log para debugging de navegación
-            console.log('BookingSection - Navegando a perfil:', {
-              fecha: selectedDate?.format('YYYY-MM-DD'),
-              hora: selectedTime,
-              cancha: selectedCancha?.id
-            });
-            navigator.navigate("pitch-profile", {
-              place: place,
-              selectedDate: selectedDate,
-              selectedTime: selectedTime,
-              selectedCancha: selectedCancha
-            });
-          }}
-          disabled={!selectedCancha || loading}
-          style={[styles.viewProfileButton, !selectedCancha && styles.disabledButton]}
-        >
-          <Text style={styles.buttonText}>Ver Perfil</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => {
-            // Log para debugging de pago
-            console.log('BookingSection - Iniciando pago:', {
-              fecha: selectedDate?.format('YYYY-MM-DD'),
-              hora: selectedTime,
-              cancha: selectedCancha?.id,
-              precio: selectedCancha?.precioPorHora
-            });
-            navigator.navigate("payment", {
-              appointmentData: { place, cancha: selectedCancha },
-              selectedDate: selectedDate,
-              selectedTime: selectedTime,
-            });
-          }}
-          disabled={!selectedCancha || loading}
-          style={[styles.reserveButton, !selectedCancha && styles.disabledButton]}
-        >
-          <Text style={styles.buttonText}>Reservar</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -442,78 +422,6 @@ const styles = StyleSheet.create({
   detailText: {
     marginLeft: 12,
     fontSize: 16,
-  },
-  notesInput: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    textAlignVertical: "top",
-  },
-  bottomSpacing: {
-    height: Platform.OS === 'ios' ? 120 : 100,
-  },
-  stickyButtonContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    backgroundColor: 'white',
-    padding: 16,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: -3,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 5,
-    zIndex: 1000,
-  },
-  viewProfileButton: {
-    backgroundColor: Colors.GRAY,
-    padding: 16,
-    borderRadius: 8,
-    flex: 1,
-    marginRight: 8,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 3,
-  },
-  reserveButton: {
-    backgroundColor: Colors.PRIMARY,
-    padding: 16,
-    borderRadius: 8,
-    flex: 1,
-    marginLeft: 8,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 3,
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    color: "white",
-    fontWeight: "bold",
   },
   caracteristicsList: {
     marginBottom: 16,
