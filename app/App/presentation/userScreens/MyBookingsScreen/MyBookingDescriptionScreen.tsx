@@ -1,4 +1,5 @@
-import { useRoute, useNavigation } from "@react-navigation/native";
+import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useState } from "react";
 import {
   View,
@@ -14,18 +15,28 @@ import WhatsappButton from "../../components/WhatsappButton";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { updateAppointment } from "../../../infraestructure/api/appointments.api";
 import Colors from "../../../infraestructure/utils/Colors";
+import { BookingResponse } from "../../../types/booking";
+
+type RootStackParamList = {
+  myBookingDescription: {
+    place: BookingResponse;
+  };
+};
+
+type MyBookingDescriptionScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'myBookingDescription'>;
+type MyBookingDescriptionScreenRouteProp = RouteProp<RootStackParamList, 'myBookingDescription'>;
 
 export default function MyBookingDescriptionScreen() {
-  const params = useRoute().params;
-  const place = params.place;
-  const navigation = useNavigation();
+  const route = useRoute<MyBookingDescriptionScreenRouteProp>();
+  const place = route.params.place;
+  const navigation = useNavigation<MyBookingDescriptionScreenNavigationProp>();
   const [loading, setLoading] = useState(false);
 
-  const handleCancel = async (appointmentId) => {
+  const handleCancel = async (appointmentId: string) => {
     setLoading(true);
     try {
-      await updateAppointment(appointmentId.toString(), {
-        estadoPago: "cancelado"
+      await updateAppointment(appointmentId, {
+        estado: "cancelado"
       });
       ToastAndroid.show("Reserva cancelada!", ToastAndroid.LONG);
       navigation.goBack();

@@ -17,6 +17,7 @@ import { TabView, SceneMap, TabBar } from "react-native-tab-view";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import moment from "moment";
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 // Constants
 import Colors from "../../../infraestructure/utils/Colors";
@@ -32,9 +33,35 @@ import { useBookings } from "../../../application/hooks/useBookings";
 import { filterBookings } from "../../../infraestructure/utils/bookingFilters";
 import { showErrorAlert } from "../../../infraestructure/utils/alerts";
 import { STORAGE_KEYS } from "../../../infraestructure/constants";
+import { mapBookingResponse } from "../../../infraestructure/utils/bookingMappers";
+
+// Types
+import { BookingResponse } from "../../../types/booking";
+
+interface EmptyBookingsListProps {
+  message: string;
+  buttonText: string;
+  onButtonPress: () => void;
+}
+
+interface BookingListProps {
+  appointments: BookingResponse[];
+  loading: boolean;
+  setLoading: (loading: boolean) => void;
+  emptyMessage: string;
+  buttonText: string;
+  onButtonPress: () => void;
+}
+
+interface FeedbackModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onPositive: () => void;
+  onNegative: () => void;
+}
 
 // Components
-const EmptyBookingsList = memo(({ message, buttonText, onButtonPress }) => (
+const EmptyBookingsList = memo(({ message, buttonText, onButtonPress }: EmptyBookingsListProps) => (
   <View style={styles.emptyContainer}>
     <Text style={styles.noReservationsText}>{message}</Text>
     <TouchableOpacity onPress={onButtonPress} style={styles.button}>
@@ -50,13 +77,13 @@ const BookingList = memo(({
   emptyMessage, 
   buttonText, 
   onButtonPress 
-}) => {
-  const keyExtractor = useCallback((item) => 
+}: BookingListProps) => {
+  const keyExtractor = useCallback((item: BookingResponse) => 
     item.appointmentId?.toString() || Math.random().toString(), 
     []
   );
 
-  const renderItem = useCallback(({ item }) => (
+  const renderItem = useCallback(({ item }: { item: BookingResponse }) => (
     <AppointmentItem reserva={item} onUpdate={() => setLoading(true)} />
   ), [setLoading]);
 
@@ -86,7 +113,7 @@ const BookingList = memo(({
   );
 });
 
-const FeedbackModal = memo(({ visible, onClose, onPositive, onNegative }) => (
+const FeedbackModal = memo(({ visible, onClose, onPositive, onNegative }: FeedbackModalProps) => (
   <Modal
     animationType="slide"
     transparent={true}
@@ -124,11 +151,16 @@ const FeedbackModal = memo(({ visible, onClose, onPositive, onNegative }) => (
   </Modal>
 ));
 
+type RootStackParamList = {
+  home: undefined;
+};
+
+type MyBookingsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 export default function MyBookingsScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<MyBookingsScreenNavigationProp>();
   const layout = useWindowDimensions();
-  const { currentUser } = useCurrentUser();
-  
+
   const [index, setIndex] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -138,7 +170,16 @@ export default function MyBookingsScreen() {
     error, 
     isLoading, 
     refetch 
-  } = useBookings(currentUser?.id);
+  } = useBookings();
+
+  // Add logging for bookings
+  useEffect(() => {
+    console.log('Bookings data:', {
+      active: bookings?.active,
+      past: bookings?.past,
+      cancelled: bookings?.cancelled
+    });
+  }, [bookings]);
 
   const [routes] = useState([
     { key: "activas", title: "Aprobadas" },
@@ -194,7 +235,7 @@ export default function MyBookingsScreen() {
   const renderScene = SceneMap({
     activas: () => (
       <BookingList
-        appointments={filterBookings(bookings?.active || [])}
+        appointments={filterBookings((bookings?.active || []).map(mapBookingResponse))}
         loading={loading}
         setLoading={setLoading}
         emptyMessage="Aún no hiciste ninguna reserva en la app"
@@ -204,7 +245,7 @@ export default function MyBookingsScreen() {
     ),
     pasadas: () => (
       <BookingList
-        appointments={filterBookings(bookings?.past || [])}
+        appointments={filterBookings((bookings?.past || []).map(mapBookingResponse))}
         loading={loading}
         setLoading={setLoading}
         emptyMessage="Aún no tienes reservas pendientes"
@@ -214,7 +255,7 @@ export default function MyBookingsScreen() {
     ),
     canceladas: () => (
       <BookingList
-        appointments={filterBookings(bookings?.cancelled || [])}
+        appointments={filterBookings((bookings?.cancelled || []).map(mapBookingResponse))}
         loading={loading}
         setLoading={setLoading}
         emptyMessage="No hay reservas canceladas"
@@ -224,7 +265,7 @@ export default function MyBookingsScreen() {
     ),
   });
 
-  const renderTabBar = useCallback(props => (
+  const renderTabBar = useCallback((props: any) => (
     <TabBar
       {...props}
       indicatorStyle={styles.tabIndicator}
@@ -238,14 +279,21 @@ export default function MyBookingsScreen() {
   if (error) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>No se pudieron cargar las reservas</Text>
-          <TouchableOpacity 
-            style={styles.button} 
-            onPress={refetch}
-          >
-            <Text style={styles.buttonText}>Reintentar</Text>
-          </TouchableOpacity>
+        <View style={styles.mainContainer}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Mis reservas</Text>
+          </View>
+          <View style={styles.emptyContainer}>
+            <Text style={styles.noReservationsText}>
+              No pudimos cargar tus reservas en este momento
+            </Text>
+            <TouchableOpacity 
+              style={styles.button} 
+              onPress={refetch}
+            >
+              <Text style={styles.buttonText}>Intentar de nuevo</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaView>
     );

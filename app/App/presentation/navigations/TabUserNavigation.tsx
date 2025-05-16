@@ -14,7 +14,7 @@ import PitchProfileScreen from "../userScreens/PitchProfileScreen/PitchProfileSc
 import EditProfileScreen from "../userScreens/ProfileScreen/EditProfileScreen";
 import DeleteAccountScreen from "../userScreens/ProfileScreen/DeleteAccountScreen";
 import MyBookingDescriptionScreen from "../userScreens/MyBookingsScreen/MyBookingDescriptionScreen";
-import SuccessScreen from "../userScreens/SuccessScreen/SuccressScreen";
+import SuccessScreen from "../userScreens/SuccessScreen/SuccessScreen";
 import MapScreen from "../userScreens/MapScreen/MapScreen";
 import TermsAndCondition from "../userScreens/ProfileScreen/TermsAndCondition";
 // Importaciones de iconos
@@ -95,6 +95,8 @@ const UserTabs = () => (
           case 'profileTab':
             Icon = ProfileIcon;
             break;
+          default:
+            Icon = HomeIcon; // Fallback icon
         }
         return (
           <>
@@ -110,7 +112,7 @@ const UserTabs = () => (
                 borderTopRightRadius: 3,
               }} />
             )}
-            <Icon width={25} height={25} color={color} />
+            {Icon && <Icon width={25} height={25} color={color} />}
           </>
         );
       },

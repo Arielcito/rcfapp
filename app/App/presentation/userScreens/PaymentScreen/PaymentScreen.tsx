@@ -39,9 +39,18 @@ type RootStackParamList = {
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-const showMessage = (message: string) => {
+const showMessage = (message: string, title?: string) => {
   if (Platform.OS === 'ios') {
-    Alert.alert('Mensaje', message);
+    Alert.alert(
+      title || 'Mensaje',
+      message,
+      [
+        {
+          text: 'Entendido',
+          style: 'default'
+        }
+      ]
+    );
   } else {
     ToastAndroid.show(message, ToastAndroid.LONG);
   }
@@ -383,7 +392,11 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
             console.log("Respuesta del navegador:", response);
             
             if (response.type === "cancel") {
-              throw new Error("Pago cancelado por el usuario");
+              showMessage(
+                "¿Necesitas ayuda para completar el pago? Puedes intentar nuevamente o elegir otro método de pago.",
+                "Pago cancelado"
+              );
+              return;
             }
 
             await bookAppointment("Mercado Pago");
@@ -398,11 +411,17 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
             // Verificar si el error es porque el predio no tiene configurado Mercado Pago
             const errorMessage = mpError.response?.data?.error || mpError.message;
             if (errorMessage.includes("no tiene configurado Mercado Pago")) {
-              showMessage("Este predio no tiene configurado Mercado Pago. Por favor, elija otro método de pago.");
+              showMessage(
+                "Este predio no tiene configurado Mercado Pago. Por favor, elija otro método de pago.",
+                "Método no disponible"
+              );
               return;
             }
             
-            throw new Error(`Error con Mercado Pago: ${mpError.message}`);
+            showMessage(
+              "Hubo un problema al procesar el pago. Por favor, intente nuevamente o elija otro método de pago.",
+              "Error en el pago"
+            );
           }
           break;
         }
@@ -591,9 +610,7 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
               onPress={() => setSelectedPaymentMethod("efectivo")}
               style={[
                 styles.paymentButton,
-                selectedPaymentMethod === "efectivo" && {
-                  borderColor: Colors.PRIMARY,
-                },
+                selectedPaymentMethod === "efectivo" && styles.selectedPaymentButton,
               ]}
             >
               <Ionicons name="cash-outline" size={30} color={Colors.PRIMARY} />
@@ -606,9 +623,7 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
               onPress={() => setSelectedPaymentMethod("transferencia")}
               style={[
                 styles.paymentButton,
-                selectedPaymentMethod === "transferencia" && {
-                  borderColor: Colors.PRIMARY,
-                },
+                selectedPaymentMethod === "transferencia" && styles.selectedPaymentButton,
               ]}
             >
               <Ionicons name="card-outline" size={30} color={Colors.PRIMARY} />
@@ -621,9 +636,7 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
               onPress={() => setSelectedPaymentMethod("tarjeta")}
               style={[
                 styles.paymentButton,
-                selectedPaymentMethod === "tarjeta" && {
-                  borderColor: Colors.PRIMARY,
-                },
+                selectedPaymentMethod === "tarjeta" && styles.selectedPaymentButton,
               ]}
             >
               <Image source={require("../../assets/images/credit-card.png")} style={styles.paymentImage} />
@@ -635,9 +648,7 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
               onPress={() => setSelectedPaymentMethod("Mercado Pago")}
               style={[
                 styles.paymentButton,
-                selectedPaymentMethod === "Mercado Pago" && {
-                  borderColor: Colors.PRIMARY,
-                },
+                selectedPaymentMethod === "Mercado Pago" && styles.selectedPaymentButton,
               ]}
             >
               <Image source={require("../../assets/images/mercado-pago.png")} style={styles.paymentImage} />
@@ -704,99 +715,104 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.LIGHT_GRAY,
   },
   scrollContentContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
   headerContainer: {
-    marginTop: 20,
+    marginTop: 16,
+    marginBottom: 8,
   },
   heading: {
-    fontSize: 24,
+    fontSize: 22,
     fontFamily: "montserrat-medium",
     color: "#003366",
     fontWeight: "bold",
     textAlign: "left",
-    marginBottom: 20,
-    marginTop: 20,
+    marginBottom: 8,
   },
   subHeading: {
     color: Colors.PRIMARY,
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: "montserrat-medium",
-    marginBottom: 15,
+    marginBottom: 8,
   },
   sectionContainer: {
-    marginBottom: 20,
+    marginBottom: 12,
   },
   sectionHeading: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: "montserrat-medium",
     color: "#003366",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   scheduleContainer: {
     backgroundColor: "#fff",
-    padding: 16,
-    borderRadius: 8,
+    padding: 12,
+    borderRadius: 12,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
   },
   scheduleText: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: "montserrat",
     color: "#000",
   },
   paymentMethodContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-around",
-    marginVertical: 10,
+    justifyContent: "space-between",
+    marginVertical: 8,
+    paddingHorizontal: 4,
   },
   billDetailsContainer: {
     backgroundColor: Colors.WHITE,
-    padding: 16,
-    borderRadius: 8,
+    padding: 12,
+    borderRadius: 12,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
   },
   billRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   billDetailText: {
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.GRAY,
     fontFamily: "montserrat",
   },
   billDetailAmount: {
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.BLACK,
     fontFamily: "montserrat-medium",
   },
   totalRow: {
-    marginTop: 8,
+    marginTop: 6,
     borderTopWidth: 1,
-    borderTopColor: Colors.LIGHT_GRAY,
-    paddingTop: 8,
+    borderTopColor: 'rgba(0, 0, 0, 0.05)',
+    paddingTop: 6,
   },
   totalText: {
-    fontSize: 18,
+    fontSize: 16,
     color: Colors.BLACK,
     fontFamily: "montserrat-medium",
   },
   totalAmount: {
-    fontSize: 18,
+    fontSize: 16,
     color: Colors.PRIMARY,
     fontFamily: "montserrat-bold",
   },
@@ -805,218 +821,245 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
-    padding: 15,
+    padding: 12,
     backgroundColor: Colors.WHITE,
-    borderRadius: 10,
+    borderRadius: 12,
     width: width * 0.28,
-    margin: 5,
-    height: 80,
+    margin: 4,
+    height: 70,
     shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  selectedPaymentButton: {
+    borderColor: Colors.PRIMARY,
+    backgroundColor: 'rgba(0, 102, 204, 0.05)',
+    borderWidth: 2,
+    shadowColor: Colors.PRIMARY,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 4,
     elevation: 3,
   },
   paymentMethodText: {
-    marginTop: 5,
+    marginTop: 4,
     fontSize: 12,
     fontFamily: "montserrat-medium",
     color: Colors.BLACK,
   },
   paymentImage: {
-    width: 60,
-    height: 40,
+    width: 50,
+    height: 32,
     resizeMode: 'contain',
   },
   creditCardForm: {
     backgroundColor: Colors.WHITE,
-    padding: 15,
-    borderRadius: 10,
-    marginTop: 15,
+    padding: 12,
+    borderRadius: 12,
+    marginTop: 8,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
   },
   formLabel: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.GRAY,
     fontFamily: "montserrat-medium",
-    marginBottom: 5,
+    marginBottom: 4,
   },
   formInput: {
     borderWidth: 1,
-    borderColor: Colors.LIGHT_GRAY,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
     borderRadius: 8,
-    padding: 12,
-    marginBottom: 15,
-    fontSize: 16,
+    padding: 10,
+    marginBottom: 12,
+    fontSize: 15,
     fontFamily: "montserrat",
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
   },
   rowContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 10,
+    gap: 8,
   },
   halfWidth: {
     flex: 1,
   },
   reserveButton: {
-    padding: 13,
+    padding: 12,
     backgroundColor: Colors.PRIMARY,
-    margin: 10,
-    borderRadius: 10,
-    marginBottom: 10,
+    margin: 8,
+    borderRadius: 12,
+    marginBottom: 8,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   reserveButtonText: {
     color: Colors.WHITE,
     textAlign: "center",
     fontFamily: "montserrat-medium",
-    fontSize: 17,
+    fontSize: 16,
   },
   transferContainer: {
     backgroundColor: Colors.WHITE,
-    padding: 15,
-    borderRadius: 10,
-    marginTop: 15,
+    padding: 12,
+    borderRadius: 12,
+    marginTop: 8,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
   },
   transferDataRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 6,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.LIGHT_GRAY,
+    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
   },
   transferLabel: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.GRAY,
     fontFamily: "montserrat-medium",
   },
   transferValue: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.BLACK,
     fontFamily: "montserrat",
     flex: 1,
     textAlign: 'right',
-    marginLeft: 10,
+    marginLeft: 8,
   },
   transferWarning: {
     backgroundColor: '#FEF3C7',
-    padding: 15,
-    borderRadius: 10,
-    marginTop: 15,
+    padding: 12,
+    borderRadius: 12,
+    marginTop: 8,
     shadowColor: "#92400E",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(146, 64, 14, 0.1)',
   },
   warningText: {
     color: '#92400E',
     fontFamily: "montserrat",
     textAlign: 'center',
+    fontSize: 13,
   },
   shareButton: {
     flexDirection: 'row',
     backgroundColor: Colors.PRIMARY,
-    padding: 12,
+    padding: 10,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 15,
+    marginTop: 12,
   },
   shareButtonText: {
     color: Colors.WHITE,
     fontFamily: "montserrat-medium",
-    marginLeft: 8,
+    marginLeft: 6,
+    fontSize: 13,
   },
   voucherInfoContainer: {
     flexDirection: 'row',
     backgroundColor: '#E6F7FF',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 20,
+    padding: 10,
+    borderRadius: 12,
+    marginBottom: 12,
     alignItems: 'flex-start',
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 102, 204, 0.1)',
   },
   voucherInfoText: {
-    marginLeft: 10,
+    marginLeft: 8,
     flex: 1,
     color: Colors.PRIMARY,
     fontFamily: "montserrat",
-    fontSize: 14,
+    fontSize: 13,
   },
   stickyButtonContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 10,
+    padding: 8,
     backgroundColor: Colors.WHITE,
     borderTopWidth: 1,
-    borderTopColor: Colors.LIGHT_GRAY,
-    elevation: 5,
+    borderTopColor: 'rgba(0, 0, 0, 0.05)',
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
+    shadowOffset: { width: 0, height: -1 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 2,
   },
   notesContainer: {
     backgroundColor: Colors.WHITE,
-    padding: 16,
-    borderRadius: 8,
+    padding: 12,
+    borderRadius: 12,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-    marginBottom: 20,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
   },
   notesInput: {
     borderWidth: 1,
-    borderColor: Colors.LIGHT_GRAY,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
     borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
+    padding: 10,
+    fontSize: 15,
     fontFamily: "montserrat",
-    minHeight: 100,
+    minHeight: 80,
     textAlignVertical: 'top',
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
   },
   iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: "rgba(0, 102, 204, 0.1)",
     justifyContent: 'center',
     alignItems: 'center',
   },
   appointmentCardContainer: {
     backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 16,
-    marginBottom: 20,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
     elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
   },
 });

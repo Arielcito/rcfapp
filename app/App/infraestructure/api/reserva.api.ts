@@ -32,6 +32,16 @@ interface CreateReservaDTO {
   notasAdicionales?: string;
 }
 
+interface UpdateReservaDTO {
+  fechaHora?: Date;
+  duracion?: number;
+  precioTotal?: number;
+  estadoPago?: string;
+  metodoPago?: string;
+  notasAdicionales?: string;
+  pagoId?: string;
+}
+
 interface ReservaResponse {
   id: string;
   fechaHora: string;
@@ -179,7 +189,7 @@ export const reservaApi = {
     }
   },
 
-  actualizarReserva: async (id: string, data: Partial<CreateReservaDTO>): Promise<Reserva> => {
+  actualizarReserva: async (id: string, data: Partial<UpdateReservaDTO>): Promise<Reserva> => {
     try {
       const response = await api.put(`/reserva/${id}`, data);
       return response.data as Reserva;

@@ -99,7 +99,6 @@ const AppointmentStack = () => (
         headerTitle: "",
         headerTransparent: true,
         headerTintColor: "#000",
-        tabBarVisible: false,
       }}
     />
   </Stack.Navigator>
