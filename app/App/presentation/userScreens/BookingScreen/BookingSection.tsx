@@ -253,7 +253,7 @@ export default function BookingSection({
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.PRIMARY} />
+        <ActivityIndicator size="large" color={Colors.SECONDARY} />
       </View>
     );
   }
@@ -273,6 +273,12 @@ export default function BookingSection({
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.contentContainer}>
+          {place?.nombre && (
+            <Text style={styles.venueTitle}>{place.nombre}</Text>
+          )}
+          {selectedCancha && (
+            <Text style={styles.courtTitle}>{selectedCancha.nombre}</Text>
+          )}
           <SubHeading subHeadingTitle={"Seleccionar Cancha"} seelAll={false} />
           <FlatList
             data={canchas}
@@ -286,33 +292,33 @@ export default function BookingSection({
           <SubHeading subHeadingTitle={"Detalles de la Reserva"} seelAll={false} />
           <View style={styles.detailsContainer}>
             <View style={styles.detailItem}>
-              <Ionicons name="calendar-outline" size={24} color={Colors.PRIMARY} />
+              <Ionicons name="calendar-outline" size={24} color={Colors.SECONDARY} />
               <Text style={styles.detailText}>
                 {selectedDate ? DateTimeUtils.formatDisplayDate(selectedDate) : 'Fecha no seleccionada'}
               </Text>
             </View>
             <View style={styles.detailItem}>
-              <Ionicons name="time-outline" size={24} color={Colors.PRIMARY} />
+              <Ionicons name="time-outline" size={24} color={Colors.SECONDARY} />
               <Text style={styles.detailText}>
                 {selectedTime && endTime ? `${selectedTime} - ${endTime}` : 'Horario no seleccionado'}
               </Text>
             </View>
             <View style={styles.detailItem}>
-              <Ionicons name="location-outline" size={24} color={Colors.PRIMARY} />
+              <Ionicons name="location-outline" size={24} color={Colors.SECONDARY} />
               <Text style={styles.detailText}>{place?.direccion || 'Dirección no disponible'}</Text>
             </View>
             {selectedCancha && (
               <>
                 <View style={styles.detailItem}>
-                  <Ionicons name="football-outline" size={24} color={Colors.PRIMARY} />
+                  <Ionicons name="football-outline" size={24} color={Colors.SECONDARY} />
                   <Text style={styles.detailText}> {selectedCancha.nombre}</Text>
                 </View>
                 <View style={styles.detailItem}>
-                  <Ionicons name="cash-outline" size={24} color={Colors.PRIMARY} />
+                  <Ionicons name="cash-outline" size={24} color={Colors.SECONDARY} />
                   <Text style={styles.detailText}>${Number(selectedCancha.precioPorHora).toLocaleString()} /hora</Text>
                 </View>
                 <View style={styles.detailItem}>
-                  <Ionicons name="pricetag-outline" size={24} color={Colors.PRIMARY} />
+                  <Ionicons name="pricetag-outline" size={24} color={Colors.SECONDARY} />
                   <Text style={styles.detailText}>Seña: ${Number(selectedCancha.precioPorHora / 2).toLocaleString()}</Text>
                 </View>
               </>
@@ -336,7 +342,7 @@ export default function BookingSection({
           <SubHeading subHeadingTitle={"Contacto"} seelAll={false} />
           <View style={styles.contactContainer}>
             <View style={styles.phoneContainer}>
-              <Ionicons name="call-outline" size={24} color={Colors.PRIMARY} />
+              <Ionicons name="call-outline" size={24} color={Colors.SECONDARY} />
               <Text style={styles.phoneText}>{place?.telefono || 'No disponible'}</Text>
             </View>
             <TouchableOpacity
@@ -389,24 +395,35 @@ const styles = StyleSheet.create({
   },
   canchaItem: {
     backgroundColor: '#E8F0FE',
-    borderRadius: 8,
-    padding: 12,
-    marginRight: 8,
-    minWidth: 120,
+    borderRadius: 12,
+    padding: 4,
+    marginRight: 10,
+    minWidth: 110,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   selectedCanchaItem: {
-    backgroundColor: Colors.PRIMARY,
+    backgroundColor: Colors.SECONDARY,
+    shadowColor: Colors.SECONDARY,
+    shadowOpacity: 0.2,
   },
   canchaText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
     color: '#1E3A8A',
   },
   canchaDetail: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#4B5563',
+    textAlign: 'center',
   },
   detailsContainer: {
     backgroundColor: "#f0f0f0",
@@ -440,7 +457,7 @@ const styles = StyleSheet.create({
   phoneText: {
     marginLeft: 12,
     fontSize: 16,
-    color: Colors.PRIMARY,
+    color: Colors.SECONDARY,
     fontWeight: '500',
   },
   whatsappButton: {
@@ -457,5 +474,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 8,
+  },
+  venueTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: Colors.PRIMARY,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  courtTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: Colors.SECONDARY,
+    marginBottom: 16,
+    textAlign: 'center',
   },
 });

@@ -10,6 +10,8 @@ import {
   Platform,
   Animated,
   Easing,
+  SafeAreaView,
+  useColorScheme,
 } from "react-native";
 import Header from "./Header";
 import { UserLocationContext } from "../../../application/context/UserLocationContext";
@@ -24,6 +26,7 @@ import { Dimensions } from 'react-native';
 import moment from 'moment';
 import { usePredios } from "../../../infraestructure/api/places.queries";
 import type { Place } from "../../../domain/entities/place.entity";
+import { LinearGradient } from "expo-linear-gradient";
 
 interface Day {
   date: string;
@@ -59,6 +62,13 @@ export default function HomeScreen() {
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
   const dayButtonAnim = useRef(new Animated.Value(0)).current;
   const listItemAnim = useRef(new Animated.Value(0)).current;
+
+  const colorScheme = useColorScheme();
+
+  const backgroundColor = colorScheme === "dark" ? "#181A20" : "#F7F8FA";
+  const headerGradientColors: [string, string] = colorScheme === "dark"
+    ? ["#1e293b", "#2563eb"]
+    : ["#2563eb", "#60a5fa"];
 
   const initializeDateAndTime = useCallback(() => {
     const dates = getDays();
@@ -187,29 +197,40 @@ export default function HomeScreen() {
     >
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Selecciona una hora</Text>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Selecciona una hora</Text>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setIsTimePickerVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>×</Text>
+            </TouchableOpacity>
+          </View>
           <FlatList
             data={timeList}
             renderItem={({ item }) => (
               <TouchableOpacity
-                style={styles.timeButton}
+                style={[
+                  styles.timeButton,
+                  selectedTime === item.time && styles.selectedTimeButton,
+                ]}
                 onPress={() => {
                   setSelectedTime(item.time);
                   setIsTimePickerVisible(false);
                 }}
               >
-                <Text style={styles.timeButtonText}>{item.time}</Text>
+                <Text style={[
+                  styles.timeButtonText,
+                  selectedTime === item.time && styles.selectedTimeButtonText,
+                ]}>
+                  {item.time}
+                </Text>
               </TouchableOpacity>
             )}
             keyExtractor={(item) => item.time.toString()}
             numColumns={3}
+            contentContainerStyle={styles.timeListContent}
           />
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => setIsTimePickerVisible(false)}
-          >
-            <Text style={styles.closeButtonText}>Cerrar</Text>
-          </TouchableOpacity>
         </View>
       </View>
     </Modal>
@@ -217,6 +238,7 @@ export default function HomeScreen() {
 
   const renderDayButton = useCallback(({ item, index }: { item: Day; index: number }) => {
     const isSelected = selectedDate === item.date;
+    const isToday = moment(item.date).isSame(moment(), 'day');
     
     const handleDatePress = () => {
       if (!item.date) return;
@@ -280,26 +302,38 @@ export default function HomeScreen() {
         <TouchableOpacity
           style={[
             styles.dayButton,
-            isSelected && { backgroundColor: Colors.PRIMARY },
+            isSelected && styles.selectedDayButton,
+            isToday && styles.todayButton,
             isTablet && styles.tabletDayButton,
           ]}
           onPress={handleDatePress}
         >
-          <View style={styles.dayButtonHeader}>
+          <View style={[
+            styles.dayButtonHeader,
+            isSelected && styles.selectedDayButtonHeader,
+            isToday && styles.todayButtonHeader,
+          ]}>
             <Text style={[
               styles.dayButtonHeaderText,
-              isSelected && { color: Colors.WHITE },
+              isSelected && styles.selectedDayButtonText,
+              isToday && styles.todayButtonText,
             ]}>
               {item.day}
             </Text>
           </View>
-          <View>
+          <View style={styles.dayButtonContent}>
             <Text style={[
               styles.dayButtonDateText,
-              isSelected && { color: Colors.WHITE },
+              isSelected && styles.selectedDayButtonText,
+              isToday && styles.todayButtonText,
             ]}>
               {item.formmatedDate}
             </Text>
+            {isToday && (
+              <View style={styles.todayIndicator}>
+                <Text style={styles.todayIndicatorText}>Hoy</Text>
+              </View>
+            )}
           </View>
         </TouchableOpacity>
       </Animated.View>
@@ -335,18 +369,13 @@ export default function HomeScreen() {
 
   return (
     <SelectMarkerContext.Provider value={{ selectedMarker, setSelectedMarker } as any}>
-      <View style={[styles.container, isTablet && styles.tabletContainer]}>
-        <Animated.View 
+      <SafeAreaView style={{ flex: 1, backgroundColor }}>
+        <LinearGradient
+          colors={headerGradientColors}
           style={[
-            styles.headerContainer, 
+            styles.headerContainer,
             isTablet && styles.tabletHeaderContainer,
-            {
-              opacity: fadeAnim,
-              transform: [
-                { translateY: slideAnim },
-                { scale: scaleAnim },
-              ],
-            },
+            { paddingTop: Platform.OS === 'ios' ? 25 : 25 }
           ]}
         >
           <Header isTablet={isTablet} />
@@ -397,8 +426,7 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </Animated.View>
           {renderTimePickerModal()}
-        </Animated.View>
-        
+        </LinearGradient>
         <View style={styles.listContainer}>
           {isLoadingPredios || loading ? (
             <View style={styles.listLoadingContainer}>
@@ -436,7 +464,7 @@ export default function HomeScreen() {
             </Animated.Text>
           )}
         </View>
-      </View>
+      </SafeAreaView>
     </SelectMarkerContext.Provider>
   );
 }
@@ -444,14 +472,12 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.WHITE,
   },
   tabletContainer: {
     paddingHorizontal: 20,
   },
   headerContainer: {
-    backgroundColor: Colors.PRIMARY,
-    paddingTop: Platform.OS === 'ios' ? 45 : 25,
+    paddingTop: Platform.OS === 'ios' ? 25 : 25,
     paddingBottom: 15,
     borderBottomLeftRadius: 25,
     borderBottomRightRadius: 25,
@@ -465,7 +491,7 @@ const styles = StyleSheet.create({
     color: Colors.WHITE,
     fontSize: 16,
     fontFamily: "montserrat-medium",
-    marginVertical: 10,
+    marginBottom: 10,
   },
   tabletSectionTitle: {
     fontSize: 20,
@@ -480,31 +506,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   timePickerContainer: {
-    marginTop: 10,
+    marginTop: 6,
+    backgroundColor: 'transparent',
+    padding: 8,
+    borderRadius: 8,
+    minHeight: 0,
   },
   tabletTimePickerContainer: {
     alignItems: 'center',
   },
   timePickerLabel: {
-    color: Colors.WHITE,
-    fontSize: 14,
-    fontFamily: "montserrat",
-    marginBottom: 8,
+    color: Colors.PRIMARY,
+    fontSize: 13,
+    fontFamily: "montserrat-medium",
+    marginBottom: 6,
   },
   timePickerButton: {
     backgroundColor: Colors.WHITE,
-    padding: 10,
+    padding: 8,
     borderRadius: 8,
     alignItems: 'center',
+    shadowColor: 'transparent',
+    elevation: 0,
+    minHeight: 0,
   },
   timePickerButtonText: {
     color: Colors.PRIMARY,
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: "montserrat-medium",
   },
   listContainer: {
     flex: 1,
-    paddingTop: 10,
+    paddingTop: 15,
   },
   listLoadingContainer: {
     flex: 1,
@@ -517,6 +550,22 @@ const styles = StyleSheet.create({
   placeListContent: {
     paddingBottom: 20,
     paddingHorizontal: 15,
+    gap: 18,
+  },
+  placeCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 18,
+    shadowColor: Colors.BLACK,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.13,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: Colors.PRIMARY,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   tabletPlaceListContent: {
     paddingHorizontal: 20,
@@ -529,48 +578,82 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 16,
     color: Colors.GRAY,
-    marginTop: 20,
+    fontFamily: "montserrat-medium",
   },
   tabletNoPlacesText: {
     fontSize: 20,
   },
   modalContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'flex-end',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
     backgroundColor: Colors.WHITE,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     padding: 20,
-    borderRadius: 10,
-    width: '80%',
-    maxWidth: 400,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.LIGHT_GRAY,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: "montserrat-medium",
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  timeList: {
-    maxHeight: 300,
-  },
-  timeItem: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  timeItemText: {
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  selectedTimeItem: {
-    backgroundColor: Colors.PRIMARY,
-  },
-  selectedTimeText: {
     color: Colors.PRIMARY,
-    fontWeight: 'bold',
+  },
+  closeButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: Colors.LIGHT_GRAY,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    fontSize: 24,
+    color: Colors.GRAY,
+    lineHeight: 24,
+  },
+  timeListContent: {
+    paddingBottom: 20,
+  },
+  timeButton: {
+    flex: 1,
+    margin: 5,
+    padding: 15,
+    backgroundColor: Colors.WHITE,
+    borderRadius: 10,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.LIGHT_GRAY,
+    shadowColor: Colors.BLACK,
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  selectedTimeButton: {
+    backgroundColor: Colors.PRIMARY,
+    borderColor: Colors.PRIMARY,
+  },
+  timeButtonText: {
+    color: Colors.PRIMARY,
+    fontFamily: "montserrat-medium",
+    fontSize: 16,
+  },
+  selectedTimeButtonText: {
+    color: Colors.WHITE,
   },
   dayButton: {
     borderWidth: 2,
@@ -580,51 +663,91 @@ const styles = StyleSheet.create({
     height: 45,
     alignItems: "center",
     marginRight: 8,
-    borderColor: Colors.BLUE,
+    borderColor: Colors.PRIMARY,
+    backgroundColor: Colors.WHITE,
+    shadowColor: Colors.BLACK,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  selectedDayButton: {
+    backgroundColor: Colors.PRIMARY,
+    borderColor: Colors.PRIMARY,
+    transform: [{ scale: 1.05 }],
+    shadowColor: Colors.PRIMARY,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  todayButton: {
+    borderColor: Colors.GREEN,
+    backgroundColor: Colors.WHITE,
+  },
+  todayButtonHeader: {
+    backgroundColor: Colors.GREEN,
+  },
+  todayButtonText: {
+    color: Colors.GREEN,
+  },
+  todayIndicator: {
+    position: 'absolute',
+    bottom: -15,
+    backgroundColor: Colors.GREEN,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    shadowColor: Colors.BLACK,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  todayIndicatorText: {
+    color: Colors.WHITE,
+    fontSize: 10,
+    fontFamily: "montserrat-medium",
   },
   dayButtonHeader: {
-    backgroundColor: "#003366",
+    backgroundColor: Colors.PRIMARY,
     width: "100%",
     height: 20,
     alignItems: "center",
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
   },
+  selectedDayButtonHeader: {
+    backgroundColor: Colors.PRIMARY,
+  },
+  dayButtonContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   dayButtonHeaderText: {
     fontFamily: "montserrat-medium",
     fontSize: 12,
     paddingTop: 1,
-    color: Colors.PRIMARY,
+    color: Colors.WHITE,
+  },
+  selectedDayButtonText: {
+    color: Colors.WHITE,
   },
   dayButtonDateText: {
     fontFamily: "montserrat-medium",
     fontSize: 16,
     paddingTop: 2,
-  },
-  timeButton: {
-    flex: 1,
-    margin: 5,
-    padding: 15,
-    backgroundColor: Colors.PRIMARY,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  timeButtonText: {
-    color: Colors.WHITE,
-    fontFamily: "montserrat-medium",
-    fontSize: 16,
-  },
-  closeButton: {
-    marginTop: 20,
-    padding: 15,
-    backgroundColor: Colors.GRAY,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  closeButtonText: {
-    color: Colors.WHITE,
-    fontFamily: "montserrat-medium",
-    fontSize: 16,
+    color: Colors.PRIMARY,
   },
   tabletDayButton: {
     width: 80,
