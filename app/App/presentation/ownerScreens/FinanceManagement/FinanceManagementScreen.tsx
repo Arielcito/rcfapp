@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Platform, TouchableOpacity, Modal, TextInput, Button, Switch, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, Platform, TouchableOpacity, Modal, TextInput, Button, Switch, ActivityIndicator, FlatList } from 'react-native';
 import Colors from '../../../infraestructure/utils/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { FinanceService, FinanceEntry } from '../../../infraestructure/api/finance.api';
@@ -17,6 +17,35 @@ const formatDate = (dateStr: string): string => {
   }
 };
 
+const COMMON_ITEMS = {
+  INGRESO: [
+    { id: '1', label: 'Alquiler de Cancha' },
+    { id: '2', label: 'Venta de Bebidas' },
+    { id: '3', label: 'Venta de Snacks' },
+    { id: '4', label: 'Venta de Indumentaria' },
+    { id: '5', label: 'Alquiler de Pelotas' },
+    { id: '6', label: 'Alquiler de Indumentaria' },
+    { id: '7', label: 'Inscripción de Torneo' },
+    { id: '8', label: 'Cuota de Torneo' },
+    { id: '9', label: 'Depósito de Garantía' },
+    { id: '10', label: 'Otro Ingreso' },
+  ],
+  EGRESO: [
+    { id: '1', label: 'Compra de Bebidas' },
+    { id: '2', label: 'Compra de Snacks' },
+    { id: '3', label: 'Mantenimiento de Canchas' },
+    { id: '4', label: 'Limpieza' },
+    { id: '5', label: 'Servicios (Luz, Agua, Gas)' },
+    { id: '6', label: 'Seguridad' },
+    { id: '7', label: 'Impuestos' },
+    { id: '8', label: 'Salarios' },
+    { id: '9', label: 'Compra de Indumentaria' },
+    { id: '10', label: 'Compra de Pelotas' },
+    { id: '11', label: 'Mantenimiento de Equipos' },
+    { id: '12', label: 'Otro Egreso' },
+  ],
+};
+
 const FinanceManagementScreen = () => {
   const { currentPlace, isLoading: isLoadingPlace } = useCurrentPlace();
   const [modalVisible, setModalVisible] = useState(false);
@@ -24,6 +53,8 @@ const FinanceManagementScreen = () => {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const queryClient = useQueryClient();
+  const [showCommonItems, setShowCommonItems] = useState(false);
+  const [isCustomInput, setIsCustomInput] = useState(false);
 
   const { data: financeData = [], isLoading, error } = useQuery({
     queryKey: ['movimientos', currentPlace?.id],
@@ -61,10 +92,10 @@ const FinanceManagementScreen = () => {
   const handleSaveEntry = async () => {
     try {
       const numericAmount = parseFloat(amount);
-      if (description.trim() && !isNaN(numericAmount) && numericAmount > 0) {
+      if ((description.trim() || isCustomInput) && !isNaN(numericAmount) && numericAmount > 0) {
         await createMovimientoMutation.mutateAsync({
           tipo: isExpense ? 'EGRESO' : 'INGRESO',
-          concepto: description.trim(),
+          concepto: description.trim() || 'Otro',
           monto: numericAmount,
           predioId: currentPlace?.id || '',
           categoriaId: '',
@@ -101,7 +132,19 @@ const FinanceManagementScreen = () => {
     setIsExpense(false); // Default to income
     setDescription('');
     setAmount('');
+    setIsCustomInput(false);
     setModalVisible(true);
+  };
+
+  const handleSelectCommonItem = (item: { id: string, label: string }) => {
+    if (item.label.includes('Otro')) {
+      setIsCustomInput(true);
+      setDescription('');
+    } else {
+      setDescription(item.label);
+      setIsCustomInput(false);
+    }
+    setShowCommonItems(false);
   };
 
   if (isLoading || isLoadingPlace) {
@@ -148,10 +191,14 @@ const FinanceManagementScreen = () => {
         <View style={styles.listContainer}>
           <Text style={styles.listTitle}>Movimientos Recientes</Text>
           {financeData.length > 0 ? (
-            financeData.map((entry) => (
+            [...financeData]
+              .sort((a, b) => new Date(b.fechaMovimiento).getTime() - new Date(a.fechaMovimiento).getTime())
+              .map((entry) => (
               <View key={entry.id} style={styles.movementItem}>
                 <View style={styles.movementHeader}>
-                  <Text style={styles.movementConcept}>{entry.concepto}</Text>
+                  <Text style={styles.movementConcept} numberOfLines={2} ellipsizeMode="tail">
+                    {entry.concepto}
+                  </Text>
                   <Text style={[styles.movementAmount, entry.tipo === 'INGRESO' ? styles.income : styles.expense]}>
                     ${entry.monto.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                   </Text>
@@ -218,14 +265,26 @@ const FinanceManagementScreen = () => {
                 </View>
               </View>
 
-              {/* Description Input */}
+              {/* Description Input with Common Items */}
               <Text style={styles.modalLabel}>Descripción:</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Ej: Alquiler Cancha 1"
-                value={description}
-                onChangeText={setDescription}
-              />
+              {isCustomInput ? (
+                <TextInput
+                  style={styles.input}
+                  placeholder="Escribe la descripción"
+                  value={description}
+                  onChangeText={setDescription}
+                  autoFocus={true}
+                />
+              ) : (
+                <TouchableOpacity 
+                  style={styles.input}
+                  onPress={() => setShowCommonItems(true)}
+                >
+                  <Text style={[styles.inputText, !description && styles.placeholderText]}>
+                    {description || 'Selecciona o escribe una descripción'}
+                  </Text>
+                </TouchableOpacity>
+              )}
 
               {/* Amount Input */}
               <Text style={styles.modalLabel}>Monto:</Text>
@@ -237,6 +296,39 @@ const FinanceManagementScreen = () => {
                 onChangeText={setAmount}
               />
             </ScrollView>
+
+            {/* Common Items Modal */}
+            <Modal
+              visible={showCommonItems}
+              transparent={true}
+              animationType="slide"
+              onRequestClose={() => setShowCommonItems(false)}
+            >
+              <View style={styles.commonItemsModalOverlay}>
+                <View style={styles.commonItemsModalContent}>
+                  <View style={styles.commonItemsHeader}>
+                    <Text style={styles.commonItemsTitle}>
+                      {isExpense ? 'Egresos Frecuentes' : 'Ingresos Frecuentes'}
+                    </Text>
+                    <TouchableOpacity onPress={() => setShowCommonItems(false)}>
+                      <Ionicons name="close" size={24} color={Colors.GRAY} />
+                    </TouchableOpacity>
+                  </View>
+                  <FlatList
+                    data={isExpense ? COMMON_ITEMS.EGRESO : COMMON_ITEMS.INGRESO}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={styles.commonItemButton}
+                        onPress={() => handleSelectCommonItem(item)}
+                      >
+                        <Text style={styles.commonItemText}>{item.label}</Text>
+                      </TouchableOpacity>
+                    )}
+                  />
+                </View>
+              </View>
+            </Modal>
 
             {/* Action Buttons */}
             <View style={styles.modalActions}>
@@ -520,7 +612,7 @@ const styles = StyleSheet.create({
   movementHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 5,
   },
   movementConcept: {
@@ -528,11 +620,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: Colors.BLACK,
     fontFamily: "montserrat-bold",
+    flex: 1,
+    marginRight: 10,
   },
   movementAmount: {
     fontSize: 16,
     fontWeight: 'bold',
     fontFamily: "montserrat-bold",
+    textAlign: 'right',
   },
   movementDetails: {
     flexDirection: 'row',
@@ -547,6 +642,52 @@ const styles = StyleSheet.create({
   movementType: {
     fontSize: 14,
     color: Colors.GRAY,
+    fontFamily: "montserrat-regular",
+  },
+  inputText: {
+    fontSize: 16,
+    color: Colors.BLACK,
+    fontFamily: "montserrat-regular",
+  },
+  placeholderText: {
+    color: Colors.GRAY,
+  },
+  commonItemsModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  commonItemsModalContent: {
+    backgroundColor: Colors.WHITE,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  commonItemsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  commonItemsTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.BLACK,
+    fontFamily: "montserrat-bold",
+  },
+  commonItemButton: {
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  commonItemText: {
+    fontSize: 16,
+    color: Colors.BLACK,
     fontFamily: "montserrat-regular",
   },
 });

@@ -7,13 +7,23 @@ export interface Place {
 
 export interface BookingResponse {
   appointmentId: string;
-  place: Place;
   appointmentDate: string;
   appointmentTime: string;
-  estado: string;
-  metodoPago?: string;
+  fechaHora: string;
   duracion: number;
+  estado: string;
+  estadoPago: string;
+  metodoPago: string;
   precioTotal: number;
+  userId: string;
+  canchaId: string;
+  place: {
+    name: string;
+    description: string;
+    imageUrl: string;
+    telefono: string;
+  };
+  notasAdicionales?: string;
 }
 
 export interface Cancha {

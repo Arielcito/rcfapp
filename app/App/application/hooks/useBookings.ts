@@ -17,11 +17,11 @@ export const useBookings = () => {
   const { currentUser, isLoading: isLoadingUser } = useCurrentUser();
 
   const mapReservaToBooking = useCallback((reserva: any): Booking => {
-    const fechaHora = moment(reserva.fechaHora);
+    const fechaHora = moment(reserva.fechaHora || reserva.bookingDateTime);
     return {
       id: reserva.id,
-      fechaHora: reserva.fechaHora,
-      estadoPago: reserva.estadoPago.toLowerCase(),
+      fechaHora: reserva.fechaHora || reserva.bookingDateTime,
+      estadoPago: (reserva.estadoPago || reserva.estado).toLowerCase(),
       duracion: reserva.duracion,
       precioTotal: reserva.precioTotal,
       metodoPago: reserva.metodoPago,
@@ -66,10 +66,10 @@ export const useBookings = () => {
       
       setBookings({
         active: mappedBookings.filter((booking: Booking) => 
-          booking.estadoPago === 'pagado' || booking.estadoPago === 'pendiente'
+          booking.estadoPago === 'pendiente'
         ),
         past: mappedBookings.filter((booking: Booking) => 
-          booking.estadoPago === 'pendiente'
+          booking.estadoPago === 'pagado'
         ),
         cancelled: mappedBookings.filter((booking: Booking) => 
           booking.estadoPago === 'cancelado'
