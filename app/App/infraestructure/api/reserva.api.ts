@@ -191,7 +191,7 @@ export const reservaApi = {
 
   actualizarReserva: async (id: string, data: Partial<UpdateReservaDTO>): Promise<Reserva> => {
     try {
-      const response = await api.put(`/reserva/${id}`, data);
+      const response = await api.put(`/reservas/${id}`, data);
       return response.data as Reserva;
     } catch (error) {
       console.error('Error al actualizar reserva:', error);

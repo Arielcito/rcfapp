@@ -16,8 +16,12 @@ import {
 import { TabView, SceneMap, TabBar } from "react-native-tab-view";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import moment from "moment";
+import { format, parseISO, compareDesc } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { reservaApi } from "../../../infraestructure/api/reserva.api";
+import { logger } from '../../../infraestructure/utils/logger';
+import { mapReservaToBooking, ReservaResponse } from '../../../infraestructure/utils/bookingMappers';
 
 // Constants
 import Colors from "../../../infraestructure/utils/Colors";
@@ -25,18 +29,10 @@ import Colors from "../../../infraestructure/utils/Colors";
 // Components
 import AppointmentItem from './AppointmentItem';
 
-// Hooks
-import { useCurrentUser } from "../../../application/context/CurrentUserContext";
-import { useBookings } from "../../../application/hooks/useBookings";
-
-// Utils
-import { filterBookings } from "../../../infraestructure/utils/bookingFilters";
-import { showErrorAlert } from "../../../infraestructure/utils/alerts";
-import { STORAGE_KEYS } from "../../../infraestructure/constants";
-import { mapBookingResponse } from "../../../infraestructure/utils/bookingMappers";
-
 // Types
 import { BookingResponse } from "../../../types/booking";
+
+const COMPONENT_NAME = 'MyBookingsScreen';
 
 interface EmptyBookingsListProps {
   message: string;
@@ -78,16 +74,21 @@ const BookingList = memo(({
   buttonText, 
   onButtonPress 
 }: BookingListProps) => {
+  logger.debug(COMPONENT_NAME, 'BookingList - Received appointments:', { count: appointments.length });
+  logger.debug(COMPONENT_NAME, 'BookingList - Loading state:', { loading });
+
   const keyExtractor = useCallback((item: BookingResponse) => 
     item.appointmentId?.toString() || Math.random().toString(), 
     []
   );
 
-  const renderItem = useCallback(({ item }: { item: BookingResponse }) => (
-    <AppointmentItem reserva={item} onUpdate={() => setLoading(true)} />
-  ), [setLoading]);
+  const renderItem = useCallback(({ item }: { item: BookingResponse }) => {
+    logger.debug(COMPONENT_NAME, 'BookingList - Rendering item:', { id: item.appointmentId });
+    return <AppointmentItem reserva={item} onUpdate={() => setLoading(true)} />;
+  }, [setLoading]);
 
   if (appointments.length === 0) {
+    logger.debug(COMPONENT_NAME, 'BookingList - No appointments, showing empty state');
     return (
       <EmptyBookingsList 
         message={emptyMessage} 
@@ -164,22 +165,52 @@ export default function MyBookingsScreen() {
   const [index, setIndex] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [reservas, setReservas] = useState<BookingResponse[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  const { 
-    bookings, 
-    error, 
-    isLoading, 
-    refetch 
-  } = useBookings();
+  const ordenarReservas = (reservasArray: BookingResponse[]) => {
+    try {
+      logger.debug(COMPONENT_NAME, 'Ordenando reservas', { count: reservasArray.length });
+      const sorted = [...reservasArray].sort((a, b) => 
+        compareDesc(parseISO(a.fechaHora), parseISO(b.fechaHora))
+      );
+      logger.info(COMPONENT_NAME, 'Reservas ordenadas exitosamente', { count: sorted.length });
+      return sorted;
+    } catch (error) {
+      logger.error(COMPONENT_NAME, 'Error al ordenar reservas', { error });
+      return reservasArray;
+    }
+  };
 
-  // Add logging for bookings
-  useEffect(() => {
-    console.log('Bookings data:', {
-      active: bookings?.active,
-      past: bookings?.past,
-      cancelled: bookings?.cancelled
-    });
-  }, [bookings]);
+  const fetchReservas = async () => {
+    setLoading(true);
+    logger.info(COMPONENT_NAME, 'Iniciando fetch de reservas');
+    try {
+      const response = await reservaApi.obtenerTodasReservas() as ReservaResponse[];
+      logger.debug(COMPONENT_NAME, 'Respuesta de API recibida', { response });
+      const todasLasReservas = response.map(mapReservaToBooking);
+      const reservasOrdenadas = ordenarReservas(todasLasReservas);
+      logger.info(COMPONENT_NAME, 'Reservas procesadas y ordenadas', { 
+        total: reservasOrdenadas.length,
+        sample: reservasOrdenadas.slice(0, 2)
+      });
+      setReservas(reservasOrdenadas);
+      setError(null);
+    } catch (error) {
+      logger.error(COMPONENT_NAME, 'Error al cargar reservas', { error });
+      setError('No pudimos cargar tus reservas en este momento');
+    } finally {
+      setLoading(false);
+      logger.info(COMPONENT_NAME, 'Fetch de reservas completado');
+    }
+  };
+
+  // Use useFocusEffect to refetch data when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      fetchReservas();
+    }, [])
+  );
 
   const [routes] = useState([
     { key: "activas", title: "Aprobadas" },
@@ -187,82 +218,76 @@ export default function MyBookingsScreen() {
     { key: "canceladas", title: "Historial" },
   ]);
 
-  // Check if feedback has been shown before
-  useEffect(() => {
-    const checkFeedbackStatus = async () => {
-      try {
-        const feedbackShown = await AsyncStorage.getItem(STORAGE_KEYS.FEEDBACK_SHOWN);
-        setShowFeedback(feedbackShown !== 'true');
-      } catch (error) {
-        console.error('Error checking feedback status:', error);
-      }
-    };
-    
-    checkFeedbackStatus();
-  }, []);
-
-  const handleFeedbackClosed = useCallback(async () => {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEYS.FEEDBACK_SHOWN, 'true');
-      setShowFeedback(false);
-    } catch (error) {
-      console.error('Error saving feedback status:', error);
-    }
-  }, []);
-
-  const handlePositiveFeedback = useCallback(async () => {
-    Alert.alert("¡Gracias por tu feedback positivo!");
-    handleFeedbackClosed();
-  }, [handleFeedbackClosed]);
-
-  const handleNegativeFeedback = useCallback(async () => {
-    Alert.alert("Gracias por ayudarnos a mejorar");
-    handleFeedbackClosed();
-  }, [handleFeedbackClosed]);
-
-  const navigateToHome = useCallback(() => 
-    navigation.navigate("home"), 
-    [navigation]
-  );
-
-  // Use useFocusEffect to refetch data when screen is focused
-  useFocusEffect(
-    useCallback(() => {
-      refetch();
-    }, [refetch])
-  );
-
   const renderScene = SceneMap({
-    activas: () => (
-      <BookingList
-        appointments={filterBookings((bookings?.active || []).map(mapBookingResponse))}
-        loading={loading}
-        setLoading={setLoading}
-        emptyMessage="Aún no hiciste ninguna reserva en la app"
-        buttonText="Buscar cancha"
-        onButtonPress={navigateToHome}
-      />
-    ),
-    pasadas: () => (
-      <BookingList
-        appointments={filterBookings((bookings?.past || []).map(mapBookingResponse))}
-        loading={loading}
-        setLoading={setLoading}
-        emptyMessage="Aún no tienes reservas pendientes"
-        buttonText="Ver historial"
-        onButtonPress={() => setIndex(2)}
-      />
-    ),
-    canceladas: () => (
-      <BookingList
-        appointments={filterBookings((bookings?.cancelled || []).map(mapBookingResponse))}
-        loading={loading}
-        setLoading={setLoading}
-        emptyMessage="No hay reservas canceladas"
-        buttonText="Explorar"
-        onButtonPress={navigateToHome}
-      />
-    ),
+    activas: () => {
+      const activeBookings = reservas.filter(reserva => {
+        try {
+          const fechaReserva = new Date(reserva.fechaHora);
+          return reserva?.estado?.toLowerCase() === 'pagado' && fechaReserva > new Date();
+        } catch (error) {
+          logger.error(COMPONENT_NAME, 'Error al procesar fecha de reserva', { error, reserva });
+          return false;
+        }
+      });
+      logger.debug(COMPONENT_NAME, 'Active Tab - Filtered bookings:', { count: activeBookings.length });
+      
+      return (
+        <BookingList
+          appointments={activeBookings}
+          loading={loading}
+          setLoading={setLoading}
+          emptyMessage="Aún no hiciste ninguna reserva en la app"
+          buttonText="Buscar cancha"
+          onButtonPress={() => navigation.navigate("home")}
+        />
+      );
+    },
+    pasadas: () => {
+      const pendingBookings = reservas.filter(reserva => {
+        try {
+          const fechaReserva = new Date(reserva.fechaHora);
+          return reserva?.estado?.toLowerCase() === 'pendiente' && fechaReserva > new Date();
+        } catch (error) {
+          logger.error(COMPONENT_NAME, 'Error al procesar fecha de reserva', { error, reserva });
+          return false;
+        }
+      });
+      logger.debug(COMPONENT_NAME, 'Pending Tab - Filtered bookings:', { count: pendingBookings.length });
+      
+      return (
+        <BookingList
+          appointments={pendingBookings}
+          loading={loading}
+          setLoading={setLoading}
+          emptyMessage="Aún no tienes reservas pendientes"
+          buttonText="Ver historial"
+          onButtonPress={() => setIndex(2)}
+        />
+      );
+    },
+    canceladas: () => {
+      const historyBookings = reservas.filter(reserva => {
+        try {
+          const fechaReserva = new Date(reserva.fechaHora);
+          return fechaReserva <= new Date() || reserva?.estado?.toLowerCase() === 'cancelado';
+        } catch (error) {
+          logger.error(COMPONENT_NAME, 'Error al procesar fecha de reserva', { error, reserva });
+          return false;
+        }
+      });
+      logger.debug(COMPONENT_NAME, 'History Tab - Filtered bookings:', { count: historyBookings.length });
+      
+      return (
+        <BookingList
+          appointments={historyBookings}
+          loading={loading}
+          setLoading={setLoading}
+          emptyMessage="No hay reservas en el historial"
+          buttonText="Explorar"
+          onButtonPress={() => navigation.navigate("home")}
+        />
+      );
+    },
   });
 
   const renderTabBar = useCallback((props: any) => (
@@ -285,11 +310,11 @@ export default function MyBookingsScreen() {
           </View>
           <View style={styles.emptyContainer}>
             <Text style={styles.noReservationsText}>
-              No pudimos cargar tus reservas en este momento
+              {error}
             </Text>
             <TouchableOpacity 
               style={styles.button} 
-              onPress={refetch}
+              onPress={fetchReservas}
             >
               <Text style={styles.buttonText}>Intentar de nuevo</Text>
             </TouchableOpacity>
@@ -306,30 +331,14 @@ export default function MyBookingsScreen() {
           <Text style={styles.headerTitle}>Mis reservas</Text>
         </View>
         
-        {isLoading && !bookings ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={Colors.PRIMARY} />
-            <Text style={styles.loadingText}>Cargando...</Text>
-          </View>
-        ) : (
-          <>
-            <FeedbackModal
-              visible={showFeedback}
-              onClose={handleFeedbackClosed}
-              onPositive={handlePositiveFeedback}
-              onNegative={handleNegativeFeedback}
-            />
-            
-            <TabView
-              navigationState={{ index, routes }}
-              renderScene={renderScene}
-              onIndexChange={setIndex}
-              initialLayout={{ width: layout.width }}
-              renderTabBar={renderTabBar}
-              swipeEnabled={true}
-            />
-          </>
-        )}
+        <TabView
+          navigationState={{ index, routes }}
+          renderScene={renderScene}
+          onIndexChange={setIndex}
+          initialLayout={{ width: layout.width }}
+          renderTabBar={renderTabBar}
+          swipeEnabled={true}
+        />
       </View>
     </SafeAreaView>
   );

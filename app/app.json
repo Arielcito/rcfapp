@@ -2,7 +2,7 @@
   "expo": {
     "name": "RFC-App",
     "slug": "RFC-App",
-    "version": "6.1.2",
+    "version": "3",
     "orientation": "portrait",
     "icon": "./App/presentation/assets/icon.png",
     "userInterfaceStyle": "light",
@@ -95,7 +95,7 @@
         "googleMapsApiKey": "AIzaSyDiNmgWgB0CGoM1EG6CT846M83bpRdso-Q"
       },
       "bundleIdentifier": "com.arielcito.RFCApp",
-      "buildNumber": "6.1.2",
+      "buildNumber": "6.1.3",
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "RFC App necesita acceso a tu galería de fotos para que puedas seleccionar y subir imágenes de perfil y documentos necesarios para el registro.",
