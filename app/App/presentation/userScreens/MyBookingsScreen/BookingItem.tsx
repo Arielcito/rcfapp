@@ -10,17 +10,33 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Colors from "../../../infraestructure/utils/Colors";
 import { updateAppointment } from "../../../infraestructure/api/appointments.api";
+import { BookingResponse } from "../../../types/booking";
 
-export default function BookingItem({ place, setLoading }) {
-  const navigation = useNavigation();
-  console.log("place", place)
-  const handleCancel = async (appointmentId) => {
+type RootStackParamList = {
+  myBookingDescription: {
+    place: BookingResponse;
+  };
+};
+
+type BookingItemNavigationProp = NativeStackNavigationProp<RootStackParamList, 'myBookingDescription'>;
+
+interface BookingItemProps {
+  place: BookingResponse;
+  setLoading: (loading: boolean) => void;
+}
+
+export default function BookingItem({ place, setLoading }: BookingItemProps) {
+  const navigation = useNavigation<BookingItemNavigationProp>();
+  console.log("place", place);
+
+  const handleCancel = async (appointmentId: string) => {
     setLoading(true);
     try {
-      await updateAppointment(appointmentId.toString(), {
-        estadoPago: "cancelado"
+      await updateAppointment(appointmentId, {
+        estado: "cancelado"
       });
       ToastAndroid.show("Reserva cancelada!", ToastAndroid.LONG);
     } catch (error) {
@@ -52,16 +68,16 @@ export default function BookingItem({ place, setLoading }) {
           </View>
           <View style={styles.bottomContainer}>
             <Pressable
-              onPress={() => handleCancel(place?.appointmentId)}
+              onPress={() => handleCancel(place.appointmentId)}
               style={[
                 styles.cancelButton,
                 {
-                  backgroundColor: place?.estado === "reservado" ? Colors.PRIMARY : "#E0E0E0",
+                  backgroundColor: place.estado === "reservado" ? Colors.PRIMARY : "#E0E0E0",
                 },
               ]}
             >
               <Text style={styles.cancelButtonText}>
-                {place?.estado === "reservado" ? "Cancelar" : "Cancelado"}
+                {place.estado === "reservado" ? "Cancelar" : "Cancelado"}
               </Text>
             </Pressable>
           </View>

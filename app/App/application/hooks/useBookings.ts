@@ -2,22 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { reservaApi } from '../../infraestructure/api/reserva.api';
 import { useCurrentUser } from '../context/CurrentUserContext';
 import moment from 'moment';
-
-interface Booking {
-  appointmentId: string;
-  appointmentDate: string;
-  appointmentTime: string;
-  estado: string;
-  duracion: number;
-  precioTotal: string;
-  metodoPago?: string;
-  place?: {
-    name: string;
-    description: string;
-    imageUrl: string;
-    telefono: string;
-  };
-}
+import { Booking } from '../../types/booking';
 
 interface BookingsState {
   active: Booking[];
@@ -34,19 +19,35 @@ export const useBookings = () => {
   const mapReservaToBooking = useCallback((reserva: any): Booking => {
     const fechaHora = moment(reserva.fechaHora);
     return {
-      appointmentId: reserva.id,
-      appointmentDate: fechaHora.format('YYYY-MM-DD'),
-      appointmentTime: fechaHora.format('HH:mm'),
-      estado: reserva.estadoPago.toLowerCase(),
+      id: reserva.id,
+      fechaHora: reserva.fechaHora,
+      estadoPago: reserva.estadoPago.toLowerCase(),
       duracion: reserva.duracion,
       precioTotal: reserva.precioTotal,
       metodoPago: reserva.metodoPago,
-      place: {
-        name: 'Cancha',
-        description: reserva.notasAdicionales || '',
-        imageUrl: 'https://example.com/placeholder.jpg',
-        telefono: ''
-      }
+      cancha: {
+        id: reserva.cancha?.id,
+        nombre: reserva.cancha?.nombre || 'Sin nombre',
+        tipo: reserva.cancha?.tipo || 'Fútbol',
+        tipoSuperficie: reserva.cancha?.tipoSuperficie || 'No especificado',
+        imagenUrl: reserva.cancha?.imagenUrl || 'https://example.com/placeholder.jpg',
+        longitud: reserva.cancha?.longitud || 0,
+        ancho: reserva.cancha?.ancho || 0,
+        caracteristicas: [],
+        precioPorHora: 0,
+        requiereSeña: false,
+        montoSeña: 0,
+        estado: 'activo',
+        predioId: '',
+        numero: 0,
+        tipo_superficie: ''
+      },
+      predio: {
+        id: reserva.predio?.id,
+        nombre: reserva.predio?.nombre || 'Sin nombre',
+        telefono: reserva.predio?.telefono || ''
+      },
+      notasAdicionales: reserva.notasAdicionales
     };
   }, []);
 
@@ -65,13 +66,13 @@ export const useBookings = () => {
       
       setBookings({
         active: mappedBookings.filter((booking: Booking) => 
-          booking.estado === 'pagado' || booking.estado === 'pendiente'
+          booking.estadoPago === 'pagado' || booking.estadoPago === 'pendiente'
         ),
         past: mappedBookings.filter((booking: Booking) => 
-          booking.estado === 'pendiente'
+          booking.estadoPago === 'pendiente'
         ),
         cancelled: mappedBookings.filter((booking: Booking) => 
-          booking.estado === 'cancelado'
+          booking.estadoPago === 'cancelado'
         )
       });
     } catch (error) {

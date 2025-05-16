@@ -9,16 +9,59 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRoute, useNavigation } from "@react-navigation/native";
+import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Colors from "../../../infraestructure/utils/Colors";
 import ButtonPrimary from "../../components/ButtonPrimary";
 import WhatsappButton from "../../components/WhatsappButton";
 import moment from "moment";
 import "moment/locale/es";
 
+// Define types for the appointment data
+interface Cancha {
+  nombre: string;
+  tipo: string;
+  tipoSuperficie: string;
+  longitud: string;
+  ancho: string;
+}
+
+interface Predio {
+  telefono: string;
+  nombre: string;
+}
+
+interface AppointmentData {
+  data: {
+    id?: string;
+    cancha?: Partial<Cancha>;
+    predio?: Partial<Predio>;
+    fechaHora: Date;
+    metodoPago: string;
+    precioTotal: string;
+    estadoPago: string;
+    duracion: number;
+  };
+  success: boolean;
+}
+
+// Define the route params type
+type SuccessScreenParams = {
+  appointmentData: AppointmentData;
+};
+
+// Define the navigation type
+type RootStackParamList = {
+  myBookingStack: undefined;
+};
+
+type SuccessScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'myBookingStack'>;
+type SuccessScreenRouteProp = RouteProp<{ Success: SuccessScreenParams }, 'Success'>;
+
 const SuccessScreen = () => {
-  const { appointmentData } = useRoute().params;
-  const navigation = useNavigation();
+  const route = useRoute<SuccessScreenRouteProp>();
+  const { appointmentData } = route.params;
+  const navigation = useNavigation<SuccessScreenNavigationProp>();
   moment.locale("es");
   console.log(appointmentData)
   // Datos por defecto en caso de que falten
@@ -58,7 +101,7 @@ const SuccessScreen = () => {
     }
   }), [appointmentData, defaultData]);
 
-  const formatDate = (date) => {
+  const formatDate = (date: Date | string) => {
     try {
       return moment(date).format("dddd, D [de] MMMM [de] YYYY");
     } catch (error) {
@@ -67,7 +110,7 @@ const SuccessScreen = () => {
     }
   };
 
-  const formatTime = (date) => {
+  const formatTime = (date: Date | string) => {
     try {
       return moment(date).format("HH:mm");
     } catch (error) {
@@ -76,7 +119,7 @@ const SuccessScreen = () => {
     }
   };
 
-  const getEndTime = (date) => {
+  const getEndTime = (date: Date | string) => {
     try {
       return moment(date).add(reserva.duracion || 60, 'minutes').format("HH:mm");
     } catch (error) {
@@ -193,7 +236,7 @@ Reserva realizada a través de RCF App
         <View style={styles.buttonContainer}>
           <ButtonPrimary
             text="Ver agenda de reservas"
-            onPress={() => navigation.navigate("Tabs")}
+            onPress={() => navigation.navigate("myBookingStack")}
           />
         </View>
       </View>

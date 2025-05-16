@@ -1,17 +1,38 @@
 import { View, Text, Pressable, StyleSheet, Modal, ScrollView, TouchableOpacity, Linking, Alert } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Colors from "../../../infraestructure/utils/Colors";
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Icon from "react-native-vector-icons/Ionicons";
 import { getProfileInfo } from "../../../infraestructure/api/user.api";
 import { reservaApi } from "../../../infraestructure/api/reserva.api";
+import { BookingResponse } from "../../../types/booking";
 
-export default function AppointmentItem({ reserva, onUpdate }) {
-  const navigation = useNavigation();
+type RootStackParamList = {
+  myBookingDescription: {
+    place: BookingResponse;
+  };
+};
+
+type AppointmentItemNavigationProp = NativeStackNavigationProp<RootStackParamList, 'myBookingDescription'>;
+
+interface AppointmentItemProps {
+  reserva: BookingResponse;
+  onUpdate: () => void;
+}
+
+interface UserData {
+  name?: string;
+  email?: string;
+  telefono?: string;
+}
+
+export default function AppointmentItem({ reserva, onUpdate }: AppointmentItemProps) {
+  const navigation = useNavigation<AppointmentItemNavigationProp>();
   const [modalVisible, setModalVisible] = useState(false);
-  const [userData, setUserData] = useState(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
@@ -27,8 +48,8 @@ export default function AppointmentItem({ reserva, onUpdate }) {
     const fetchUserData = async () => {
       try {
         setLoadingUser(true);
-        const userInfo = await getProfileInfo(reserva.userId);
-        setUserData(userInfo);
+        // Since userId is not available in BookingResponse, we'll skip fetching user data
+        setUserData(null);
       } catch (error) {
         console.error('Error fetching user data:', error);
       } finally {
@@ -36,12 +57,10 @@ export default function AppointmentItem({ reserva, onUpdate }) {
       }
     };
 
-    if (reserva.userId) {
-      fetchUserData();
-    }
-  }, [reserva.userId]);
+    fetchUserData();
+  }, []);
 
-  const handleUpdateStatus = async (newStatus) => {
+  const handleUpdateStatus = async (newStatus: string) => {
     try {
       setUpdatingStatus(true);
       await reservaApi.actualizarReserva(reserva.appointmentId, {
@@ -69,8 +88,8 @@ export default function AppointmentItem({ reserva, onUpdate }) {
   };
 
   const handleWhatsApp = () => {
-    const message = `Hola! Tengo una reserva en "${reserva.place?.name}" para el ${fechaFormateada} a las ${hora}. Me gustaría consultar algunos detalles.`;
-    const phoneNumber = reserva.place?.telefono?.replace(/\D/g, '') || '';
+    const message = `Hola! Tengo una reserva en "${reserva.place.name}" para el ${fechaFormateada} a las ${hora}. Me gustaría consultar algunos detalles.`;
+    const phoneNumber = reserva.place.telefono.replace(/\D/g, '');
     
     // Aseguramos que el número tenga el formato correcto
     const formattedNumber = phoneNumber.startsWith('54') ? phoneNumber : `54${phoneNumber}`;
@@ -223,7 +242,7 @@ export default function AppointmentItem({ reserva, onUpdate }) {
                   <View style={styles.phoneContainer}>
                     <Icon name="call-outline" size={20} color={Colors.PRIMARY} />
                     <Text style={styles.phoneText}>
-                      {reserva.place?.telefono || 'No disponible'}
+                      {reserva.place.telefono || 'No disponible'}
                     </Text>
                   </View>
                   <TouchableOpacity
@@ -237,13 +256,6 @@ export default function AppointmentItem({ reserva, onUpdate }) {
                   </TouchableOpacity>
                 </View>
               </View>
-
-              {reserva.notasAdicionales && (
-                <View style={styles.detalleSeccion}>
-                  <Text style={styles.detalleLabel}>Notas</Text>
-                  <Text style={styles.detalleValor}>{reserva.notasAdicionales}</Text>
-                </View>
-              )}
             </ScrollView>
           </View>
         </View>
@@ -265,11 +277,6 @@ export default function AppointmentItem({ reserva, onUpdate }) {
           <View style={styles.details}>
             <Text style={styles.duracion}>{reserva.duracion} minutos</Text>
             <Text style={styles.metodoPago}>{reserva.metodoPago || 'No especificado'}</Text>
-            {reserva.notasAdicionales && (
-              <Text style={styles.notas} numberOfLines={1}>
-                {reserva.notasAdicionales}
-              </Text>
-            )}
           </View>
           <View style={styles.statusContainer}>
             <Text style={[
@@ -334,11 +341,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginBottom: 2,
-  },
-  notas: {
-    fontSize: 12,
-    color: '#999',
-    fontStyle: 'italic',
   },
   statusContainer: {
     alignItems: 'flex-end',
