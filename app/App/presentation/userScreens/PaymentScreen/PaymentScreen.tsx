@@ -234,8 +234,8 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
   const paymentMethodsAnimatedStyle = {
     transform: [{ translateY: paymentMethodsOffset }],
     opacity: paymentMethodsOffset.interpolate({
-      inputRange: [50, 0],
-      outputRange: [0, 1],
+      inputRange: [0, 50],
+      outputRange: [1, 0],
       extrapolate: 'clamp'
     })
   };
@@ -247,7 +247,7 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
       outputRange: [0, 1],
       extrapolate: 'clamp'
     }),
-    overflow: 'hidden' as const
+    overflow: 'visible' as const
   };
 
   const buttonAnimatedStyle = {
@@ -988,6 +988,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
+    marginBottom: 20,
   },
   notesInput: {
     borderWidth: 1,
@@ -997,6 +998,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "montserrat",
     minHeight: 100,
+    textAlignVertical: 'top',
   },
   iconContainer: {
     width: 36,

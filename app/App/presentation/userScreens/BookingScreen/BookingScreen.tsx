@@ -39,8 +39,6 @@ export default function BookingScreen() {
   const [selectedDate, setSelectedDate] = useState<any>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   
-  console.log('BookingScreen - Parámetros recibidos:', JSON.stringify(param));
-  
   // Obtenemos los parámetros con los nombres correctos
   const date = param?.preselectedDate;
   const time = param?.preselectedTime;
@@ -134,7 +132,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   reserveButton: {
-    backgroundColor: Colors.PRIMARY,
+    backgroundColor: Colors.SECONDARY,
     padding: 16,
     borderRadius: 8,
     flex: 1,

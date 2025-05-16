@@ -49,17 +49,6 @@ const PlaceItem = ({ place, selectedDate, selectedTime, isTablet }) => {
 
   const handlePress = () => {
     const formattedDate = formatDate(selectedDate);
-    
-    console.log('PlaceItem - Datos de navegación:', {
-      place: {
-        id: place.id,
-        nombre: place.nombre,
-        direccion: place.direccion
-      },
-      selectedDate: formattedDate,
-      selectedTime: selectedTime,
-      originalDate: selectedDate
-    });
 
     if (!formattedDate) {
       console.warn('PlaceItem - Advertencia: No hay fecha seleccionada o es inválida');
@@ -194,9 +183,9 @@ const styles = StyleSheet.create({
   button: {
     padding: 8,
     paddingHorizontal: 16,
-    backgroundColor: Colors.PRIMARY,
+    backgroundColor: Colors.SECONDARY,
     borderRadius: 8,
-    shadowColor: Colors.PRIMARY,
+    shadowColor: Colors.SECONDARY,
     shadowOffset: {
       width: 0,
       height: 2,
