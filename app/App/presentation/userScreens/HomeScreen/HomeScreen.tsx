@@ -602,7 +602,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.LIGHT_GRAY,
+    borderBottomColor: Colors.GRAY_LIGHT,
   },
   modalTitle: {
     fontSize: 20,
@@ -613,7 +613,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: Colors.LIGHT_GRAY,
+    backgroundColor: Colors.GRAY_LIGHT,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: Colors.LIGHT_GRAY,
+    borderColor: Colors.GRAY_LIGHT,
     shadowColor: Colors.BLACK,
     shadowOffset: {
       width: 0,

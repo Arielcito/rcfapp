@@ -9,12 +9,15 @@ import {
   FlatList,
   Alert,
   Linking,
-  Platform
+  Platform,
+  Animated
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import moment from "moment";
 import "moment/locale/es";
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Calendar } from 'react-native-calendars';
 import SubHeading from "../../components/SubHeading";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Colors from "../../../infraestructure/utils/Colors";
@@ -112,6 +115,19 @@ const DateTimeUtils = {
   }
 };
 
+type RootStackParamList = {
+  BookingDateTime: { place: ExtendedPredio };
+  // ... other screens
+};
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+const AVAILABLE_HOURS = [
+  '08:00', '09:00', '10:00', '11:00', '12:00',
+  '13:00', '14:00', '15:00', '16:00', '17:00',
+  '18:00', '19:00', '20:00', '21:00', '22:00',
+];
+
 export default function BookingSection({
   place,
   preselectedDate,
@@ -127,7 +143,8 @@ export default function BookingSection({
   const [loading, setLoading] = useState(false);
   const [canchas, setCanchas] = useState([]);
   const [selectedCancha, setSelectedCancha] = useState<Cancha | null>(null);
-  const navigator = useNavigation();
+  const navigator = useNavigation<NavigationProp>();
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const auth = FIREBASE_AUTH;
   const user = auth.currentUser;
@@ -177,6 +194,15 @@ export default function BookingSection({
     }
   }, [preselectedDate, preselectedTime, place?.id, place?.nombre]);
 
+  // Eliminar el useEffect de validación y alerta
+  useEffect(() => {
+    if (!preselectedDate || !preselectedTime) {
+      if (place) {
+        navigator.navigate('BookingDateTime', { place });
+      }
+    }
+  }, [preselectedDate, preselectedTime, place]);
+
   const fetchCanchas = async () => {
     try {
       setLoading(true);
@@ -205,22 +231,179 @@ export default function BookingSection({
     }
   };
 
-  const renderCanchaItem = ({ item }: { item: Cancha }) => (
-    <TouchableOpacity
-      style={[
-        styles.canchaItem,
-        selectedCancha?.id === item.id && styles.selectedCanchaItem,
-      ]}
-      onPress={() => {
-        setSelectedCancha(item);
-        onCanchaSelect?.(item);
-      }}
-    >
-      <Text style={styles.canchaText}>Cancha {item.numero}</Text>
-      <Text style={styles.canchaDetail}>{item.nombre}</Text>
-      <Text style={styles.canchaDetail}>{item.tipo_superficie}</Text>
-    </TouchableOpacity>
-  );
+  const handleTimeSelect = (time: string) => {
+    setSelectedTime(time);
+    onTimeSelect?.(time);
+    const calculatedEndTime = DateTimeUtils.calculateEndTime(time);
+    setEndTime(calculatedEndTime);
+  };
+
+  const handleDateSelect = (date: any) => {
+    const selectedMoment = moment(date.dateString);
+    setSelectedDate(selectedMoment);
+    onDateSelect?.(selectedMoment);
+  };
+
+  const renderDateSelector = () => {
+    if (preselectedDate) return null;
+
+    const dates = Array.from({ length: 7 }, (_, index) => {
+      return moment().add(index, 'days');
+    });
+
+    return (
+      <View style={styles.dateSelectorContainer}>
+        <SubHeading subHeadingTitle={"Seleccionar Fecha"} seelAll={false} />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={styles.dateGrid}>
+            {dates.map((date) => {
+              const dateStr = date.format('YYYY-MM-DD');
+              const isSelected = selectedDate && selectedDate.format('YYYY-MM-DD') === dateStr;
+              
+              return (
+                <TouchableOpacity
+                  key={dateStr}
+                  style={[
+                    styles.dateSlot,
+                    isSelected && styles.selectedDateSlot,
+                  ]}
+                  onPress={() => handleDateSelect({ dateString: dateStr })}
+                >
+                  <Text
+                    style={[
+                      styles.dayName,
+                      isSelected && styles.selectedDateText,
+                    ]}
+                  >
+                    {date.format('ddd')}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.dayNumber,
+                      isSelected && styles.selectedDateText,
+                    ]}
+                  >
+                    {date.format('D')}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.monthName,
+                      isSelected && styles.selectedDateText,
+                    ]}
+                  >
+                    {date.format('MMM')}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </ScrollView>
+      </View>
+    );
+  };
+
+  const renderTimeSelector = () => {
+    if (preselectedTime) return null;
+
+    return (
+      <View style={styles.timeSelectorContainer}>
+        <SubHeading subHeadingTitle={"Seleccionar Horario"} seelAll={false} />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={styles.timeGrid}>
+            {AVAILABLE_HOURS.map((time) => (
+              <TouchableOpacity
+                key={time}
+                style={[
+                  styles.timeSlot,
+                  selectedTime === time && styles.selectedTimeSlot,
+                ]}
+                onPress={() => handleTimeSelect(time)}
+              >
+                <Text
+                  style={[
+                    styles.timeSlotText,
+                    selectedTime === time && styles.selectedTimeText,
+                  ]}
+                >
+                  {time}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+      </View>
+    );
+  };
+
+  const renderCanchaItem = ({ item }: { item: Cancha }) => {
+    const isSelected = selectedCancha?.id === item.id;
+    
+    const handlePress = () => {
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 0.95,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true,
+        })
+      ]).start();
+
+      setSelectedCancha(item);
+      onCanchaSelect?.(item);
+    };
+
+    return (
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={handlePress}
+      >
+        <Animated.View
+          style={[
+            styles.canchaItem,
+            isSelected && styles.selectedCanchaItem,
+            {
+              transform: [{ scale: scaleAnim }]
+            }
+          ]}
+        >
+          <View style={styles.canchaIconContainer}>
+            <Ionicons 
+              name={isSelected ? "football" : "football-outline"} 
+              size={24} 
+              color={isSelected ? 'white' : Colors.SECONDARY} 
+            />
+          </View>
+          <Text style={[
+            styles.canchaName,
+            isSelected && styles.selectedCanchaText
+          ]}>
+            {item.nombre}
+          </Text>
+          <Text style={[
+            styles.canchaType,
+            isSelected && styles.selectedCanchaText
+          ]}>
+            {item.tipoSuperficie}
+          </Text>
+          <View style={[
+            styles.priceBadge,
+            isSelected && styles.selectedPriceBadge
+          ]}>
+            <Text style={[
+              styles.priceText,
+              isSelected && styles.selectedPriceText
+            ]}>
+              ${Number(item.precioPorHora).toLocaleString()}
+            </Text>
+          </View>
+        </Animated.View>
+      </TouchableOpacity>
+    );
+  };
 
   const handleWhatsApp = () => {
     if (!place) return;
@@ -279,6 +462,7 @@ export default function BookingSection({
           {selectedCancha && (
             <Text style={styles.courtTitle}>{selectedCancha.nombre}</Text>
           )}
+          
           <SubHeading subHeadingTitle={"Seleccionar Cancha"} seelAll={false} />
           <FlatList
             data={canchas}
@@ -288,6 +472,9 @@ export default function BookingSection({
             showsHorizontalScrollIndicator={false}
             style={styles.canchasList}
           />
+
+          {renderDateSelector()}
+          {renderTimeSelector()}
 
           <SubHeading subHeadingTitle={"Detalles de la Reserva"} seelAll={false} />
           <View style={styles.detailsContainer}>
@@ -391,39 +578,72 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   canchasList: {
-    marginBottom: 16,
+    marginBottom: 20,
+    paddingHorizontal: 6,
   },
   canchaItem: {
-    backgroundColor: '#E8F0FE',
+    backgroundColor: 'white',
     borderRadius: 12,
-    padding: 4,
-    marginRight: 10,
-    minWidth: 110,
+    padding: 12,
+    marginRight: 12,
+    width: 130,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 3,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   selectedCanchaItem: {
     backgroundColor: Colors.SECONDARY,
-    shadowColor: Colors.SECONDARY,
-    shadowOpacity: 0.2,
+    borderColor: Colors.SECONDARY,
   },
-  canchaText: {
+  canchaIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  canchaName: {
     fontSize: 14,
     fontWeight: '600',
+    color: Colors.PRIMARY,
     marginBottom: 2,
-    color: '#1E3A8A',
-  },
-  canchaDetail: {
-    fontSize: 12,
-    color: '#4B5563',
     textAlign: 'center',
+  },
+  canchaType: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  selectedCanchaText: {
+    color: 'white',
+  },
+  priceBadge: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  selectedPriceBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  priceText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.SECONDARY,
+  },
+  selectedPriceText: {
+    color: 'white',
   },
   detailsContainer: {
     backgroundColor: "#f0f0f0",
@@ -488,5 +708,71 @@ const styles = StyleSheet.create({
     color: Colors.SECONDARY,
     marginBottom: 16,
     textAlign: 'center',
+  },
+  timeSelectorContainer: {
+    marginBottom: 20,
+  },
+  timeGrid: {
+    flexDirection: 'row',
+    paddingHorizontal: 6,
+  },
+  timeSlot: {
+    backgroundColor: '#f5f5f5',
+    padding: 12,
+    borderRadius: 8,
+    marginRight: 8,
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  selectedTimeSlot: {
+    backgroundColor: Colors.PRIMARY,
+  },
+  timeSlotText: {
+    fontSize: 16,
+    color: Colors.SECONDARY,
+    fontWeight: '500',
+  },
+  selectedTimeText: {
+    color: Colors.WHITE,
+  },
+  dateSelectorContainer: {
+    marginBottom: 20,
+  },
+  dateGrid: {
+    flexDirection: 'row',
+    paddingHorizontal: 6,
+  },
+  dateSlot: {
+    backgroundColor: '#f5f5f5',
+    padding: 12,
+    borderRadius: 8,
+    marginRight: 8,
+    minWidth: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedDateSlot: {
+    backgroundColor: Colors.PRIMARY,
+  },
+  dayName: {
+    fontSize: 14,
+    color: Colors.SECONDARY,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  dayNumber: {
+    fontSize: 20,
+    color: Colors.SECONDARY,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  monthName: {
+    fontSize: 14,
+    color: Colors.SECONDARY,
+    textTransform: 'uppercase',
+  },
+  selectedDateText: {
+    color: Colors.WHITE,
   },
 });

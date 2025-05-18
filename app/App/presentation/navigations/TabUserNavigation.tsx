@@ -15,14 +15,14 @@ import EditProfileScreen from "../userScreens/ProfileScreen/EditProfileScreen";
 import DeleteAccountScreen from "../userScreens/ProfileScreen/DeleteAccountScreen";
 import MyBookingDescriptionScreen from "../userScreens/MyBookingsScreen/MyBookingDescriptionScreen";
 import SuccessScreen from "../userScreens/SuccessScreen/SuccessScreen";
-import MapScreen from "../userScreens/MapScreen/MapScreen";
+
 import TermsAndCondition from "../userScreens/ProfileScreen/TermsAndCondition";
 // Importaciones de iconos
 import CalendarIcon from "../assets/icons/CalendarIcon";
 import HomeIcon from "../assets/icons/HomeIcon";
 import ProfileIcon from "../assets/icons/ProfileIcon";
 import UbicationIcon from "../assets/icons/UbicationIcon";
-import BookingDateTimeScreen from "../userScreens/BookingDateTime/BookingDateTimeScreen";
+import MapScreen from "../userScreens/MapScreen/MapScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -58,6 +58,22 @@ const BookingStack = () => (
     <Stack.Screen
       name="myBookingDescription"
       component={MyBookingDescriptionScreen}
+    />
+  </Stack.Navigator>
+);
+
+// Componente para el stack de mapas
+const MapStack = () => (
+  <Stack.Navigator>
+    <Stack.Screen
+      name="map"
+      component={MapScreen}
+      options={{
+        headerBackTitleVisible: false,
+        headerTitle: "",
+        headerTransparent: true,
+        headerTintColor: "#fff",
+      }}
     />
   </Stack.Navigator>
 );
@@ -126,16 +142,16 @@ const UserTabs = () => (
         tabBarIcon: () => <CalendarIcon width={25} height={25} />,
       }}
     />
-    {Platform.OS === 'android' && (
-      <Tab.Screen
-        name="mapStack"
-        component={MapStack}
-        options={{
-          ...tabScreenOptions,
-          tabBarIcon: () => <UbicationIcon width={25} height={25} />,
-        }}
-      />
-    )}
+    <Tab.Screen
+      name="mapStack"
+      component={MapStack}
+      options={{
+        ...tabScreenOptions,
+        tabBarIcon: ({ color }) => (
+          <UbicationIcon width={25} height={25} color={color} />
+        ),
+      }}
+    />
     <Tab.Screen
       name="myBookingStack"
       component={BookingStack}
@@ -155,26 +171,6 @@ const UserTabs = () => (
       }}
     />
   </Tab.Navigator>
-);
-const MapStack = () => (
-  <Stack.Navigator>
-    <Stack.Screen
-      name="map"
-      component={MapScreen}
-      options={{
-        headerBackTitleVisible: false,
-        headerTitle: "",
-        headerTransparent: true,
-        headerTintColor: "#fff",
-      }}
-    />
-    <Stack.Screen name="bookingDateTime" component={BookingDateTimeScreen} options={{
-        headerBackTitleVisible: false,
-        headerTitle: "",
-        headerTransparent: true,
-        headerTintColor: "#fff",
-      }} />
-  </Stack.Navigator>
 );
 // Componente principal de navegación
 export default function TabUserNavigation() {
