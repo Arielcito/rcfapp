@@ -67,13 +67,9 @@ export const getUserById = async (id: string): Promise<User | null> => {
 };
 
 export const updateUser = async (id: string, userData: UserUpdateData): Promise<User | null> => {
-  const { name, email, password, role } = userData;
-  const updateData: Partial<User> = { name, email, role };
-
-  if (password) {
-    updateData.password = await bcrypt.hash(password, 10);
-  }
-
+  const { name, email, role , telefono, image } = userData;
+  const updateData: Partial<User> = { name, email, role, telefono, image };
+  console.log("updateData", updateData);
   const [updatedUser] = await db.update(users)
     .set(updateData)
     .where(eq(users.id, id))
@@ -81,9 +77,11 @@ export const updateUser = async (id: string, userData: UserUpdateData): Promise<
       id: users.id,
       name: users.name,
       email: users.email,
-      role: users.role
+      role: users.role,
+      telefono: users.telefono,
+      image: users.image
     });
-
+  console.log("updatedUser", updatedUser);
   return updatedUser || null;
 };
 

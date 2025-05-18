@@ -18,8 +18,6 @@ import Colors from "../../../infrastructure/utils/Colors";
 import { useCurrentUser } from "../../../application/context/CurrentUserContext";
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { AnalyticsService } from "../../../infrastructure/services/analytics.service";
-import { AnalyticsMethods } from "../../../infrastructure/constants/analytics.constants";
 
 interface LoginValues {
   email: string;
@@ -69,8 +67,6 @@ export default function UserLoginScreen() {
       }),
     ]).start();
 
-    // Track screen view
-    AnalyticsService.logScreen('UserLoginScreen');
   }, []);
 
   function validateEmail(email: string): boolean {
@@ -137,12 +133,7 @@ export default function UserLoginScreen() {
 
     try {
       const user = await login(values.email.toLowerCase(), values.pwd);
-      
-      // Log successful login
-      await AnalyticsService.auth.logLogin(
-        AnalyticsMethods.EMAIL,
-        true
-      );
+    
 
       if (user.role === 'USER') {
         navigation.reset({
@@ -152,23 +143,12 @@ export default function UserLoginScreen() {
       } else {
         const errorMsg = "Esta cuenta no tiene permisos de usuario. Por favor, use la opción de inicio de sesión correcta.";
         setError(errorMsg);
-        // Log failed login due to incorrect role
-        await AnalyticsService.auth.logLogin(
-          AnalyticsMethods.EMAIL,
-          false,
-          'incorrect_role'
-        );
       }
     } catch (error) {
       console.log(error);
       const errorMsg = "Error de inicio de sesión. Por favor, verifique sus credenciales.";
       setError(errorMsg);
-      // Log failed login
-      await AnalyticsService.auth.logLogin(
-        AnalyticsMethods.EMAIL,
-        false,
-        'invalid_credentials'
-      );
+
     } finally {
       setLoading(false);
     }

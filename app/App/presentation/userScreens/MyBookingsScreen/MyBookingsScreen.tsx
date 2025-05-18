@@ -223,14 +223,16 @@ export default function MyBookingsScreen() {
       const activeBookings = reservas.filter(reserva => {
         try {
           const fechaReserva = new Date(reserva.fechaHora);
-          return reserva?.estado?.toLowerCase() === 'pagado' && fechaReserva > new Date();
+          const isPagado = reserva?.estado === 'PAGADO';
+          const isFutureDate = fechaReserva > new Date();
+
+          return isPagado && isFutureDate;
         } catch (error) {
           logger.error(COMPONENT_NAME, 'Error al procesar fecha de reserva', { error, reserva });
           return false;
         }
       });
-      logger.debug(COMPONENT_NAME, 'Active Tab - Filtered bookings:', { count: activeBookings.length });
-      
+
       return (
         <BookingList
           appointments={activeBookings}
@@ -243,16 +245,20 @@ export default function MyBookingsScreen() {
       );
     },
     pasadas: () => {
+
       const pendingBookings = reservas.filter(reserva => {
         try {
           const fechaReserva = new Date(reserva.fechaHora);
-          return reserva?.estado?.toLowerCase() === 'pendiente' && fechaReserva > new Date();
+          const currentDate = new Date();
+          const isPendiente = reserva?.estado === 'PENDIENTE';
+          const isFutureDate = fechaReserva > currentDate;
+
+          return isPendiente && isFutureDate;
         } catch (error) {
           logger.error(COMPONENT_NAME, 'Error al procesar fecha de reserva', { error, reserva });
           return false;
         }
       });
-      logger.debug(COMPONENT_NAME, 'Pending Tab - Filtered bookings:', { count: pendingBookings.length });
       
       return (
         <BookingList
@@ -266,16 +272,40 @@ export default function MyBookingsScreen() {
       );
     },
     canceladas: () => {
+      logger.debug(COMPONENT_NAME, 'History Tab - Starting filter with total reservas:', { 
+        total: reservas.length 
+      });
+
       const historyBookings = reservas.filter(reserva => {
         try {
           const fechaReserva = new Date(reserva.fechaHora);
-          return fechaReserva <= new Date() || reserva?.estado?.toLowerCase() === 'cancelado';
+          const currentDate = new Date();
+          const isPastDate = fechaReserva <= currentDate;
+          const isCancelado = reserva?.estado === 'CANCELADO';
+          
+          logger.debug(COMPONENT_NAME, 'History Tab - Filtering reservation:', { 
+            id: reserva.appointmentId,
+            estado: reserva.estado,
+            fechaHora: reserva.fechaHora,
+            isPastDate,
+            isCancelado,
+            currentDate: currentDate.toISOString()
+          });
+
+          return isPastDate || isCancelado;
         } catch (error) {
           logger.error(COMPONENT_NAME, 'Error al procesar fecha de reserva', { error, reserva });
           return false;
         }
       });
-      logger.debug(COMPONENT_NAME, 'History Tab - Filtered bookings:', { count: historyBookings.length });
+      logger.debug(COMPONENT_NAME, 'History Tab - Filtered bookings:', { 
+        count: historyBookings.length,
+        filteredSample: historyBookings.slice(0, 2).map(r => ({
+          id: r.appointmentId,
+          estado: r.estado,
+          fechaHora: r.fechaHora
+        }))
+      });
       
       return (
         <BookingList

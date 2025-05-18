@@ -27,13 +27,6 @@ export const authenticateToken = (
   res: Response,
   next: NextFunction
 ) => {
-  console.log('[Auth] Iniciando middleware de autenticación');
-  console.log('[Auth] Headers recibidos:', {
-    authorization: req.headers.authorization ? 'Presente' : 'Ausente',
-    'content-type': req.headers['content-type'],
-    'user-agent': req.headers['user-agent']
-  });
-
   const authHeader = req.headers.authorization;
   const token = authHeader?.split(' ')[1];
 
@@ -46,16 +39,9 @@ export const authenticateToken = (
   }
 
   try {
-    console.log('[Auth] Verificando token...');
     const secretKey = process.env.JWT_SECRET || 'your-secret-key';
-    console.log('[Auth] Secret key presente:', !!secretKey);
     
     const decoded = jwt.verify(token, secretKey) as JWTPayload;
-    console.log('[Auth] Token decodificado exitosamente:', {
-      id: decoded.id,
-      email: decoded.email,
-      role: decoded.role
-    });
   
     req.user = {
       id: decoded.id,
