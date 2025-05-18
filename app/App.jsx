@@ -15,8 +15,8 @@ import { UserLocationContext } from "./App/application/context/UserLocationConte
 import { CurrentUserProvider, useCurrentUser } from "./App/application/context/CurrentUserContext";
 import { CurrentPlaceContext } from "./App/application/context/CurrentPlaceContext";
 
-import Colors from "./App/infraestructure/utils/Colors";
-import { fetchOwnerPlace } from "./App/infraestructure/api/places.api";
+import Colors from "./App/infrastructure/utils/Colors";
+import { fetchOwnerPlace } from "./App/infrastructure/api/places.api";
 
 // Create a client
 const queryClient = new QueryClient();

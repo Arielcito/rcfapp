@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { getAppointmentById } from "../../../infraestructure/api/appointments.api";
+import { getAppointmentById } from "../../../infrastructure/api/appointments.api";
 
 export default function AppointmentInfo() {
   const [appointment, setAppointment] = useState(null);

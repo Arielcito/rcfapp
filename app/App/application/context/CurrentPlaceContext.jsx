@@ -1,5 +1,5 @@
 import { createContext, useState, useContext, useEffect } from 'react';
-import { fetchOwnerPlace } from '../../infraestructure/api/places.api';
+import { fetchOwnerPlace } from '../../infrastructure/api/places.api';
 import { useCurrentUser } from './CurrentUserContext';
 
 export const CurrentPlaceContext = createContext();

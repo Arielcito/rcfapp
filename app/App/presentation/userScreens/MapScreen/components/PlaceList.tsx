@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { Place } from '../../../../domain/entities/place.entity';
 import { PlaceCard } from './PlaceCard';
-import Colors from '../../../../infraestructure/utils/Colors';
+import Colors from '../../../../infrastructure/utils/Colors';
 
 interface PlaceListProps {
   places: Place[];

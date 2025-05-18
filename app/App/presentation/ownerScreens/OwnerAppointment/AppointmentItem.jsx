@@ -1,12 +1,12 @@
 import { View, Text, Pressable, StyleSheet, Modal, ScrollView, TouchableOpacity, Linking, Alert } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
-import Colors from "../../../infraestructure/utils/Colors";
+import Colors from "../../../infrastructure/utils/Colors";
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Icon from "react-native-vector-icons/Ionicons";
-import { getProfileInfo } from "../../../infraestructure/api/user.api";
-import { reservaApi } from "../../../infraestructure/api/reserva.api";
+import { getProfileInfo } from "../../../infrastructure/api/user.api";
+import { reservaApi } from "../../../infrastructure/api/reserva.api";
 
 export default function AppointmentItem({ reserva, onUpdate }) {
   const navigation = useNavigation();

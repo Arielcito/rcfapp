@@ -10,11 +10,11 @@ import {
   ToastAndroid,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import Colors from "../../../infraestructure/utils/Colors";
+import Colors from "../../../infrastructure/utils/Colors";
 import { useCurrentUser } from "../../../application/context/CurrentUserContext";
-import { getProfileInfo } from "../../../infraestructure/api/user.api";
+import { getProfileInfo } from "../../../infrastructure/api/user.api";
 import defaultAvatar from "../../assets/images/avatar.png";
-import { api } from "../../../infraestructure/api/api";
+import { api } from "../../../infrastructure/api/api";
 
 const EditProfileScreen = () => {
   const navigation = useNavigation();

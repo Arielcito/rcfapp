@@ -17,14 +17,14 @@ import Header from "./Header";
 import { UserLocationContext } from "../../../application/context/UserLocationContext";
 import { SelectMarkerContext } from "../../../application/context/SelectMarkerContext";
 import { CurrentUserContext } from "../../../application/context/CurrentUserContext";
-import Colors from "../../../infraestructure/utils/Colors";
+import Colors from "../../../infrastructure/utils/Colors";
 import PlaceItem from "../../components/PlaceItem";
-import { getDays, getTime } from "../../../infraestructure/utils/TimeDate";
-import { getAvailableTimes } from "../../../infraestructure/api/appointments.api";
+import { getDays, getTime } from "../../../infrastructure/utils/TimeDate";
+import { getAvailableTimes } from "../../../infrastructure/api/appointments.api";
 import { useFocusEffect } from '@react-navigation/native';
 import { Dimensions } from 'react-native';
 import moment from 'moment';
-import { usePredios } from "../../../infraestructure/api/places.queries";
+import { usePredios } from "../../../infrastructure/api/places.queries";
 import type { Place } from "../../../domain/entities/place.entity";
 import { LinearGradient } from "expo-linear-gradient";
 

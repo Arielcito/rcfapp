@@ -8,9 +8,9 @@ import {
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
-import { FIREBASE_AUTH } from '../../../infraestructure/config/FirebaseConfig';
+import { FIREBASE_AUTH } from '../../../infrastructure/config/FirebaseConfig';
 import { PhoneAuthProvider, signInWithCredential } from 'firebase/auth';
-import Colors from '../../../infraestructure/utils/Colors';
+import Colors from '../../../infrastructure/utils/Colors';
 
 export default function PhoneVerificationScreen({ route, navigation }) {
   const [verificationCode, setVerificationCode] = useState('');

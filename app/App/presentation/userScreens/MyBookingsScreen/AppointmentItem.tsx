@@ -2,12 +2,12 @@ import { View, Text, Pressable, StyleSheet, Modal, ScrollView, TouchableOpacity,
 import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Colors from "../../../infraestructure/utils/Colors";
+import Colors from "../../../infrastructure/utils/Colors";
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Icon from "react-native-vector-icons/Ionicons";
-import { getProfileInfo } from "../../../infraestructure/api/user.api";
-import { reservaApi } from "../../../infraestructure/api/reserva.api";
+import { getProfileInfo } from "../../../infrastructure/api/user.api";
+import { reservaApi } from "../../../infrastructure/api/reserva.api";
 import { BookingResponse } from "../../../types/booking";
 import { useCurrentUser } from "../../../application/context/CurrentUserContext";
 import { useUser } from "../../../application/hooks/useUser";

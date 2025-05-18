@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
-import Colors from '../../../../infraestructure/utils/Colors';
+import Colors from '../../../../infrastructure/utils/Colors';
 import { Place } from '../../../../domain/entities/place.entity';
 
 interface PlaceCardProps {

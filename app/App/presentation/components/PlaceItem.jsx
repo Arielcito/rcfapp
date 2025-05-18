@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Image } from 'expo-image';
 import { useNavigation } from "@react-navigation/native";
-import Colors from "../../infraestructure/utils/Colors";
+import Colors from "../../infrastructure/utils/Colors";
 import moment from 'moment';
 
 const PlaceItem = ({ place, selectedDate, selectedTime, isTablet }) => {

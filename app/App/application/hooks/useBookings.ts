@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { reservaApi } from '../../infraestructure/api/reserva.api';
+import { reservaApi } from '../../infrastructure/api/reserva.api';
 import { useCurrentUser } from '../context/CurrentUserContext';
 import moment from 'moment';
 import { Booking } from '../../types/booking';

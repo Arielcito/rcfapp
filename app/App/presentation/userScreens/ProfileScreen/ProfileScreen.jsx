@@ -3,10 +3,10 @@ import { StyleSheet, Text, View, Image, TouchableOpacity } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import { useState, useEffect } from "react";
-import { getProfileInfo } from "../../../infraestructure/api/user.api";
+import { getProfileInfo } from "../../../infrastructure/api/user.api";
 import { useCurrentUser } from "../../../application/context/CurrentUserContext";
 import defaultAvatar from "../../assets/images/avatar.png";
-import { api } from "../../../infraestructure/api/api";
+import { api } from "../../../infrastructure/api/api";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ProfileScreen = () => {

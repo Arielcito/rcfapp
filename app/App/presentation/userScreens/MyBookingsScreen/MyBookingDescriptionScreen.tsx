@@ -13,8 +13,8 @@ import {
 } from "react-native";
 import WhatsappButton from "../../components/WhatsappButton";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { updateAppointment } from "../../../infraestructure/api/appointments.api";
-import Colors from "../../../infraestructure/utils/Colors";
+import { updateAppointment } from "../../../infrastructure/api/appointments.api";
+import Colors from "../../../infrastructure/utils/Colors";
 import { BookingResponse } from "../../../types/booking";
 
 type RootStackParamList = {

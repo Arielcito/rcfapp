@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, Platform, TouchableOpacity, Modal, TextInput, Button, Switch, ActivityIndicator, FlatList } from 'react-native';
-import Colors from '../../../infraestructure/utils/Colors';
+import Colors from '../../../infrastructure/utils/Colors';
 import { Ionicons } from '@expo/vector-icons';
-import { FinanceService, FinanceEntry } from '../../../infraestructure/api/finance.api';
+import { FinanceService, FinanceEntry } from '../../../infrastructure/api/finance.api';
 import { useCurrentUser } from '../../../application/context/CurrentUserContext';
 import { useCurrentPlace } from '../../../application/context/CurrentPlaceContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';

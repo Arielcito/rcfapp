@@ -8,7 +8,7 @@ import {
   Platform,
   SafeAreaView,
 } from 'react-native';
-import Colors from '../../../infraestructure/utils/Colors';
+import Colors from '../../../infrastructure/utils/Colors';
 import { Place } from '../../../domain/entities/place.entity';
 
 interface BookingDateTimeScreenProps {

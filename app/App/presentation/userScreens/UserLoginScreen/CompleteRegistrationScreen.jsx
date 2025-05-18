@@ -5,8 +5,8 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import Colors from '../../../infraestructure/utils/Colors';
-import { api } from '../../../infraestructure/api/api';
+import Colors from '../../../infrastructure/utils/Colors';
+import { api } from '../../../infrastructure/api/api';
 
 export default function CompleteRegistrationScreen({ route, navigation }) {
   const [loading, setLoading] = useState(false);
