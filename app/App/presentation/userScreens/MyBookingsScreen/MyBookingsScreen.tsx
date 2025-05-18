@@ -19,12 +19,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { format, parseISO, compareDesc } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { reservaApi } from "../../../infraestructure/api/reserva.api";
-import { logger } from '../../../infraestructure/utils/logger';
-import { mapReservaToBooking, ReservaResponse } from '../../../infraestructure/utils/bookingMappers';
+import { reservaApi } from "../../../infrastructure/api/reserva.api";
+import { logger } from '../../../infrastructure/utils/logger';
+import { mapReservaToBooking, ReservaResponse } from '../../../infrastructure/utils/bookingMappers';
 
 // Constants
-import Colors from "../../../infraestructure/utils/Colors";
+import Colors from "../../../infrastructure/utils/Colors";
 
 // Components
 import AppointmentItem from './AppointmentItem';
@@ -186,7 +186,7 @@ export default function MyBookingsScreen() {
     setLoading(true);
     logger.info(COMPONENT_NAME, 'Iniciando fetch de reservas');
     try {
-      const response = await reservaApi.obtenerTodasReservas() as ReservaResponse[];
+      const response = (await reservaApi.obtenerTodasReservas() as unknown) as ReservaResponse[];
       logger.debug(COMPONENT_NAME, 'Respuesta de API recibida', { response });
       const todasLasReservas = response.map(mapReservaToBooking);
       const reservasOrdenadas = ordenarReservas(todasLasReservas);

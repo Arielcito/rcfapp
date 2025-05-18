@@ -20,10 +20,10 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Calendar } from 'react-native-calendars';
 import SubHeading from "../../components/SubHeading";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import Colors from "../../../infraestructure/utils/Colors";
-import { FIREBASE_AUTH } from "../../../infraestructure/config/FirebaseConfig";
+import Colors from "../../../infrastructure/utils/Colors";
+import { FIREBASE_AUTH } from "../../../infrastructure/config/FirebaseConfig";
 import CaracteristicItem from "../../components/CaracteristicItem";
-import { api } from "../../../infraestructure/api/api";
+import { api } from "../../../infrastructure/api/api";
 import { Cancha, Predio } from "../../../types/booking";
 
 interface ExtendedPredio extends Predio {

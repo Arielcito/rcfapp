@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useCurrentUser } from '../../../application/context/CurrentUserContext';
-import Colors from '../../../infraestructure/utils/Colors';
+import Colors from '../../../infrastructure/utils/Colors';
 
 const Header = ({ isTablet }: { isTablet: boolean }) => {
   const { currentUser } = useCurrentUser();

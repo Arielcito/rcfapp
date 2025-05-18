@@ -2,7 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform } from '
 import React, { useState } from 'react'
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Colors from '../../../infraestructure/utils/Colors';
+import Colors from '../../../infrastructure/utils/Colors';
 import AppointmentFieldInfo from './AppointmentFieldInfo';
 import BookingSection from './BookingSection';
 import { Predio, Cancha } from '../../../types/booking';

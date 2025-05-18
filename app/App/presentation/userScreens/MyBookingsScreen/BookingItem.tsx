@@ -11,8 +11,8 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Colors from "../../../infraestructure/utils/Colors";
-import { updateAppointment } from "../../../infraestructure/api/appointments.api";
+import Colors from "../../../infrastructure/utils/Colors";
+import { updateAppointment } from "../../../infrastructure/api/appointments.api";
 import { BookingResponse } from "../../../types/booking";
 
 type RootStackParamList = {

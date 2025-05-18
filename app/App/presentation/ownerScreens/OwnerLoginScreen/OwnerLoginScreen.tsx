@@ -14,7 +14,7 @@ import {
   Animated,
 } from "react-native";
 import * as WebBrowser from "expo-web-browser";
-import Colors from "../../../infraestructure/utils/Colors";
+import Colors from "../../../infrastructure/utils/Colors";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { Ionicons } from '@expo/vector-icons';
 import { useCurrentUser } from "../../../application/context/CurrentUserContext";

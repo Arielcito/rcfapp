@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../../infraestructure/api/api';
+import { api } from '../../infrastructure/api/api';
 
 interface CanchaInfo {
   id: string;

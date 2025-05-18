@@ -10,8 +10,8 @@ import {
   Text,
 } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
-import Colors from "../../../infraestructure/utils/Colors";
-import { usePredios } from "../../../infraestructure/api/places.queries";
+import Colors from "../../../infrastructure/utils/Colors";
+import { usePredios } from "../../../infrastructure/api/places.queries";
 import { Place } from "../../../domain/entities/place.entity";
 import { SearchBar } from "./components/SearchBar";
 import { PlaceList } from "./components/PlaceList";

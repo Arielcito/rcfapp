@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useCurrentUser } from '../../../application/context/CurrentUserContext';
-import Colors from '../../../infraestructure/utils/Colors';
+import Colors from '../../../infrastructure/utils/Colors';
 
 const DeleteAccountScreen = () => {
   const navigation = useNavigation();

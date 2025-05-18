@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { doc, deleteDoc } from "firebase/firestore";
-import { FIREBASE_DB } from "../../../infraestructure/config/FirebaseConfig";
+import { FIREBASE_DB } from "../../../infrastructure/config/FirebaseConfig";
 
 export default function OwnerPitchItem({ item, onEdit, onDelete }) {
   const handleEdit = () => {

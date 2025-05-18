@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
-import Colors from '../../../../infraestructure/utils/Colors';
+import Colors from '../../../../infrastructure/utils/Colors';
 
 interface SearchBarProps {
   value: string;

@@ -7,7 +7,7 @@ import OwnerAppointments from "../ownerScreens/OwnerAppointment/OwnerAppointment
 import AppointmentInfo from "../ownerScreens/OwnerAppointment/AppointmentInfo";
 import OwnerProfileScreen from "../ownerScreens/OwnerProfileScreen/OwnerProfileScreen";
 import OwnerPitches from "../ownerScreens/OwnerPitches/OwnerPitches";
-import Colors from "../../infraestructure/utils/Colors";
+import Colors from "../../infrastructure/utils/Colors";
 import OwnerHomeScreen from "../ownerScreens/OwnerHome/OwnerHomeScreen";
 import FinanceManagementScreen from "../ownerScreens/FinanceManagement/FinanceManagementScreen";
 

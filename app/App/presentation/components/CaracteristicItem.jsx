@@ -1,6 +1,6 @@
 import { View, Text,StyleSheet } from 'react-native'
 import React from 'react'
-import Colors from '../../infraestructure/utils/Colors'
+import Colors from '../../infrastructure/utils/Colors'
 
 export default function CaracteristicItem({name}) {
   return (

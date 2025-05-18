@@ -17,11 +17,13 @@ import {
   Animated,
 } from 'react-native';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
-import Colors from '../../../infraestructure/utils/Colors';
+import Colors from '../../../infrastructure/utils/Colors';
 import { Ionicons } from '@expo/vector-icons';
-import { api } from '../../../infraestructure/api/api';
+import { api } from '../../../infrastructure/api/api';
 import { useCurrentUser } from "../../../application/context/CurrentUserContext";
 import { StatusBar } from 'expo-status-bar';
+import { AnalyticsService } from "../../../infrastructure/services/analytics.service";
+import { AnalyticsMethods } from "../../../infrastructure/constants/analytics.constants";
 
 type RootStackParamList = {
   TabUserNavigation: undefined;
@@ -78,6 +80,9 @@ export default function UserRegistrationScreen() {
         useNativeDriver: true,
       }),
     ]).start();
+
+    // Track screen view
+    AnalyticsService.logScreen('UserRegistrationScreen');
   }, []);
 
   const validateForm = () => {
@@ -163,25 +168,58 @@ export default function UserRegistrationScreen() {
       });
 
       if (response.status === 201) {
+        // Log successful registration
+        await AnalyticsService.auth.logRegistration(
+          AnalyticsMethods.EMAIL,
+          true
+        );
+
         try {
           const user = await login(values.email.toLowerCase(), values.pwd);
+          
+          // Log successful login after registration
+          await AnalyticsService.auth.logLogin(
+            AnalyticsMethods.EMAIL,
+            true
+          );
+
           if (user.role === 'USER') {
             navigation.reset({
               index: 0,
               routes: [{ name: 'TabUserNavigation' }],
             });
           } else {
-            showMessage("Esta cuenta no tiene permisos de usuario. Por favor, use la opción de inicio de sesión correcta.");
+            const errorMsg = "Esta cuenta no tiene permisos de usuario. Por favor, use la opción de inicio de sesión correcta.";
+            showMessage(errorMsg);
+            // Log failed login due to incorrect role
+            await AnalyticsService.auth.logLogin(
+              AnalyticsMethods.EMAIL,
+              false,
+              'incorrect_role'
+            );
           }
         } catch (loginError) {
           console.error('Error en login automático:', loginError);
           showMessage('Registro exitoso. Por favor, inicie sesión.');
+          // Log failed login after registration
+          await AnalyticsService.auth.logLogin(
+            AnalyticsMethods.EMAIL,
+            false,
+            'auto_login_failed'
+          );
           navigation.navigate('user-login');
         }
       }
     } catch (error) {
       console.error('Error en registro:', error);
-      showMessage((error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Error en el registro');
+      const errorMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Error en el registro';
+      showMessage(errorMsg);
+      // Log failed registration
+      await AnalyticsService.auth.logRegistration(
+        AnalyticsMethods.EMAIL,
+        false,
+        errorMsg
+      );
     } finally {
       setLoading(false);
     }

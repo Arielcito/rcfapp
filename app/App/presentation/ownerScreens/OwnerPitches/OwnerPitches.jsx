@@ -10,19 +10,19 @@ import {
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import Colors from "../../../infraestructure/utils/Colors";
+import Colors from "../../../infrastructure/utils/Colors";
 import { collection, query, where, getDocs, addDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import {
   FIREBASE_DB,
   FIREBASE_AUTH,
   FIREBASE_STORAGE,
-} from "../../../infraestructure/config/FirebaseConfig";
+} from "../../../infrastructure/config/FirebaseConfig";
 import * as ImagePicker from "expo-image-picker";
 import { CurrentPlaceContext } from "../../../application/context/CurrentPlaceContext";
 import { useContext } from "react";
 import OwnerPitchItem from "./OwnerPitchItem";
-import { getPitchesByPlaceId } from "../../../infraestructure/api/pitches.api";
+import { getPitchesByPlaceId } from "../../../infrastructure/api/pitches.api";
 
 export default function OwnerPitches() {
   const { currentPlace } = useContext(CurrentPlaceContext);

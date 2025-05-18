@@ -2,7 +2,7 @@ import React from "react";
 import { Platform, View } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import Colors from "../../infraestructure/utils/Colors";
+import Colors from "../../infrastructure/utils/Colors";
 
 // Importaciones de pantallas
 import HomeScreen from "../userScreens/HomeScreen/HomeScreen";

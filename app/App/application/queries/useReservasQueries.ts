@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { reservaApi } from '../../infraestructure/api/reserva.api';
+import { reservaApi } from '../../infrastructure/api/reserva.api';
 import { useCurrentUser } from '../context/CurrentUserContext';
 import moment from 'moment';
 

@@ -7,13 +7,13 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import Colors from "../../../infraestructure/utils/Colors";
-import { getDays } from "../../../infraestructure/utils/TimeDate";
+import Colors from "../../../infrastructure/utils/Colors";
+import { getDays } from "../../../infrastructure/utils/TimeDate";
 import AppointmentItem from "./AppointmentItem";
 import Divider from "../../components/Divider";
-import { reservaApi } from "../../../infraestructure/api/reserva.api";
+import { reservaApi } from "../../../infrastructure/api/reserva.api";
 import { format, parseISO, compareDesc } from 'date-fns';
-import { logger } from '../../../infraestructure/utils/logger';
+import { logger } from '../../../infrastructure/utils/logger';
 
 const COMPONENT_NAME = 'OwnerAppointments';
 

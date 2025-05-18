@@ -1,6 +1,6 @@
 import { View, Text, ActivityIndicator, Image, FlatList, Pressable, Alert, ScrollView, StyleSheet, Linking } from 'react-native'
 import React from 'react'
-import Colors from '../../../infraestructure/utils/Colors'
+import Colors from '../../../infrastructure/utils/Colors'
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import { useCurrentUser } from '../../../application/context/CurrentUserContext'

@@ -11,7 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import Colors from "../../../infraestructure/utils/Colors";
+import Colors from "../../../infrastructure/utils/Colors";
 import ButtonPrimary from "../../components/ButtonPrimary";
 import WhatsappButton from "../../components/WhatsappButton";
 import moment from "moment";
@@ -172,7 +172,8 @@ Reserva realizada a través de RCF App
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>¡FELICITACIONES!</Text>
-        <Text style={styles.subtitle}>TU RESERVA YA ESTÁ LISTA</Text>
+        <Text style={styles.subtitle}>TU RESERVA ESTÁ PENDIENTE DE CONFIRMACIÓN</Text>
+        <Text style={styles.pendingMessage}>El dueño del predio debe confirmar tu reserva. Te notificaremos cuando sea aceptada.</Text>
 
         <View style={styles.card}>
           <View style={styles.cardHeader}>
@@ -272,7 +273,14 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#333333",
     textAlign: "center",
+    marginBottom: 8,
+  },
+  pendingMessage: {
+    fontSize: 14,
+    color: Colors.GRAY,
+    textAlign: "center",
     marginBottom: 16,
+    paddingHorizontal: 20,
   },
   errorText: {
     fontSize: 16,
