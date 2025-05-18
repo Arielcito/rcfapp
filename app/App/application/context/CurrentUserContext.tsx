@@ -5,6 +5,9 @@ import { api, TokenService, setTokenExpiredCallback } from "../../infrastructure
 export interface User {
   id: string;
   email: string;
+  name: string;
+  telefono: string;
+  image: string;
   [key: string]: any;
 }
 

@@ -58,7 +58,6 @@ export default function AppointmentItem({ reserva, onUpdate }: AppointmentItemPr
   const hora = format(fecha, 'HH:mm', { locale: es });
   const fechaFormateada = format(fecha, 'dd/MM/yyyy', { locale: es });
   const estado = reserva.estado.toLowerCase();
-  console.log("Usuario actual:", currentUser);
   // Verificar si el usuario actual es el propietario del predio o el creador de la reserva
   const canEditStatus = currentUser?.role === 'OWNER' ;
 

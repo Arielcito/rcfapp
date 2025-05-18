@@ -14,6 +14,7 @@ export interface User {
   image?: string | null;
   passwordResetToken?: string | null;
   passwordResetTokenExp?: Date | null;
+  telefono?: string | null;
 }
 
 export interface UserCreationData {
@@ -29,4 +30,6 @@ export interface UserUpdateData {
   email?: string;
   password?: string;
   role?: Role;
+  telefono?: string;
+  image?: string;
 }

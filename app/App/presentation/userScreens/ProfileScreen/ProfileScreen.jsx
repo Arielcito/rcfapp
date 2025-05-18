@@ -1,30 +1,18 @@
 import React from "react";
-import { StyleSheet, Text, View, Image, TouchableOpacity } from "react-native";
+import { StyleSheet, Text, View, Image, TouchableOpacity, ActivityIndicator } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
-import { useState, useEffect } from "react";
-import { getProfileInfo } from "../../../infrastructure/api/user.api";
 import { useCurrentUser } from "../../../application/context/CurrentUserContext";
+import { useProfile } from "../../../application/hooks/useProfile";
 import defaultAvatar from "../../assets/images/avatar.png";
-import { api } from "../../../infrastructure/api/api";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import Colors from "../../../infrastructure/utils/Colors";
 
 const ProfileScreen = () => {
-  const navigator = useNavigation();
+  const navigation = useNavigation();
   const { currentUser, logout } = useCurrentUser();
-  const [additionalData, setAdditionalData] = useState(null);
+  const { data: profileData, isLoading: isLoadingProfile } = useProfile(currentUser?.id || "");
 
-  useEffect(() => {
-    if (currentUser) {
-      setAdditionalData({
-        name: currentUser.name,
-        email: currentUser.email,
-        imageUrl: currentUser.image || null
-      });
-    }
-  }, [currentUser]);
-
-  const signOut = async () => {
+  const handleSignOut = async () => {
     try {
       await logout();
       navigator.navigate('userLoginStack');
@@ -34,11 +22,20 @@ const ProfileScreen = () => {
   };
 
   const getImageSource = () => {
-    if (additionalData?.imageUrl) {
-      return { uri: additionalData.imageUrl };
+    if (profileData?.image) {
+      return { uri: profileData.image };
     }
     return defaultAvatar;
   };
+
+  if (isLoadingProfile) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={Colors.PRIMARY} />
+        <Text style={styles.loadingText}>Cargando perfil...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -54,12 +51,12 @@ const ProfileScreen = () => {
               source={getImageSource()}
             />
             <View style={styles.profileText}>
-              <Text style={styles.profileName}>{currentUser?.name || additionalData?.name || "Cargando..."}</Text>
-              <Text style={styles.profileEmail}>{currentUser?.email || additionalData?.email || "Cargando..."}</Text>
+              <Text style={styles.profileName}>{profileData?.name || "Sin nombre"}</Text>
+              <Text style={styles.profileEmail}>{profileData?.email || "Sin email"}</Text>
             </View>
             <TouchableOpacity
               style={styles.editButton}
-              onPress={() => navigator.navigate("edit-profile")}
+              onPress={() => navigation.navigate("edit-profile")}
             >
               <Text style={styles.editText}>editar</Text>
             </TouchableOpacity>
@@ -68,17 +65,22 @@ const ProfileScreen = () => {
       </View>
 
       <View style={styles.body}>
-        <TouchableOpacity style={styles.menuItem}
-         onPress={() => navigator.navigate("myBookingStack")}
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={() => navigation.navigate("myBookingStack")}
         >
           <Text style={styles.menuText}>Mi historial</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}
-           onPress={() => navigator.navigate("termsAndCondition")}
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={() => navigation.navigate("termsAndCondition")}
         >
           <Text style={styles.menuText}>Términos y condiciones</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} onPress={() => signOut()}>
+        <TouchableOpacity 
+          style={styles.menuItem} 
+          onPress={handleSignOut}
+        >
           <Text style={styles.menuText}>Cerrar sesión</Text>
         </TouchableOpacity>
       </View>
@@ -86,7 +88,7 @@ const ProfileScreen = () => {
       <View style={styles.footer}>
         <TouchableOpacity 
           style={styles.deleteAccountItem} 
-          onPress={() => navigator.navigate("delete-account")}
+          onPress={() => navigation.navigate("delete-account")}
         >
           <Text style={styles.deleteAccountText}>Eliminar cuenta</Text>
         </TouchableOpacity>
@@ -100,8 +102,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+  },
+  loadingText: {
+    marginTop: 10,
+    color: Colors.PRIMARY,
+    fontSize: 16,
+  },
   header: {
-    backgroundColor: "#0A4074",
+    backgroundColor: Colors.PRIMARY,
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,
     paddingBottom: 20,

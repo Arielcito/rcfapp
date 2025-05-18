@@ -55,12 +55,15 @@ export const updateUser = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const user = await userService.updateUser(req.params.id, req.body as UserUpdateData);
+    const { id } = req.params;
+    const { name, email, phone, image } = req.body;
+
+    const user = await userService.updateUser(id, { name, email, phone, image } as UserUpdateData);
     if (!user) {
       res.status(404).json({ message: 'User not found' });
       return;
     }
-    res.json(user);
+    res.status(200).json(user);
   } catch (error) {
     next(error);
   }
