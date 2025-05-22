@@ -6,6 +6,7 @@ import { MercadoPagoConfig, Payment, Preference } from 'mercadopago';
 import { decrypt, encrypt } from '../utils/encryption';
 
 export class MercadoPagoService {
+  /*
   private async getConfigByPredioId(predioId: string) {
     console.log(`[MercadoPagoService] Buscando configuración de Mercado Pago para el predio: ${predioId}`);
     
@@ -65,7 +66,7 @@ export class MercadoPagoService {
       throw new Error('Error al guardar la configuración de Mercado Pago');
     }
   }
-
+*/
   async createPreference(data: CreatePreferenceDTO) {
     try {
       console.log(`[MercadoPagoService] Iniciando creación de preferencia para el predio: ${data.predioId}`);
@@ -122,8 +123,7 @@ export class MercadoPagoService {
 
   async getPaymentById(paymentId: string, predioId: string) {
     try {
-      const config = await this.getConfigByPredioId(predioId);
-      
+
       const mercadopago = new MercadoPagoConfig({ 
         accessToken: "TEST-5294995935306734-082313-97c4286e2cbbe8124db0c1afd5976eda-225978862"
       });
@@ -137,8 +137,7 @@ export class MercadoPagoService {
 
   async getPublicKey(predioId: string) {
     try {
-      const config = await this.getConfigByPredioId(predioId);
-      return { publicKey: config.publicKey };
+      return { publicKey: "TEST-9a7e1962-ad0c-4606-aeb1-015c0e59d70d" };
     } catch (error) {
       throw new Error('Error al obtener la clave pública');
     }
@@ -149,7 +148,9 @@ export class MercadoPagoService {
       console.log(`[MercadoPagoService] Procesando webhook para pago ${paymentId} del predio ${predioId}`);
       
       // Obtener la configuración del predio
-      const config = await this.getConfigByPredioId(predioId);
+      const config = {
+        accessToken: "TEST-5294995935306734-082313-97c4286e2cbbe8124db0c1afd5976eda-225978862"
+      };
       
       // Inicializar cliente de Mercado Pago
       const mercadopago = new MercadoPagoConfig({ 

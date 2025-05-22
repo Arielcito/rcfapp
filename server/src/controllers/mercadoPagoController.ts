@@ -6,6 +6,7 @@ import { encrypt } from '../utils/encryption';
 const mercadoPagoService = new MercadoPagoService();
 
 export class MercadoPagoController {
+  /*
   async saveConfig(req: Request, res: Response) {
     console.log('[MercadoPagoController] Iniciando saveConfig');
     try {
@@ -93,7 +94,7 @@ export class MercadoPagoController {
       });
     }
   }
-
+*/
   async createPreference(req: Request, res: Response) {
     console.log('[MercadoPagoController] Iniciando createPreference');
     try {
