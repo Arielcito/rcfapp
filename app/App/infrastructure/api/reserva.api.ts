@@ -84,6 +84,12 @@ interface Appointment {
   };
 }
 
+interface RatePredioData {
+  rating: number;
+  predioId: string;
+  userId: string;
+}
+
 export const reservaApi = {
   obtenerTodasReservas: async (): Promise<ReservaResponse[]> => {
     try {
@@ -269,5 +275,15 @@ export const reservaApi = {
       console.error('Error al obtener y filtrar reservas del usuario:', error);
       throw error;
     }
-  }
+  },
+
+  ratePredio: async (reservaId: string, data: RatePredioData) => {
+    try {
+      const response = await api.post(`/reservas/${reservaId}/rate`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error al calificar el predio:', error);
+      throw error;
+    }
+  },
 }; 
