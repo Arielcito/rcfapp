@@ -639,7 +639,8 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
                 selectedPaymentMethod === "tarjeta" && styles.selectedPaymentButton,
               ]}
             >
-              <Image source={require("../../assets/images/credit-card.png")} style={styles.paymentImage} />
+              <Ionicons name="card" size={30} color={Colors.PRIMARY} />
+              <Text style={styles.paymentMethodText}>Tarjeta</Text>
             </TouchableOpacity>
           </Animated.View>
 
@@ -652,6 +653,7 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
               ]}
             >
               <Image source={require("../../assets/images/mercado-pago.png")} style={styles.paymentImage} />
+              <Text style={styles.paymentMethodText}>Mercado Pago</Text>
             </TouchableOpacity>
           </Animated.View>
         </Animated.View>
@@ -708,11 +710,11 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: Colors.LIGHT_GRAY,
+    backgroundColor: Colors.GRAY_LIGHT,
   },
   container: {
     flex: 1,
-    backgroundColor: Colors.LIGHT_GRAY,
+    backgroundColor: Colors.GRAY_LIGHT,
   },
   scrollContentContainer: {
     paddingHorizontal: 16,
