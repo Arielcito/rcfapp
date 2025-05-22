@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { canchas } from '../db/schema';
+import { canchas, predios } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import type { Cancha, CanchaCreationData, CanchaUpdateData } from '../types/cancha';
 
@@ -48,9 +48,35 @@ export const getCanchas = async (): Promise<Cancha[]> => {
 };
 
 export const getCanchaById = async (id: string): Promise<Cancha | null> => {
-  const [cancha] = await db.select()
-    .from(canchas)
-    .where(eq(canchas.id, id));
+  const [cancha] = await db.select({
+    id: canchas.id,
+    nombre: canchas.nombre,
+    tipo: canchas.tipo,
+    tipoSuperficie: canchas.tipoSuperficie,
+    imagenUrl: canchas.imagenUrl,
+    ancho: canchas.ancho,
+    longitud: canchas.longitud,
+    capacidadJugadores: canchas.capacidadJugadores,
+    equipamientoIncluido: canchas.equipamientoIncluido,
+    esTechada: canchas.esTechada,
+    estado: canchas.estado,
+    montoSeña: canchas.montoSeña,
+    precioPorHora: canchas.precioPorHora,
+    predioId: canchas.predioId,
+    requiereSeña: canchas.requiereSeña,
+    tieneIluminacion: canchas.tieneIluminacion,
+    ultimoMantenimiento: canchas.ultimoMantenimiento,
+    createdAt: canchas.createdAt,
+    predio: {
+      id: predios.id,
+      nombre: predios.nombre,
+      direccion: predios.direccion,
+      telefono: predios.telefono
+    }
+  })
+  .from(canchas)
+  .leftJoin(predios, eq(canchas.predioId, predios.id))
+  .where(eq(canchas.id, id));
 
   return cancha as unknown as Cancha | null;
 };

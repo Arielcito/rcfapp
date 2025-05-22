@@ -74,16 +74,12 @@ const BookingList = memo(({
   buttonText, 
   onButtonPress 
 }: BookingListProps) => {
-  logger.debug(COMPONENT_NAME, 'BookingList - Received appointments:', { count: appointments.length });
-  logger.debug(COMPONENT_NAME, 'BookingList - Loading state:', { loading });
-
   const keyExtractor = useCallback((item: BookingResponse) => 
     item.appointmentId?.toString() || Math.random().toString(), 
     []
   );
 
   const renderItem = useCallback(({ item }: { item: BookingResponse }) => {
-    logger.debug(COMPONENT_NAME, 'BookingList - Rendering item:', { id: item.appointmentId });
     return <AppointmentItem reserva={item} onUpdate={() => setLoading(true)} />;
   }, [setLoading]);
 

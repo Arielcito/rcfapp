@@ -39,6 +39,7 @@ export const getCanchaById = async (
       res.status(404).json({ message: 'Cancha not found' });
       return;
     }
+    console.log('Cancha encontrada:', cancha);
     res.json(cancha);
   } catch (error) {
     next(error);

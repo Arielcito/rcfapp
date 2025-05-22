@@ -48,6 +48,8 @@ export interface Predio {
   id: string;
   nombre: string;
   telefono: string;
+  description?: string;
+  imageUrl?: string;
 }
 
 export interface Booking {

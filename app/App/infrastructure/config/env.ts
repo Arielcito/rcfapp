@@ -20,7 +20,7 @@ const getApiUrl = () => {
 const ENV = {
   dev: {
     //apiUrl: 'https://backoffice.xerato.io/rcf/api',
-    apiUrl: getApiUrl(),
+    apiUrl: API_CONFIG.DEV.IOS,
     firebase: {
       apiKey: "AIzaSyC63HcJiZPxNDxCSwFm0258ctV0ILQDjRc",
       authDomain: "rfc-app-11121.firebaseapp.com",
