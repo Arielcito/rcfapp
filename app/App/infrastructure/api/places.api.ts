@@ -37,7 +37,6 @@ export const fetchOwnerPlace = async (userId: string) => {
 
     try {
       const predioResponse = await api.get(`/predios/${userData.predioTrabajo}`);
-      console.log('predioResponse fetchOwnerPlace', predioResponse.data);
       return predioResponse.data;
     } catch (predioError) {
       if ((predioError as AxiosError)?.response?.status === 404) {
