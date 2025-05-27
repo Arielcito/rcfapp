@@ -4,12 +4,13 @@ import UserLoginScreen from '../userScreens/UserLoginScreen/UserLoginScreen';
 import UserRegistrationScreen from '../userScreens/UserLoginScreen/UserRegistrationScreen';
 import PhoneVerificationScreen from '../userScreens/UserLoginScreen/PhoneVerificationScreen';
 import TabUserNavigation from './TabUserNavigation';
-import OwnerLoginScreen
- from '../ownerScreens/OwnerLoginScreen/OwnerLoginScreen';
+import OwnerLoginScreen from '../ownerScreens/OwnerLoginScreen/OwnerLoginScreen';
+import OwnerRegistrationScreen from '../ownerScreens/OwnerRegistrationScreen/OwnerRegistrationScreen';
 import WelcomeLoginScreen from '../screens/WelcomeLoginScreen/WelcomeLoginScreen';
 import LoginScreen from '../screens/LoginScreen/LoginScreen';
 import CompleteRegistrationScreen from '../userScreens/UserLoginScreen/CompleteRegistrationScreen';
 import TabOwnerNavigation from './TabOwnerNavigation';
+
 const Stack = createNativeStackNavigator();
 
 export const LoginStack = () => (
@@ -27,6 +28,11 @@ export const LoginStack = () => (
     <Stack.Screen
       name="owner-login"
       component={OwnerLoginScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="OwnerRegistration"
+      component={OwnerRegistrationScreen}
       options={{ headerShown: false }}
     />
     <Stack.Screen
