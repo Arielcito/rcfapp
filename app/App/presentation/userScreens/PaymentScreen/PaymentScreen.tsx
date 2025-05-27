@@ -71,12 +71,6 @@ export default function PaymentScreen() {
   const [endTime, setEndTime] = useState<string>();
   const [notes, setNotes] = useState('');
   
-  // Datos de tarjeta
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardName, setCardName] = useState('');
-  const [expiryDate, setExpiryDate] = useState('');
-  const [cvv, setCvv] = useState('');
-  
   const navigator = useNavigation<NavigationProp>();
   const formatDate = moment(date).format("YYYY-MM-DD");
   
@@ -429,13 +423,6 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
           await bookAppointment("efectivo");
           break;
         }
-        case "tarjeta": {
-          if (!cardNumber || !cardName || !expiryDate || !cvv) {
-            throw new Error("Por favor complete todos los campos de la tarjeta");
-          }
-          await bookAppointment("tarjeta");
-          break;
-        }
         default:
           throw new Error("Método de pago no válido");
       }
@@ -467,67 +454,6 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
         })
       ]).start();
     }
-  };
-
-  const renderCreditCardForm = () => {
-    if (selectedPaymentMethod !== 'tarjeta') return null;
-    
-    // Animar entrada del formulario
-    Animated.timing(formOpacity, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-
-    return (
-      <Animated.View style={[styles.creditCardForm, formAnimatedStyle]}>
-        <Text style={styles.formLabel}>Número de Tarjeta</Text>
-        <TextInput
-          style={styles.formInput}
-          placeholder="1234 5678 9012 3456"
-          value={cardNumber}
-          onChangeText={setCardNumber}
-          keyboardType="numeric"
-          maxLength={16}
-        />
-
-        <Text style={styles.formLabel}>Nombre en la Tarjeta</Text>
-        <TextInput
-          style={styles.formInput}
-          placeholder="NOMBRE APELLIDO"
-          value={cardName}
-          onChangeText={setCardName}
-          autoCapitalize="characters"
-        />
-
-        <View style={styles.rowContainer}>
-          <View style={styles.halfWidth}>
-            <Text style={styles.formLabel}>Fecha de Vencimiento</Text>
-            <TextInput
-              style={styles.formInput}
-              placeholder="MM/AA"
-              value={expiryDate}
-              onChangeText={setExpiryDate}
-              maxLength={5}
-              keyboardType="numeric"
-            />
-          </View>
-
-          <View style={styles.halfWidth}>
-            <Text style={styles.formLabel}>CVV</Text>
-            <TextInput
-              style={styles.formInput}
-              placeholder="123"
-              value={cvv}
-              onChangeText={setCvv}
-              maxLength={3}
-              keyboardType="numeric"
-              secureTextEntry
-            />
-          </View>
-        </View>
-      </Animated.View>
-    );
   };
 
   return (
@@ -633,19 +559,6 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
 
           <Animated.View>
             <TouchableOpacity
-              onPress={() => setSelectedPaymentMethod("tarjeta")}
-              style={[
-                styles.paymentButton,
-                selectedPaymentMethod === "tarjeta" && styles.selectedPaymentButton,
-              ]}
-            >
-              <Ionicons name="card" size={30} color={Colors.PRIMARY} />
-              <Text style={styles.paymentMethodText}>Tarjeta</Text>
-            </TouchableOpacity>
-          </Animated.View>
-
-          <Animated.View>
-            <TouchableOpacity
               onPress={() => setSelectedPaymentMethod("Mercado Pago")}
               style={[
                 styles.paymentButton,
@@ -653,13 +566,11 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
               ]}
             >
               <Image source={require("../../assets/images/mercado-pago.png")} style={styles.paymentImage} />
-              <Text style={styles.paymentMethodText}>Mercado Pago</Text>
             </TouchableOpacity>
           </Animated.View>
         </Animated.View>
 
         {renderTransferenciaBancaria()}
-        {renderCreditCardForm()}
 
         <Animated.View style={[styles.sectionContainer, notesAnimatedStyle]}>
           <Text style={styles.sectionHeading}>Notas Adicionales</Text>

@@ -10,6 +10,7 @@ import pagoRoutes from './routes/pagoRoutes';
 import movimientosRoutes from './routes/movimientos';
 import mercadoPagoRoutes from './routes/mercadoPagoRoutes';
 import logRoutes from './routes/logRoutes';
+import ownerRegistrationRoutes from './routes/ownerRegistrationRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
@@ -59,6 +60,8 @@ app.use(`${BASE_PATH}/movimientos`, movimientosRoutes);
 app.use(`${BASE_PATH}/mercadopago`, mercadoPagoRoutes);
 
 app.use(`${BASE_PATH}/logs`, logRoutes);
+
+app.use(`${BASE_PATH}/owner-registration`, ownerRegistrationRoutes);
 
 // Health check endpoint
 app.get(`${BASE_PATH}/health`, (req, res) => {

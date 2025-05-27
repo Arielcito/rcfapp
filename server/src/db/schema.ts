@@ -133,6 +133,22 @@ export const predioMercadoPagoConfig = pgTable('predio_mercadopago_config', {
   updatedAt: timestamp('updated_at').defaultNow(),
 });
 
+export const ownerRegistrationRequests = pgTable('owner_registration_requests', {
+  id: uuid('id').primaryKey().$defaultFn(createId),
+  fullName: text('full_name').notNull(),
+  email: text('email').notNull(),
+  phone: text('phone').notNull(),
+  propertyName: text('property_name').notNull(),
+  propertyLocation: text('property_location').notNull(),
+  additionalInfo: text('additional_info'),
+  status: text('status', { enum: ['PENDING', 'APPROVED', 'REJECTED'] }).notNull().default('PENDING'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  processedAt: timestamp('processed_at'),
+  processedBy: uuid('processed_by').references(() => users.id),
+  notes: text('notes'),
+});
+
 // Configurar las relaciones
 export const usersRelations = relations(users, ({ many }) => ({
   prediosOwned: many(predios)

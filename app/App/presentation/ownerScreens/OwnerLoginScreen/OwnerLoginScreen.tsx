@@ -26,6 +26,7 @@ WebBrowser.maybeCompleteAuthSession();
 
 type RootStackParamList = {
   TabOwnerNavigation: undefined;
+  OwnerRegistration: undefined;
 };
 
 interface LoginValues {
@@ -234,11 +235,11 @@ export default function OwnerLoginScreen() {
           </Animated.View>
           
           <TouchableOpacity
-            onPress={() => WebBrowser.openBrowserAsync('https://tudominio.com/contacto')}
+            onPress={() => navigation.navigate('OwnerRegistration')}
             style={styles.ctaButton}
           >
             <Text style={styles.ctaText}>
-              ¿Quieres unirte? Contacta con soporte para crear una cuenta
+              ¿Quieres unirte? Completa el formulario de registro
             </Text>
           </TouchableOpacity>
         </View>
