@@ -10,6 +10,7 @@ import OwnerPitches from "../ownerScreens/OwnerPitches/OwnerPitches";
 import Colors from "../../infrastructure/utils/Colors";
 import OwnerHomeScreen from "../ownerScreens/OwnerHome/OwnerHomeScreen";
 import FinanceManagementScreen from "../ownerScreens/FinanceManagement/FinanceManagementScreen";
+import PredioConfigScreen from "../ownerScreens/PredioConfig/PredioConfigScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -62,6 +63,17 @@ const AdminTabs = () => (
         tabBarActiveTintColor: Colors.PRIMARY,
         tabBarIcon: ({ color, size }) => (
           <Ionicons name="cash-outline" size={size} color={color} />
+        ),
+      }}
+    />
+    <Tab.Screen
+      name="config"
+      component={PredioConfigScreen}
+      options={{
+        tabBarLabel: "Configuración",
+        tabBarActiveTintColor: Colors.PRIMARY,
+        tabBarIcon: ({ color, size }) => (
+          <Ionicons name="settings" size={size} color={color} />
         ),
       }}
     />
