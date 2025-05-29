@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, ActivityIndicator, Dimensions, Modal, TouchableOpacity, Linking, Platform, Alert } from 'react-native';
-import { VictoryLine, VictoryChart, VictoryAxis, VictoryTheme, VictoryContainer } from 'victory-native';
+import { VictoryLine, VictoryChart, VictoryAxis, VictoryTheme, VictoryContainer, VictoryScatter } from 'victory-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { reservaApi } from '../../../infrastructure/api/reserva.api';
 import { format, parseISO, compareDesc, subDays, subMonths } from 'date-fns';
@@ -81,6 +81,8 @@ const OwnerHomeContent = () => {
       });
 
       const datos = Array(daysToShow).fill(0);
+      
+      // Contar reservas por día
       for (const reserva of reservas) {
         try {
           if (!reserva.fechaHora) {
@@ -116,11 +118,89 @@ const OwnerHomeContent = () => {
         x: label,
         y: datos[index]
       }));
+
       return result;
     } catch (error) {
       logError(error, 'generarDatosGrafico');
       return [];
     }
+  };
+
+  // Nueva función para calcular estadísticas de volumen
+  const calcularEstadisticasVolumen = () => {
+    if (!chartData || chartData.length === 0) {
+      return {
+        promedio: 0,
+        maximo: 0,
+        minimo: 0,
+        diaMaximo: '',
+        diaMinimo: '',
+        diasAltoVolumen: 0,
+        diasBajoVolumen: 0
+      };
+    }
+
+    const valores = chartData.map(d => d.y);
+    const promedio = valores.reduce((a, b) => a + b, 0) / valores.length;
+    const maximo = Math.max(...valores);
+    const minimo = Math.min(...valores.filter(v => v > 0)); // Excluir días sin reservas
+    
+    const puntoMaximo = chartData.find(d => d.y === maximo);
+    const puntoMinimo = chartData.find(d => d.y === minimo);
+    
+    const diasAltoVolumen = chartData.filter(d => d.y > promedio).length;
+    const diasBajoVolumen = chartData.filter(d => d.y > 0 && d.y <= promedio).length;
+
+    return {
+      promedio: Math.round(promedio * 10) / 10,
+      maximo,
+      minimo: isFinite(minimo) ? minimo : 0,
+      diaMaximo: puntoMaximo?.x || '',
+      diaMinimo: puntoMinimo?.x || '',
+      diasAltoVolumen,
+      diasBajoVolumen
+    };
+  };
+
+  // Función para renderizar las estadísticas de volumen
+  const renderEstadisticasVolumen = () => {
+    const stats = calcularEstadisticasVolumen();
+    
+    return (
+      <View style={styles.volumeStatsContainer}>
+        <Text style={styles.volumeStatsTitle}>📊 Análisis de Movimiento</Text>
+        
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{stats.promedio}</Text>
+            <Text style={styles.statLabel}>Promedio diario</Text>
+          </View>
+          
+          <View style={styles.statCard}>
+            <Text style={[styles.statNumber, { color: '#FF6B6B' }]}>{stats.maximo}</Text>
+            <Text style={styles.statLabel}>Día pico</Text>
+            {stats.diaMaximo && <Text style={styles.statSubLabel}>Día {stats.diaMaximo}</Text>}
+          </View>
+          
+          <View style={styles.statCard}>
+            <Text style={[styles.statNumber, { color: '#4ECDC4' }]}>{stats.minimo}</Text>
+            <Text style={styles.statLabel}>Mínimo activo</Text>
+            {stats.diaMinimo && <Text style={styles.statSubLabel}>Día {stats.diaMinimo}</Text>}
+          </View>
+        </View>
+        
+        <View style={styles.volumeIndicators}>
+          <View style={styles.volumeIndicator}>
+            <View style={[styles.volumeDot, { backgroundColor: '#FF6B6B' }]} />
+            <Text style={styles.volumeText}>{stats.diasAltoVolumen} días de alto movimiento</Text>
+          </View>
+          <View style={styles.volumeIndicator}>
+            <View style={[styles.volumeDot, { backgroundColor: '#4ECDC4' }]} />
+            <Text style={styles.volumeText}>{stats.diasBajoVolumen} días de bajo movimiento</Text>
+          </View>
+        </View>
+      </View>
+    );
   };
 
   const cargarDatosConRetry = async (intentos = 3) => {
@@ -135,11 +215,11 @@ const OwnerHomeContent = () => {
         setUserName(storedName || '');
 
         let todasLasReservas: Booking[] = [];
-        const response = await reservaApi.obtenerTodasReservas() as ReservaResponse;
+        const response = await reservaApi.obtenerTodasReservas();
         logger.debug(COMPONENT_NAME, 'Respuesta de API recibida', { response });
         
         if (response) {
-          todasLasReservas = 'data' in response ? response.data : response;
+          todasLasReservas = Array.isArray(response) ? response : (response as any).data || [];
         }
 
         if (!Array.isArray(todasLasReservas)) {
@@ -328,6 +408,17 @@ const OwnerHomeContent = () => {
 
   const renderChart = () => {
     try {
+      const maxValue = chartData ? Math.max(...chartData.map(d => d.y)) : 5;
+      const tickValues = Array.from({ length: Math.min(maxValue + 1, 6) }, (_, i) => i);
+      
+      // Calcular promedio para destacar días de alto/bajo volumen
+      const stats = calcularEstadisticasVolumen();
+      const promedio = stats.promedio;
+
+      // Separar datos por volumen para diferentes colores
+      const datosAltoVolumen = chartData?.filter(d => d.y > promedio) || [];
+      const datosBajoVolumen = chartData?.filter(d => d.y > 0 && d.y <= promedio) || [];
+
       return (
         <VictoryChart
           theme={VictoryTheme.material}
@@ -361,17 +452,36 @@ const OwnerHomeContent = () => {
               tickLabels: { fontSize: 10, fill: '#888' },
               grid: { stroke: '#e3e3e3', strokeWidth: 0.5 }
             }}
-            tickValues={[0, 1, 2, 3, 4, 5]}
-            domain={{ y: [0, 5] }}
+            tickValues={tickValues}
+            domain={{ y: [0, maxValue] }}
           />
           <VictoryLine
             data={chartData || []}
             style={{
-              data: { stroke: '#1AFF92', strokeWidth: 2 },
+              data: { 
+                stroke: '#1AFF92',
+                strokeWidth: 3
+              },
             }}
             animate={{
               duration: 2000,
               onLoad: { duration: 1000 }
+            }}
+          />
+          {/* Puntos para días de alto volumen */}
+          <VictoryScatter
+            data={datosAltoVolumen}
+            size={6}
+            style={{
+              data: { fill: '#FF6B6B' }
+            }}
+          />
+          {/* Puntos para días de bajo volumen */}
+          <VictoryScatter
+            data={datosBajoVolumen}
+            size={4}
+            style={{
+              data: { fill: '#4ECDC4' }
             }}
           />
         </VictoryChart>
@@ -541,6 +651,8 @@ const OwnerHomeContent = () => {
             {chartData && Array.isArray(chartData) ? chartData.reduce((a, b) => a + b.y, 0) : 0} canchas reservadas en total
           </Text>
         </View>
+
+        {renderEstadisticasVolumen()}
 
         <View style={styles.proximasReservasContainer}>
           <View style={styles.proximasReservasHeader}>
@@ -925,6 +1037,76 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: '600',
+  },
+  volumeStatsContainer: {
+    backgroundColor: '#fff',
+    margin: 20,
+    padding: 20,
+    borderRadius: 20,
+    marginHorizontal: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  volumeStatsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 15,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  statCard: {
+    flex: 1,
+    padding: 15,
+    borderRadius: 10,
+    backgroundColor: '#f8f8f8',
+    alignItems: 'center',
+    marginHorizontal: 4,
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 5,
+  },
+  statLabel: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
+  statSubLabel: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
+  },
+  volumeIndicators: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  volumeIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  volumeDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  volumeText: {
+    fontSize: 14,
+    color: '#666',
   },
 });
 

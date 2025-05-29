@@ -8,7 +8,13 @@ export const createCancha = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const cancha = await canchaService.createCancha(req.body as CanchaCreationData);
+    console.log('Cancha a crear:', req.body);
+    const { predioId, ...canchaData } = req.body;
+    if (!predioId) {
+      res.status(400).json({ message: 'Predio ID is required' });
+      return;
+    }
+    const cancha = await canchaService.createCancha({ predioId, ...canchaData });
     res.status(201).json(cancha);
   } catch (error) {
     next(error);
