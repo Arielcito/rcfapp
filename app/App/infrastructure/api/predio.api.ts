@@ -18,7 +18,7 @@ export const getCanchasByPredio = async (predioId: string): Promise<Cancha[]> =>
   return response.data;
 };
 
-export const createCancha = async (data: CanchaFormData): Promise<Cancha> => {
+export const createCancha = async (data: CanchaFormData & { predioId: string }): Promise<Cancha> => {
   const response = await api.post('/canchas', data);
   return response.data;
 };

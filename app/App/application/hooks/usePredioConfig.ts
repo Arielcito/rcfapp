@@ -129,8 +129,8 @@ export const useCreateCancha = () => {
   const queryClient = useQueryClient();
   
   return useMutation<Cancha, Error, { predioId: string; data: CanchaFormData }>({
-    mutationFn: async ({ data }) => {
-      return createCancha(data);
+    mutationFn: async ({ predioId, data }) => {
+      return createCancha({ predioId, ...data });
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['predio-canchas', variables.predioId] });

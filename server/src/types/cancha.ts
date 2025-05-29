@@ -26,7 +26,7 @@ export interface Cancha {
 }
 
 export interface CanchaCreationData {
-  predioId?: string | null;
+  predioId: string;
   nombre: string;
   tipo?: string | null;
   capacidadJugadores?: number | null;

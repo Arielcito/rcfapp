@@ -6,7 +6,7 @@ import type { Cancha, CanchaCreationData, CanchaUpdateData } from '../types/canc
 const completarDatosCancha = (cancha: Partial<CanchaCreationData>): CanchaCreationData => {
   return {
     nombre: cancha.nombre || "Cancha sin nombre",
-    predioId: cancha.predioId,
+    predioId: cancha.predioId || "",
     ancho: "15",
     capacidadJugadores: 10,
     equipamientoIncluido: "Pelotas, pecheras, arcos con red",
@@ -32,7 +32,7 @@ export const createCancha = async (canchaData: CanchaCreationData): Promise<Canc
     ancho: datosCompletos.ancho?.toString() ?? null,
     precioPorHora: datosCompletos.precioPorHora?.toString() ?? null,
   };
-
+  console.log('Datos completos:', formattedData);
   const [cancha] = await db.insert(canchas)
     .values(formattedData)
     .returning();
