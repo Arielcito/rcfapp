@@ -109,25 +109,24 @@ export const getAppointmentsByAppointmentDate = async (date: string): Promise<Ap
 // Función modificada para manejar problemas de autenticación
 export const getAppointmentsByUser = async (): Promise<Appointment[]> => {
   try {
-    console.log('Iniciando petición getAppointmentsByUser');
-    
     // Intenta obtener los datos de la API
     const { data } = await api.get('/reservas/user/bookings');
 
-    console.log('Respuesta de reservas:', {
-      totalReservas: data.length,
-      primeraReserva: data[0] || null
-    });
+    // Verificar si la respuesta es exitosa y contiene datos
+    if (!data || !data.success || !Array.isArray(data.data)) {
+      console.log('API no retornó datos válidos:', data);
+      return [];
+    }
 
-    return data.map((appointment: ApiAppointment) => ({
+    return data.data.map((appointment: ApiAppointment) => ({
       appointmentId: typeof appointment.appointmentId === 'string' 
         ? Number.parseInt(appointment.appointmentId, 10) 
         : appointment.appointmentId,
       appointmentDate: appointment.appointmentDate,
       appointmentTime: appointment.appointmentTime,
       estado: appointment.estado,
-      email: 'usuario@example.com',
-      pitch: 1
+      email: appointment.email || 'usuario@example.com',
+      pitch: appointment.pitch || 1
     }));
   } catch (error: unknown) {
     console.error("Error detallado en getAppointmentsByUser:", {
@@ -138,8 +137,8 @@ export const getAppointmentsByUser = async (): Promise<Appointment[]> => {
       data: (error instanceof AxiosError) ? error.response?.data : undefined
     });
     
-    
-    throw error;
+    // En lugar de hacer throw, retornar array vacío para evitar crashes
+    return [];
   }
 };
 

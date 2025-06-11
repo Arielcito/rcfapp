@@ -5,7 +5,6 @@ import { AxiosError } from 'axios';
 export const getPredios = async (): Promise<Place[]> => {
   try {
     const response = await api.get('/predios');
-    console.log('response getPredios', response.data);
     return response.data;
   } catch (error) {
     console.error("Error al obtener predios:", error);

@@ -74,6 +74,9 @@ export default function PaymentScreen() {
   const navigator = useNavigation<NavigationProp>();
   const formatDate = moment(date).format("YYYY-MM-DD");
   
+  // Seña fija de $1000 para todos los métodos de pago
+  const SEÑA_FIJA = 1000;
+  
   // Valores de animación
   const buttonScale = useRef(new Animated.Value(1)).current;
   const formOpacity = useRef(new Animated.Value(0)).current;
@@ -152,7 +155,8 @@ export default function PaymentScreen() {
         throw new Error('El horario seleccionado ya no está disponible');
       }
 
-      const montoAPagar = cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora;
+      // Siempre usar seña fija de $1000
+      const montoAPagar = SEÑA_FIJA;
 
       const reservaData: ReservaData = {
         canchaId: cancha.id,
@@ -162,7 +166,7 @@ export default function PaymentScreen() {
         precioTotal: montoAPagar,
         metodoPago: paymentMethod,
         estadoPago: 'PENDIENTE',
-        notasAdicionales: notes || `Reserva para ${cancha.nombre}`
+        notasAdicionales: notes || `Reserva para ${cancha.nombre} - Seña de $${SEÑA_FIJA}`
       };
 
       const { data: createdReserva } = await api.post('/reservas', reservaData);
@@ -213,7 +217,7 @@ CBU: ${place.cbu}
 Titular: ${place.titularCuenta}
 Banco: ${place.banco}
 Tipo de cuenta: ${place.tipoCuenta}
-Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
+Monto a transferir (Seña): $${SEÑA_FIJA}`;
 
       await Share.share({
         message: mensaje,
@@ -356,18 +360,18 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
           console.log("Datos de la cancha:", { 
             canchaId: cancha.id, 
             nombre: cancha.nombre,
-            precio: cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora
+            seña: SEÑA_FIJA
           });
           
           const preferenceData: MercadoPagoPreferenceData = {
             predioId: place.id,
             items: [{
-              title: cancha.nombre,
-              description: `Reserva en ${place.nombre} - ${cancha.tipo} ${cancha.tipoSuperficie}`,
+              title: `${cancha.nombre} - Seña`,
+              description: `Reserva en ${place.nombre} - ${cancha.tipo} ${cancha.tipoSuperficie} - Seña de reserva`,
               picture_url: cancha.imagenUrl || place.imagenUrl,
               quantity: 1,
               currency_id: "ARS",
-              unit_price: cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora
+              unit_price: SEÑA_FIJA
             }],
             external_reference: `reserva_${Date.now()}`
           };
@@ -514,23 +518,25 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
               <Text style={styles.billDetailText}>Costo por hora:</Text>
               <Text style={styles.billDetailAmount}>${cancha.precioPorHora}</Text>
             </View>
-            {cancha.requiereSeña && (
-              <View style={styles.billRow}>
-                <Text style={styles.billDetailText}>Seña requerida:</Text>
-                <Text style={styles.billDetailAmount}>${cancha.montoSeña}</Text>
-              </View>
-            )}
+            <View style={styles.billRow}>
+              <Text style={styles.billDetailText}>Seña requerida:</Text>
+              <Text style={styles.billDetailAmount}>${SEÑA_FIJA}</Text>
+            </View>
+            <View style={styles.billRow}>
+              <Text style={styles.billDetailText}>Resto a pagar en el predio:</Text>
+              <Text style={styles.billDetailAmount}>${cancha.precioPorHora - SEÑA_FIJA}</Text>
+            </View>
             <View style={[styles.billRow, styles.totalRow]}>
-              <Text style={styles.totalText}>Total a pagar:</Text>
+              <Text style={styles.totalText}>Total a pagar ahora (Seña):</Text>
               <Text style={styles.totalAmount}>
-                ${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}
+                ${SEÑA_FIJA}
               </Text>
             </View>
           </View>
         </View>
 
         <Text style={styles.heading}>Método de Pago</Text>
-        <Animated.View style={[styles.paymentMethodContainer, paymentMethodsAnimatedStyle]}>
+        <Animated.View style={[styles.paymentMethodContainer, paymentMethodsAnimatedStyle]} testID="payment-methods">
           <Animated.View>
             <TouchableOpacity
               onPress={() => setSelectedPaymentMethod("efectivo")}
@@ -591,7 +597,25 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
           <Animated.View style={[styles.voucherInfoContainer, formAnimatedStyle]}>
             <Ionicons name="information-circle-outline" size={24} color={Colors.PRIMARY} />
             <Text style={styles.voucherInfoText}>
-              Al pagar en efectivo, podrás obtener un voucher digital para presentar en el predio como comprobante de tu reserva.
+              Al pagar la seña de $1000 en efectivo, podrás obtener un voucher digital para presentar en el predio como comprobante de tu reserva. El resto (${cancha.precioPorHora - SEÑA_FIJA}) se paga en el predio.
+            </Text>
+          </Animated.View>
+        )}
+
+        {selectedPaymentMethod === "transferencia" && (
+          <Animated.View style={[styles.voucherInfoContainer, formAnimatedStyle]}>
+            <Ionicons name="information-circle-outline" size={24} color={Colors.PRIMARY} />
+            <Text style={styles.voucherInfoText}>
+              Transfiere la seña de $1000 y presenta el comprobante en el predio. El resto (${cancha.precioPorHora - SEÑA_FIJA}) se paga al llegar.
+            </Text>
+          </Animated.View>
+        )}
+
+        {selectedPaymentMethod === "Mercado Pago" && (
+          <Animated.View style={[styles.voucherInfoContainer, formAnimatedStyle]}>
+            <Ionicons name="information-circle-outline" size={24} color={Colors.PRIMARY} />
+            <Text style={styles.voucherInfoText}>
+              Paga la seña de $1000 con Mercado Pago de forma segura. El resto (${cancha.precioPorHora - SEÑA_FIJA}) se paga en el predio.
             </Text>
           </Animated.View>
         )}
@@ -605,9 +629,10 @@ Monto: $${cancha.requiereSeña ? cancha.montoSeña : cancha.precioPorHora}`;
             onPress={handlePayment}
             disabled={loading}
             style={styles.reserveButton}
+            testID="reserve-button"
           >
             {!loading ? (
-              <Text style={styles.reserveButtonText}>Reservar</Text>
+              <Text style={styles.reserveButtonText}>Pagar Seña - ${SEÑA_FIJA}</Text>
             ) : (
               <ActivityIndicator color={Colors.WHITE} />
             )}

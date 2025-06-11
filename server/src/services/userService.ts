@@ -195,3 +195,24 @@ export const getCurrentUserById = async (userId: string) => {
 
   return user;
 };
+
+export const changePassword = async (userId: string, currentPassword: string, newPassword: string): Promise<void> => {
+  const [user] = await db.select()
+    .from(users)
+    .where(eq(users.id, userId));
+
+  if (!user) {
+    throw new Error('Usuario no encontrado');
+  }
+
+  const isValidPassword = await bcrypt.compare(currentPassword, user.password || '');
+  if (!isValidPassword) {
+    throw new Error('Contraseña actual incorrecta');
+  }
+
+  const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+  await db.update(users)
+    .set({ password: hashedNewPassword })
+    .where(eq(users.id, userId));
+};
