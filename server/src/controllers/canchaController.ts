@@ -1,6 +1,15 @@
 import type { Request, Response, NextFunction } from 'express';
 import * as canchaService from '../services/canchaService';
 import type { CanchaCreationData, CanchaUpdateData } from '../types/cancha';
+import { z } from 'zod';
+
+const canchaSchema = z.object({
+  nombre: z.string().min(1, 'Nombre es requerido'),
+  descripcion: z.string().optional(),
+  predioId: z.string().min(1, 'PredioId es requerido'),
+  deporteId: z.string().min(1, 'DeporteId es requerido'),
+  precio: z.number().positive('Precio debe ser positivo'),
+});
 
 export const createCancha = async (
   req: Request,
@@ -8,13 +17,8 @@ export const createCancha = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    console.log('Cancha a crear:', req.body);
-    const { predioId, ...canchaData } = req.body;
-    if (!predioId) {
-      res.status(400).json({ message: 'Predio ID is required' });
-      return;
-    }
-    const cancha = await canchaService.createCancha({ predioId, ...canchaData });
+    const validatedData = canchaSchema.parse(req.body);
+    const cancha = await canchaService.createCancha(validatedData);
     res.status(201).json(cancha);
   } catch (error) {
     next(error);
@@ -61,6 +65,39 @@ export const getCanchasByPredioId = async (
     const canchas = await canchaService.getCanchasByPredioId(req.params.predioId);
     res.json(canchas);
   } catch (error) {
+    next(error);
+  }
+};
+
+export const getAvailableCanchasByPredioId = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { predioId } = req.params;
+    const { fecha, hora } = req.query;
+    
+    if (!fecha || !hora) {
+      res.status(400).json({ 
+        success: false, 
+        error: 'Fecha y hora son requeridas' 
+      });
+      return;
+    }
+
+    console.log('🔍 [canchaController] Obteniendo canchas disponibles:', { predioId, fecha, hora });
+    
+    const availableCanchas = await canchaService.getAvailableCanchasByPredioId(
+      predioId, 
+      fecha as string, 
+      hora as string
+    );
+    
+    console.log('📦 [canchaController] Canchas disponibles encontradas:', availableCanchas.length);
+    res.json(availableCanchas);
+  } catch (error) {
+    console.error('❌ [canchaController] Error al obtener canchas disponibles:', error);
     next(error);
   }
 };

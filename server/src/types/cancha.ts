@@ -23,23 +23,27 @@ export interface Cancha {
     direccion: string;
     telefono: string;
   };
+  deporte?: {
+    id: string;
+    nombre: string;
+    descripcion?: string;
+  };
 }
 
 export interface CanchaCreationData {
-  predioId: string;
   nombre: string;
-  tipo?: string | null;
-  capacidadJugadores?: number | null;
-  longitud?: string | null;
-  ancho?: string | null;
-  tipoSuperficie?: string | null;
-  tieneIluminacion?: boolean | null;
-  esTechada?: boolean | null;
-  precioPorHora?: number | null;
-  estado?: string | null;
-  ultimoMantenimiento?: Date | null;
-  equipamientoIncluido?: string | null;
-  imagenUrl?: string | null;
+  predioId: string;
+  deporteId: string;
+  tipo?: string;
+  tipoSuperficie?: string;
+  capacidadJugadores?: number;
+  longitud?: number | string;
+  ancho?: number | string;
+  tieneIluminacion?: boolean;
+  esTechada?: boolean;
+  precioPorHora?: number | string;
+  estado?: string;
+  equipamientoIncluido?: string;
   requiereSeña?: boolean;
   montoSeña?: number;
 }

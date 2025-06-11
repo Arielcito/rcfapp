@@ -7,7 +7,8 @@ import {
   getCanchaById,
   getCanchasByPredioId,
   updateCancha,
-  deleteCancha
+  deleteCancha,
+  getAvailableCanchasByPredioId
 } from '../controllers/canchaController';
 
 const router = express.Router();
@@ -16,6 +17,7 @@ router.post('/', authenticateToken, authorizeRole([Role.ADMIN, Role.OWNER]), cre
 router.get('/', getCanchas);
 router.get('/:id', getCanchaById);
 router.get('/predio/:predioId', getCanchasByPredioId);
+router.get('/predio/:predioId/available', getAvailableCanchasByPredioId);
 router.put('/:id', authenticateToken, authorizeRole([Role.ADMIN, Role.OWNER]), updateCancha);
 router.delete('/:id', authenticateToken, authorizeRole([Role.ADMIN, Role.OWNER]), deleteCancha);
 

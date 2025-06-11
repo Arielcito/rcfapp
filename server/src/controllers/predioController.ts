@@ -28,6 +28,38 @@ export const getPredios = async (
   }
 };
 
+export const getPrediosWithAvailableCourts = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { fecha, hora, deporteId } = req.query;
+    
+    if (!fecha || !hora) {
+      res.status(400).json({ 
+        success: false, 
+        error: 'Fecha y hora son requeridas' 
+      });
+      return;
+    }
+
+    console.log('🔍 [predioController] Obteniendo predios con canchas disponibles:', { fecha, hora, deporteId });
+    
+    const prediosWithAvailableCourts = await predioService.getPrediosWithAvailableCourts(
+      fecha as string, 
+      hora as string, 
+      deporteId as string | undefined
+    );
+    
+    console.log('📦 [predioController] Predios encontrados:', prediosWithAvailableCourts.length);
+    res.json(prediosWithAvailableCourts);
+  } catch (error) {
+    console.error('❌ [predioController] Error al obtener predios con canchas disponibles:', error);
+    next(error);
+  }
+};
+
 export const getPredioById = async (
   req: Request,
   res: Response,

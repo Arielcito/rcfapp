@@ -9,11 +9,14 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Cancha, CanchaFormData } from '../../types/predio';
 import Colors from '../../infrastructure/utils/Colors';
 import ButtonPrimary from './ButtonPrimary';
+import { useDeportes } from '../../application/hooks/useDeportes';
+import Dropdown from './Dropdown';
 
 interface CanchaFormModalProps {
   visible: boolean;
@@ -30,9 +33,12 @@ const CanchaFormModal: React.FC<CanchaFormModalProps> = ({
   cancha,
   isLoading = false,
 }) => {
+  const { data: deportes, isLoading: isLoadingDeportes } = useDeportes();
+  
   const [formData, setFormData] = useState<CanchaFormData>({
     nombre: '',
     tipo: '',
+    deporteId: '',
     tipoSuperficie: '',
     capacidadJugadores: 0,
     longitud: 0,
@@ -51,6 +57,7 @@ const CanchaFormModal: React.FC<CanchaFormModalProps> = ({
       setFormData({
         nombre: cancha.nombre,
         tipo: cancha.tipo || '',
+        deporteId: cancha.deporteId || '',
         tipoSuperficie: cancha.tipoSuperficie || '',
         capacidadJugadores: cancha.capacidadJugadores || 0,
         longitud: cancha.longitud || 0,
@@ -68,6 +75,7 @@ const CanchaFormModal: React.FC<CanchaFormModalProps> = ({
       setFormData({
         nombre: '',
         tipo: '',
+        deporteId: '',
         tipoSuperficie: '',
         capacidadJugadores: 0,
         longitud: 0,
@@ -101,6 +109,11 @@ const CanchaFormModal: React.FC<CanchaFormModalProps> = ({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const deportesOptions = deportes?.map(deporte => ({
+    label: deporte.nombre,
+    value: deporte.id,
+  })) || [];
+
   return (
     <Modal
       visible={visible}
@@ -132,13 +145,18 @@ const CanchaFormModal: React.FC<CanchaFormModalProps> = ({
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Tipo de Deporte</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.tipo}
-                onChangeText={(text) => updateField('tipo', text)}
-                placeholder="Ej: Fútbol, Paddle, Tenis"
-              />
+              {isLoadingDeportes ? (
+                <ActivityIndicator color={Colors.PRIMARY} />
+              ) : (
+                <Dropdown
+                  label="Deporte"
+                  required
+                  options={deportesOptions}
+                  value={formData.deporteId}
+                  onChange={(value) => updateField('deporteId', value)}
+                  placeholder="Seleccionar deporte"
+                />
+              )}
             </View>
 
             <View style={styles.inputGroup}>

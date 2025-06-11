@@ -8,13 +8,15 @@ import {
   getPrediosByUsuarioId,
   updatePredio,
   deletePredio,
-  getPredioByOwnerId
+  getPredioByOwnerId,
+  getPrediosWithAvailableCourts
 } from '../controllers/predioController';
 
 const router = express.Router();
 
 router.post('/', authenticateToken, createPredio);
 router.get('/', getPredios);
+router.get('/available-courts', getPrediosWithAvailableCourts);
 router.get('/:id', authenticateToken, getPredioById);
 router.get('/usuario/:id', authenticateToken, getPrediosByUsuarioId);
 router.get('/owner/:id', authenticateToken, getPredioByOwnerId);

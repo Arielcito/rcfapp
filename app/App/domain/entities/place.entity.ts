@@ -1,3 +1,5 @@
+import { Cancha } from "../../types/predio";
+
 export interface Place {
   banco: string;
   capacidadEstacionamiento: number | null;
@@ -24,5 +26,6 @@ export interface Place {
   tipoCuenta: string;
   titularCuenta: string;
   usuarioId: string;
+  canchas?: Cancha[];
 }
   
