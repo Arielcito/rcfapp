@@ -53,9 +53,21 @@ const createPrediosTable = (): PrediosTable => pgTable('predios', {
 // Crear las instancias de las tablas
 export const users = createUsersTable();
 export const predios = createPrediosTable();
+
+export const deportes = pgTable('deportes', {
+  id: uuid('id').primaryKey().$defaultFn(createId),
+  nombre: text('nombre').notNull().unique(),
+  descripcion: text('descripcion'),
+  reglasEspeciales: text('reglas_especiales'),
+  equipamientoRequerido: text('equipamiento_requerido'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 export const canchas = pgTable('canchas', {
   id: uuid('id').primaryKey().$defaultFn(createId),
   predioId: uuid('predio_id').references(() => predios.id),
+  deporteId: uuid('deporte_id').references(() => deportes.id),
   nombre: text('nombre').notNull(),
   tipo: text('tipo'),
   capacidadJugadores: integer('capacidad_jugadores'),
@@ -149,6 +161,24 @@ export const ownerRegistrationRequests = pgTable('owner_registration_requests', 
   notes: text('notes'),
 });
 
+export const courtRatings = pgTable('court_ratings', {
+  id: uuid('id').primaryKey().$defaultFn(createId),
+  userId: uuid('user_id').notNull().references(() => users.id),
+  reservaId: uuid('reserva_id').notNull().references(() => reservas.id),
+  canchaId: uuid('cancha_id').notNull().references(() => canchas.id),
+  rating: integer('rating').notNull(), // 1-5 estrellas
+  comment: text('comment'),
+  facilityQuality: integer('facility_quality').notNull().default(0),
+  cleanliness: integer('cleanliness').notNull().default(0),
+  staff: integer('staff').notNull().default(0),
+  accessibility: integer('accessibility').notNull().default(0),
+  submittedAt: timestamp('submitted_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  uniqueUserReserva: uniqueIndex('unique_user_reserva').on(table.userId, table.reservaId),
+}));
+
 // Configurar las relaciones
 export const usersRelations = relations(users, ({ many }) => ({
   prediosOwned: many(predios)
@@ -166,7 +196,15 @@ export const canchasRelations = relations(canchas, ({ one }) => ({
   predio: one(predios, {
     fields: [canchas.predioId],
     references: [predios.id]
+  }),
+  deporte: one(deportes, {
+    fields: [canchas.deporteId],
+    references: [deportes.id]
   })
+}));
+
+export const deportesRelations = relations(deportes, ({ many }) => ({
+  canchas: many(canchas)
 }));
 
 export const movimientosCajaRelations = relations(movimientosCaja, ({ one }) => ({
@@ -177,5 +215,39 @@ export const movimientosCajaRelations = relations(movimientosCaja, ({ one }) => 
   categoria: one(categoriaMovimiento, {
     fields: [movimientosCaja.categoriaId],
     references: [categoriaMovimiento.id],
+  }),
+}));
+
+export const courtRatingsRelations = relations(courtRatings, ({ one }) => ({
+  user: one(users, {
+    fields: [courtRatings.userId],
+    references: [users.id],
+  }),
+  reserva: one(reservas, {
+    fields: [courtRatings.reservaId],
+    references: [reservas.id],
+  }),
+  cancha: one(canchas, {
+    fields: [courtRatings.canchaId],
+    references: [canchas.id],
+  }),
+}));
+
+export const reservasRelations = relations(reservas, ({ one, many }) => ({
+  cancha: one(canchas, {
+    fields: [reservas.canchaId],
+    references: [canchas.id],
+  }),
+  user: one(users, {
+    fields: [reservas.userId],
+    references: [users.id],
+  }),
+  pago: one(pagos, {
+    fields: [reservas.pagoId],
+    references: [pagos.id],
+  }),
+  courtRating: one(courtRatings, {
+    fields: [reservas.id],
+    references: [courtRatings.reservaId],
   }),
 }));    

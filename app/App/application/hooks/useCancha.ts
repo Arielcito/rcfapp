@@ -33,7 +33,6 @@ export const useCancha = (canchaId: string) => {
     queryKey: ['cancha', canchaId],
     queryFn: async () => {
       const response = await api.get(`/canchas/${canchaId}`);
-      console.log('Cancha encontrada:', response.data);
       return response.data;
     },
     enabled: !!canchaId,

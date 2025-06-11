@@ -11,7 +11,8 @@ import {
   register,
   logout,
   getCurrentUser,
-  checkEmail
+  checkEmail,
+  changePassword
 } from '../controllers/userController';
 import { getPredioById, getPrediosByUsuarioId } from '../controllers/predioController';
 
@@ -25,6 +26,9 @@ router.post('/check-email', checkEmail);
 
 // Ruta protegida para obtener usuario actual
 router.get('/me', authenticateToken, getCurrentUser);
+
+// Ruta protegida para cambiar contraseña
+router.post('/change-password', authenticateToken, changePassword);
 
 // Rutas protegidas de administración
 router.post('/', authenticateToken, authorizeRole([Role.ADMIN, Role.OWNER]), createUser);

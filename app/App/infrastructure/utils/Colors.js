@@ -14,6 +14,7 @@ export default{
   PINK: '#E91E63',
   BROWN: '#795548',
   GRAY: '#666666',
+  GRAY_LIGHT: '#E0E0E0',
   ERROR: '#F44336',
   SUCCESS: '#4CAF50',
   WARNING: '#FF9800',

@@ -197,3 +197,39 @@ export const checkEmail = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const changePassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!userId) {
+      res.status(401).json({ message: 'No autorizado' });
+      return;
+    }
+
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({ message: 'La contraseña actual y la nueva contraseña son requeridas' });
+      return;
+    }
+
+    await userService.changePassword(userId, currentPassword, newPassword);
+    res.status(200).json({ message: 'Contraseña actualizada exitosamente' });
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'Contraseña actual incorrecta') {
+        res.status(400).json({ message: error.message });
+        return;
+      }
+      if (error.message === 'Usuario no encontrado') {
+        res.status(404).json({ message: error.message });
+        return;
+      }
+    }
+    next(error);
+  }
+};

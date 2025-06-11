@@ -27,6 +27,7 @@ import moment from 'moment';
 import { usePredios } from "../../../infrastructure/api/places.queries";
 import type { Place } from "../../../domain/entities/place.entity";
 import { LinearGradient } from "expo-linear-gradient";
+import { PendingRatingsCard } from "../../components/PendingRatingsCard";
 
 interface Day {
   date: string;
@@ -427,6 +428,9 @@ export default function HomeScreen() {
           </Animated.View>
           {renderTimePickerModal()}
         </LinearGradient>
+        
+        <PendingRatingsCard />
+        
         <View style={styles.listContainer}>
           {isLoadingPredios || loading ? (
             <View style={styles.listLoadingContainer}>
