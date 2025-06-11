@@ -1,4 +1,5 @@
 import type { Place } from "../../domain/entities/place.entity";
+import type { Cancha } from "../../types/predio";
 import { api } from "./api";
 import { AxiosError } from 'axios';
 
@@ -8,6 +9,38 @@ export const getPredios = async (): Promise<Place[]> => {
     return response.data;
   } catch (error) {
     console.error("Error al obtener predios:", error);
+    return [];
+  }
+};
+
+export const getPrediosWithAvailableCourts = async (fecha: string, hora: string, deporteId?: string): Promise<Place[]> => {
+  try {
+    console.log('🔍 [places.api] Obteniendo predios con canchas disponibles:', { fecha, hora, deporteId });
+    const params = new URLSearchParams({
+      fecha,
+      hora,
+      ...(deporteId && { deporteId })
+    });
+    
+    const response = await api.get(`/predios/available-courts?${params}`);
+    console.log('📦 [places.api] Respuesta del servidor:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ [places.api] Error al obtener predios con canchas disponibles:", error);
+    return [];
+  }
+};
+
+export const getAvailableCourts = async (predioId: string, fecha: string, hora: string): Promise<Cancha[]> => {
+  try {
+    console.log('🔍 [places.api] Obteniendo canchas disponibles para predio:', { predioId, fecha, hora });
+    const params = new URLSearchParams({ fecha, hora });
+    
+    const response = await api.get(`/canchas/predio/${predioId}/available?${params}`);
+    console.log('📦 [places.api] Canchas disponibles:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ [places.api] Error al obtener canchas disponibles:", error);
     return [];
   }
 };

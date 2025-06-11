@@ -13,6 +13,7 @@ import logRoutes from './routes/logRoutes';
 import ownerRegistrationRoutes from './routes/ownerRegistrationRoutes';
 import courtRatingRoutes from './routes/courtRatingRoutes';
 import { errorHandler } from './middleware/errorHandler';
+import deporteRoutes from './routes/deporteRoutes';
 
 dotenv.config();
 
@@ -65,6 +66,8 @@ app.use(`${BASE_PATH}/logs`, logRoutes);
 app.use(`${BASE_PATH}/owner-registration`, ownerRegistrationRoutes);
 
 app.use(`${BASE_PATH}/court-ratings`, courtRatingRoutes);
+
+app.use(`${BASE_PATH}/deportes`, deporteRoutes);
 
 // Health check endpoint
 app.get(`${BASE_PATH}/health`, (req, res) => {

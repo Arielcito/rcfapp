@@ -111,9 +111,7 @@ export default function WelcomeLoginScreen() {
           }}
         >
           <Text style={styles.welcomeText}>
-            Organizar partidos de{" "}
-            <Text style={styles.highlightedText}>Fútbol</Text> ya no es más un
-            problema
+            Organizar partidos ya no es más un problema
           </Text>
         </Animated.View>
         <Animated.View

@@ -12,8 +12,18 @@ import { Image } from 'expo-image';
 import { useNavigation } from "@react-navigation/native";
 import Colors from "../../infrastructure/utils/Colors";
 import moment from 'moment';
+import type { Place } from "../../domain/entities/place.entity";
+import type { Cancha } from "../../types/predio";
 
-const PlaceItem = ({ place, selectedDate, selectedTime, isTablet }) => {
+interface PlaceItemProps {
+  place: Place;
+  selectedDate: string;
+  selectedTime: string | null;
+  availableCourts: Cancha[];
+  isTablet: boolean;
+}
+
+const PlaceItem: React.FC<PlaceItemProps> = ({ place, selectedDate, selectedTime, availableCourts, isTablet }) => {
   const navigation = useNavigation();
   const [imageError, setImageError] = useState(false);
 
@@ -28,7 +38,7 @@ const PlaceItem = ({ place, selectedDate, selectedTime, isTablet }) => {
     return { uri: place.imagenUrl };
   };
 
-  const formatDate = (date) => {
+  const formatDate = (date: string) => {
     if (!date) return null;
     // Si ya es una cadena en formato YYYY-MM-DD, la devolvemos tal cual
     if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -64,6 +74,30 @@ const PlaceItem = ({ place, selectedDate, selectedTime, isTablet }) => {
     });
   };
 
+  const getAvailableCourtsText = () => {
+    if (!availableCourts || availableCourts.length === 0) {
+      return "Sin canchas disponibles";
+    }
+    
+    if (availableCourts.length === 1) {
+      return "1 cancha disponible";
+    }
+    
+    return `${availableCourts.length} canchas disponibles`;
+  };
+
+  const getCourtTypesText = () => {
+    if (!availableCourts || availableCourts.length === 0) {
+      return "";
+    }
+    
+    const types = [...new Set(availableCourts.map(court => court.tipo || 'Fútbol'))];
+    if (types.length > 2) {
+      return `${types.slice(0, 2).join(', ')} +${types.length - 2}`;
+    }
+    return types.join(', ');
+  };
+
   return (
     <TouchableOpacity
       style={[styles.container, isTablet && styles.tabletContainer]}
@@ -77,16 +111,34 @@ const PlaceItem = ({ place, selectedDate, selectedTime, isTablet }) => {
         onError={handleImageError}
       />
       <View style={styles.textContainer}>
-        <View style={styles.infoContainer}>
+        <View style={styles.headerInfo}>
           <Text style={[styles.title, isTablet && styles.tabletTitle]} numberOfLines={1} ellipsizeMode="tail">
             {place.nombre}
           </Text>
-          <Text style={[styles.description, isTablet && styles.tabletDescription]} numberOfLines={2} ellipsizeMode="tail">
-            {place.description}
+          <Text style={[styles.description, isTablet && styles.tabletDescription]} numberOfLines={1} ellipsizeMode="tail">
+            {place.direccion}
           </Text>
         </View>
+        
+        {availableCourts && availableCourts.length > 0 && (
+          <View style={styles.courtInfo}>
+            <View style={styles.courtTypesContainer}>
+              <Text style={[styles.courtTypesLabel, isTablet && styles.tabletCourtTypesLabel]}>
+                Deportes:
+              </Text>
+              <Text style={[styles.courtTypes, isTablet && styles.tabletCourtTypes]} numberOfLines={1} ellipsizeMode="tail">
+                {getCourtTypesText()}
+              </Text>
+            </View>
+          </View>
+        )}
+        
         <View style={styles.bottomContainer}>
-          <Text style={[styles.price, isTablet && styles.tabletPrice]}>$20.000</Text>
+          <View style={styles.availabilityContainer}>
+            <Text style={[styles.availability, isTablet && styles.tabletAvailability]}>
+              {getAvailableCourtsText()}
+            </Text>
+          </View>
           <Pressable
             style={[styles.button, isTablet && styles.tabletButton]}
             onPress={handlePress}
@@ -107,7 +159,7 @@ const styles = StyleSheet.create({
     width: Platform.OS === 'ios' ? '95%' : Dimensions.get("screen").width * 0.9,
     marginHorizontal: 20,
     flexDirection: "row",
-    height: 140,
+    height: 150,
     overflow: 'hidden',
     alignSelf: 'center',
     shadowColor: "#000",
@@ -121,35 +173,35 @@ const styles = StyleSheet.create({
   },
   tabletContainer: {
     width: Platform.OS === 'ios' ? '45%' : '95%',
-    height: 180,
+    height: 190,
     margin: 8,
   },
   image: {
-    width: "40%",
+    width: "35%",
     height: "100%",
     borderTopLeftRadius: 15,
     borderBottomLeftRadius: 15,
     backgroundColor: '#f5f5f5',
   },
   tabletImage: {
-    width: "45%",
+    width: "40%",
   },
   textContainer: {
     flex: 1,
-    padding: 10,
+    padding: 12,
     justifyContent: 'space-between',
   },
-  infoContainer: {
-    flex: 1,
+  headerInfo: {
+    marginBottom: 8,
   },
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: "montserrat-medium",
     marginBottom: 4,
     color: '#1a1a1a',
   },
   tabletTitle: {
-    fontSize: 20,
+    fontSize: 18,
   },
   description: {
     color: Colors.GRAY,
@@ -160,29 +212,58 @@ const styles = StyleSheet.create({
   },
   tabletDescription: {
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 18,
+  },
+  courtInfo: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  courtTypesContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  courtTypesLabel: {
+    color: Colors.GRAY,
+    fontFamily: "montserrat-medium",
+    fontSize: 10,
+    marginRight: 4,
+  },
+  tabletCourtTypesLabel: {
+    fontSize: 12,
+  },
+  courtTypes: {
+    color: Colors.PRIMARY,
+    fontFamily: "montserrat-medium",
+    fontSize: 11,
+    flex: 1,
+  },
+  tabletCourtTypes: {
+    fontSize: 13,
   },
   bottomContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 'auto',
     paddingTop: 8,
     borderTopWidth: 0.5,
     borderTopColor: 'rgba(0,0,0,0.05)',
   },
-  price: {
-    fontSize: 16,
-    fontFamily: "montserrat",
-    color: "#003366",
-    fontWeight: "bold",
+  availabilityContainer: {
+    flex: 1,
+    marginRight: 8,
   },
-  tabletPrice: {
-    fontSize: 18,
+  availability: {
+    fontSize: 12,
+    fontFamily: "montserrat-medium",
+    color: Colors.GREEN,
+  },
+  tabletAvailability: {
+    fontSize: 14,
   },
   button: {
-    padding: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     backgroundColor: Colors.SECONDARY,
     borderRadius: 8,
     shadowColor: Colors.SECONDARY,
@@ -195,17 +276,17 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   tabletButton: {
-    padding: 10,
-    paddingHorizontal: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
   },
   buttonText: {
     fontFamily: "montserrat-medium",
-    fontSize: 14,
+    fontSize: 13,
     color: "white",
     textAlign: "center",
   },
   tabletButtonText: {
-    fontSize: 16,
+    fontSize: 15,
   },
 });
 

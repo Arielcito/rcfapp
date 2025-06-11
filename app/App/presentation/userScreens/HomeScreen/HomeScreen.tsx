@@ -24,8 +24,10 @@ import { getAvailableTimes } from "../../../infrastructure/api/appointments.api"
 import { useFocusEffect } from '@react-navigation/native';
 import { Dimensions } from 'react-native';
 import moment from 'moment';
-import { usePredios } from "../../../infrastructure/api/places.queries";
+import { usePrediosWithAvailableCourts } from "../../../infrastructure/api/places.queries";
+import { useDeportes } from "../../../application/hooks/useDeportes";
 import type { Place } from "../../../domain/entities/place.entity";
+import type { Cancha } from "../../../types/predio";
 import { LinearGradient } from "expo-linear-gradient";
 import { PendingRatingsCard } from "../../components/PendingRatingsCard";
 
@@ -48,14 +50,21 @@ export default function HomeScreen() {
   const [timeList, setTimeList] = useState<TimeSlot[]>([]);
   const [selectedDate, setSelectedDate] = useState(moment().format("YYYY-MM-DD"));
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isTimePickerVisible, setIsTimePickerVisible] = useState(false);
+  const [isSportPickerVisible, setIsSportPickerVisible] = useState(false);
 
   const { width } = Dimensions.get('window');
   const isTablet = width >= 768;
 
-  // React Query hook for fetching predios
-  const { data: predios, isLoading: isLoadingPredios } = usePredios();
+  // React Query hooks - usando el nuevo hook para obtener predios con canchas disponibles
+  const { data: predios, isLoading: isLoadingPredios } = usePrediosWithAvailableCourts(
+    selectedDate, 
+    selectedTime || '', 
+    selectedSport || undefined
+  );
+  const { data: deportes, isLoading: isLoadingDeportes } = useDeportes();
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -237,6 +246,53 @@ export default function HomeScreen() {
     </Modal>
   );
 
+  const renderSportPickerModal = () => (
+    <Modal
+      visible={isSportPickerVisible}
+      transparent={true}
+      animationType="slide"
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Selecciona un deporte</Text>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setIsSportPickerVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>×</Text>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={[{ id: '', nombre: 'Todos los deportes' }, ...(deportes || [])]}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.timeButton,
+                  selectedSport === item.id && styles.selectedTimeButton,
+                ]}
+                onPress={() => {
+                  setSelectedSport(item.id === '' ? null : item.id);
+                  setIsSportPickerVisible(false);
+                }}
+              >
+                <Text style={[
+                  styles.timeButtonText,
+                  selectedSport === item.id && styles.selectedTimeButtonText,
+                ]}>
+                  {item.nombre}
+                </Text>
+              </TouchableOpacity>
+            )}
+            keyExtractor={(item) => item.id.toString()}
+            numColumns={2}
+            contentContainerStyle={styles.timeListContent}
+          />
+        </View>
+      </View>
+    </Modal>
+  );
+
   const renderDayButton = useCallback(({ item, index }: { item: Day; index: number }) => {
     const isSelected = selectedDate === item.date;
     const isToday = moment(item.date).isSame(moment(), 'day');
@@ -362,6 +418,7 @@ export default function HomeScreen() {
           place={item}
           selectedDate={selectedDate}
           selectedTime={selectedTime}
+          availableCourts={item.canchas || []}
           isTablet={isTablet}
         />
       </Animated.View>
@@ -380,18 +437,30 @@ export default function HomeScreen() {
           ]}
         >
           <Header isTablet={isTablet} />
-          <Animated.Text 
-            style={[
-              styles.sectionTitle, 
-              isTablet && styles.tabletSectionTitle,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            Elegi la fecha
-          </Animated.Text>
+          <View style={styles.filtersContainer}>
+            <Animated.Text 
+              style={[
+                styles.sectionTitle, 
+                isTablet && styles.tabletSectionTitle,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
+            >
+              Elegi la fecha
+            </Animated.Text>
+            <TouchableOpacity
+              style={styles.sportFilterButton}
+              onPress={() => setIsSportPickerVisible(true)}
+            >
+              <Text style={styles.sportFilterButtonText}>
+                {selectedSport && deportes ? 
+                  deportes.find(d => d.id === selectedSport)?.nombre || "Filtrar por deporte" 
+                  : "Filtrar por deporte"}
+              </Text>
+            </TouchableOpacity>
+          </View>
           {Array.isArray(next7Days) && next7Days.length > 0 ? (
             <View style={styles.dayButtonContainer}>
               <FlatList
@@ -427,6 +496,7 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </Animated.View>
           {renderTimePickerModal()}
+          {renderSportPickerModal()}
         </LinearGradient>
         
         <PendingRatingsCard />
@@ -464,7 +534,7 @@ export default function HomeScreen() {
                 },
               ]}
             >
-              No hay lugares disponibles
+              {selectedTime ? "No hay canchas disponibles para este horario" : "Selecciona un horario para ver las canchas disponibles"}
             </Animated.Text>
           )}
         </View>
@@ -757,5 +827,30 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     marginRight: 20,
+  },
+  filtersContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  sportFilterButton: {
+    backgroundColor: Colors.WHITE,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    shadowColor: Colors.BLACK,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  sportFilterButtonText: {
+    color: Colors.PRIMARY,
+    fontSize: 14,
+    fontFamily: "montserrat-medium",
   },
 });

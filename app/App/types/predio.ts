@@ -44,11 +44,13 @@ export interface Cancha {
   tieneIluminacion: boolean;
   ultimoMantenimiento: string | null;
   createdAt: string;
+  deporteId?: string;
 }
 
 export interface CanchaFormData {
   nombre: string;
   tipo: string;
+  deporteId: string;
   tipoSuperficie: string;
   capacidadJugadores: number;
   longitud: number;
@@ -60,6 +62,25 @@ export interface CanchaFormData {
   equipamientoIncluido: string;
   requiereSeña: boolean;
   montoSeña: number;
+}
+
+export interface Cancha extends CanchaFormData {
+  id: string;
+  predioId: string;
+  imagenUrl?: string;
+  ultimoMantenimiento?: Date;
+  createdAt?: Date;
+  predio?: {
+    id: string;
+    nombre: string;
+    direccion: string;
+    telefono: string;
+  };
+  deporte?: {
+    id: string;
+    nombre: string;
+    descripcion?: string;
+  };
 }
 
 export interface PredioFormData {

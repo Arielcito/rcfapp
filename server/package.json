@@ -7,6 +7,7 @@
     "start": "node dist/index.js",
     "test": "vitest",
     "generate": "drizzle-kit generate:pg",
+    "push": "drizzle-kit push:pg ",
     "migrate": "tsx src/db/migrate.ts",
     "seed": "tsx src/db/seed.ts",
     "seed:mercadopago": "ts-node src/db/seedMercadoPago.ts"
