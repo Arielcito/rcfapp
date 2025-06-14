@@ -83,14 +83,12 @@ export class MercadoPagoService {
           id: item.id || `item-${Date.now()}-${Math.random().toString(36).substring(7)}`
         })),
         external_reference: data.external_reference,
-        auto_return: data.auto_return || 'approved',
         notification_url: data.notification_url || process.env.MP_WEBHOOK_URL
       };
 
       console.log(`[MercadoPagoService] Datos de preferencia a enviar a Mercado Pago:`, {
         items: preferenceData.items,
         external_reference: preferenceData.external_reference,
-        auto_return: preferenceData.auto_return,
         notification_url: preferenceData.notification_url
       });
 

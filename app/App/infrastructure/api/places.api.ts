@@ -1,9 +1,9 @@
 import type { Place } from "../../domain/entities/place.entity";
-import type { Cancha } from "../../types/predio";
+import type { Cancha, Predio } from "../../types/predio";
 import { api } from "./api";
 import { AxiosError } from 'axios';
 
-export const getPredios = async (): Promise<Place[]> => {
+export const getPredios = async (): Promise<Predio[]> => {
   try {
     const response = await api.get('/predios');
     return response.data;

@@ -3,9 +3,10 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import Colors from '../../../../infrastructure/utils/Colors';
 import { Place } from '../../../../domain/entities/place.entity';
+import { Predio } from '../../../../types/predio';
 
 interface PlaceCardProps {
-  place: Place;
+  place: Predio;
   isSelected: boolean;
   onPress: () => void;
 }
@@ -34,7 +35,7 @@ export function PlaceCard({ place, isSelected, onPress }: PlaceCardProps) {
             </Text>
             <Text style={styles.placePhone}>{place.telefono}</Text>
           </View>
-          <Text style={styles.price}>$20.000/h</Text>
+          <Text style={styles.price}>$30.000/h</Text>
         </View>
       </View>
     </TouchableOpacity>
