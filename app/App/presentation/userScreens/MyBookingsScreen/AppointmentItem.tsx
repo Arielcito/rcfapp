@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet, Modal, ScrollView, TouchableOpacity, Linking, Alert } from "react-native";
+import { View, Text, Pressable, StyleSheet, Modal, ScrollView, TouchableOpacity, Alert } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,6 +13,7 @@ import { useCurrentUser } from "../../../application/context/CurrentUserContext"
 import { useUser } from "../../../application/hooks/useUser";
 import { useCancha } from "../../../application/hooks/useCancha";
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { contactarPredio } from '../../../infrastructure/utils/whatsappUtils';
 
 type RootStackParamList = {
   myBookingDescription: {
@@ -139,30 +140,14 @@ export default function AppointmentItem({ reserva, onUpdate }: AppointmentItemPr
     );
   };
 
-  const handleWhatsApp = () => {
-    const message = `Hola! Tengo una reserva en "${reserva.place.name}" para el ${fechaFormateada} a las ${hora}. Me gustaría consultar algunos detalles.`;
-    const phoneNumber = reserva.place.telefono.replace(/\D/g, '');
-    
-    // Aseguramos que el número tenga el formato correcto
-    const formattedNumber = phoneNumber.startsWith('54') ? phoneNumber : `54${phoneNumber}`;
-    
-    const url = `whatsapp://send?phone=${formattedNumber}&text=${encodeURIComponent(message)}`;
-    
-    Linking.canOpenURL(url)
-      .then(supported => {
-        if (!supported) {
-          Alert.alert(
-            'Error',
-            'WhatsApp no está instalado en este dispositivo'
-          );
-        } else {
-          return Linking.openURL(url);
-        }
-      })
-      .catch(err => {
-        console.error('Error al abrir WhatsApp:', err);
-        Alert.alert('Error', 'No se pudo abrir WhatsApp');
-      });
+  const handleWhatsApp = async () => {
+    console.log('AppointmentItem - Iniciando contacto por WhatsApp con predio');
+    await contactarPredio(
+      reserva.place.telefono,
+      reserva.place.name,
+      fechaFormateada,
+      hora
+    );
   };
 
   const handleRatePredio = () => {

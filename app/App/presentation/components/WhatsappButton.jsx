@@ -1,17 +1,17 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { Linking } from "react-native";
+import { openWhatsApp } from "../../infrastructure/utils/whatsappUtils";
 
 
 const WhatsappButton = ({phoneNumber, message}) => {
 
-  const handleWhatsApp = () => {
-    
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
+  const handleWhatsApp = async () => {
+    console.log('WhatsappButton - Iniciando contacto por WhatsApp');
+    await openWhatsApp({
+      phoneNumber,
       message
-    )}`;
-    Linking.openURL(whatsappUrl);
+    });
   };
 
   return (

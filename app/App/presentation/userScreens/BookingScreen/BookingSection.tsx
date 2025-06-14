@@ -8,7 +8,6 @@ import {
   ScrollView,
   FlatList,
   Alert,
-  Linking,
   Platform,
   Animated
 } from "react-native";
@@ -25,6 +24,7 @@ import { FIREBASE_AUTH } from "../../../infrastructure/config/FirebaseConfig";
 import CaracteristicItem from "../../components/CaracteristicItem";
 import { api } from "../../../infrastructure/api/api";
 import { Cancha, Predio } from "../../../types/booking";
+import { contactarPredio } from '../../../infrastructure/utils/whatsappUtils';
 
 interface ExtendedPredio extends Predio {
   direccion?: string;
@@ -405,32 +405,14 @@ export default function BookingSection({
     );
   };
 
-  const handleWhatsApp = () => {
+  const handleWhatsApp = async () => {
     if (!place) return;
     
-    const message = `Hola! Vi tu predio "${place.nombre}" en RCF App y me gustaría obtener más información.`;
-    const phoneNumber = place.telefono?.replace(/\D/g, '') || '';
-    
-    // Aseguramos que el número tenga el formato correcto (54 + número sin el 0 ni el 15)
-    const formattedNumber = phoneNumber.startsWith('54') ? phoneNumber : `54${phoneNumber}`;
-    
-    const url = `whatsapp://send?phone=${formattedNumber}&text=${encodeURIComponent(message)}`;
-    
-    Linking.canOpenURL(url)
-      .then(supported => {
-        if (!supported) {
-          Alert.alert(
-            'Error',
-            'WhatsApp no está instalado en este dispositivo'
-          );
-        } else {
-          return Linking.openURL(url);
-        }
-      })
-      .catch(err => {
-        console.error('Error al abrir WhatsApp:', err);
-        Alert.alert('Error', 'No se pudo abrir WhatsApp');
-      });
+    console.log('BookingSection - Iniciando contacto por WhatsApp con predio');
+    await contactarPredio(
+      place.telefono || '',
+      place.nombre || 'Predio'
+    );
   };
 
   if (loading) {
