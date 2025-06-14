@@ -74,8 +74,20 @@ export default function PaymentScreen() {
   const navigator = useNavigation<NavigationProp>();
   const formatDate = moment(date).format("YYYY-MM-DD");
   
-  // Seña fija de $1000 para todos los métodos de pago
+  // Seña que se suma al precio original de la cancha (siempre con Mercado Pago)
   const SEÑA_FIJA = 1000;
+  // Precio total incluye la seña (con validación de seguridad)
+  // La cancha puede tener 'precio' o 'precioPorHora', y pueden ser string o number
+  const precioRaw = (cancha as any).precio || cancha.precioPorHora || 0;
+  const precioPorHora = typeof precioRaw === 'string' ? parseFloat(precioRaw) : Number(precioRaw) || 0;
+  const PRECIO_TOTAL_CON_SEÑA = precioPorHora + SEÑA_FIJA;
+  
+  console.log('PaymentScreen - Debugging precio:', {
+    canchaCompleta: cancha,
+    precioRaw: precioRaw,
+    precioPorHora: precioPorHora,
+    PRECIO_TOTAL_CON_SEÑA: PRECIO_TOTAL_CON_SEÑA
+  });
   
   // Valores de animación
   const buttonScale = useRef(new Animated.Value(1)).current;
@@ -155,27 +167,63 @@ export default function PaymentScreen() {
         throw new Error('El horario seleccionado ya no está disponible');
       }
 
-      // Siempre usar seña fija de $1000
-      const montoAPagar = SEÑA_FIJA;
+      // Generar código QR único para la reserva
+      const codigoQR = `RCF-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      
+      console.log('Creando reserva con seña pagada - Generando código QR:', codigoQR);
 
       const reservaData: ReservaData = {
         canchaId: cancha.id,
         userId: currentUser.id,
         fechaHora: fechaHora,
         duracion: 60,
-        precioTotal: montoAPagar,
-        metodoPago: paymentMethod,
-        estadoPago: 'PENDIENTE',
-        notasAdicionales: notes || `Reserva para ${cancha.nombre} - Seña de $${SEÑA_FIJA}`
+        precioTotal: precioPorHora, // Solo el precio base, la seña ya fue pagada a RCF
+        seña: SEÑA_FIJA, // Seña pagada a RCF
+        metodoPago: "Pendiente", // El resto se paga en el predio
+        estadoPago: 'PENDIENTE', // Reserva confirmada pero pago pendiente del resto
+        codigoQR: codigoQR,
+        notasAdicionales: notes ? 
+          `${notes}\n\nSeña pagada: $${SEÑA_FIJA.toFixed(2)} (RCF). Resto a pagar en el predio: $${precioPorHora.toFixed(2)} con ${selectedPaymentMethod}. Código QR: ${codigoQR}` :
+          `Reserva confirmada - Seña pagada: $${SEÑA_FIJA.toFixed(2)} (RCF). Resto a pagar en el predio: $${precioPorHora.toFixed(2)} con ${selectedPaymentMethod}. Código QR: ${codigoQR}`
       };
 
       const { data: createdReserva } = await api.post('/reservas', reservaData);
-      console.log('createdReserva', createdReserva);
+      console.log('Reserva creada con código QR:', { 
+        reservaId: createdReserva.data?.id, 
+        codigoQR: codigoQR,
+        seña: SEÑA_FIJA,
+        restoPorPagar: precioPorHora
+      });
+      
       if (!createdReserva) {
         throw new Error('Error al crear la reserva');
       }
 
-      navigator.navigate("successScreen", { appointmentData: createdReserva });
+      // Enviar email con código QR (opcional, se puede implementar en el backend)
+      try {
+        await api.post('/reservas/send-qr-email', {
+          reservaId: createdReserva.data?.id,
+          email: currentUser.email,
+          codigoQR: codigoQR,
+          cancha: cancha.nombre,
+          fecha: formatDate,
+          hora: selectedTime
+        });
+        console.log('Email con código QR enviado exitosamente');
+      } catch (emailError) {
+        console.log('Error al enviar email (no crítico):', emailError);
+        // No bloquear el flujo si falla el email
+      }
+
+      navigator.navigate("successScreen", { 
+        appointmentData: {
+          ...createdReserva,
+          codigoQR: codigoQR,
+          señaPagada: SEÑA_FIJA,
+          restoPorPagar: precioPorHora,
+          metodoPagoResto: selectedPaymentMethod
+        }
+      });
 
     } catch (error: any) {
       console.error("Error en la reserva:", error);
@@ -212,12 +260,12 @@ export default function PaymentScreen() {
 
   const compartirDatosBancarios = async () => {
     try {
-      const mensaje = `Datos para transferencia:
+      const mensaje = `Datos bancarios del predio:
 CBU: ${place.cbu}
 Titular: ${place.titularCuenta}
 Banco: ${place.banco}
 Tipo de cuenta: ${place.tipoCuenta}
-Monto a transferir (Seña): $${SEÑA_FIJA}`;
+Monto: $${precioPorHora.toFixed(2)}`;
 
       await Share.share({
         message: mensaje,
@@ -285,15 +333,19 @@ Monto a transferir (Seña): $${SEÑA_FIJA}`;
     }).start();
     
     if (!place.cbu) {
-      return (
-        <Animated.View style={[styles.transferWarning, formAnimatedStyle]}>
-          <Text style={styles.warningText}>Este predio no tiene datos bancarios configurados.</Text>
-        </Animated.View>
-      );
+              return (
+          <Animated.View style={[styles.transferWarning, formAnimatedStyle]}>
+            <Text style={styles.warningText}>Este predio no tiene datos bancarios configurados.</Text>
+          </Animated.View>
+        );
     }
 
     return (
       <Animated.View style={[styles.transferContainer, formAnimatedStyle]}>
+        <View style={styles.transferInfoHeader}>
+          <Text style={styles.transferInfoTitle}>Datos del predio</Text>
+          <Text style={styles.transferInfoSubtitle}>Para pagar el resto: ${precioPorHora.toFixed(2)}</Text>
+        </View>
         <View style={styles.transferDataRow}>
           <Text style={styles.transferLabel}>CBU:</Text>
           <Text style={styles.transferValue}>{place.cbu}</Text>
@@ -343,93 +395,81 @@ Monto a transferir (Seña): $${SEÑA_FIJA}`;
     ]).start();
     
     try {
-      switch (selectedPaymentMethod) {
-        case "transferencia": {
-          if (!place.cbu) {
-            throw new Error("Este predio no tiene datos bancarios configurados");
-          }
-          await bookAppointment("transferencia");
-          break;
-        }
-        case "Mercado Pago": {
-          console.log("Iniciando proceso de pago con Mercado Pago");
-          console.log("Datos del predio:", { 
-            predioId: place.id, 
-            nombre: place.nombre 
-          });
-          console.log("Datos de la cancha:", { 
-            canchaId: cancha.id, 
-            nombre: cancha.nombre,
-            seña: SEÑA_FIJA
-          });
-          
-          const preferenceData: MercadoPagoPreferenceData = {
-            predioId: place.id,
-            items: [{
-              title: `${cancha.nombre} - Seña`,
-              description: `Reserva en ${place.nombre} - ${cancha.tipo} ${cancha.tipoSuperficie} - Seña de reserva`,
-              picture_url: cancha.imagenUrl || place.imagenUrl,
-              quantity: 1,
-              currency_id: "ARS",
-              unit_price: SEÑA_FIJA
-            }],
-            external_reference: `reserva_${Date.now()}`
-          };
-          
-          console.log("Datos de preferencia a enviar:", preferenceData);
+      // PASO 1: Siempre pagar la seña con Mercado Pago primero
+      console.log("Iniciando pago de seña con Mercado Pago");
+      console.log("Datos del predio:", { 
+        predioId: place.id, 
+        nombre: place.nombre 
+      });
+               console.log("Datos de la cancha:", { 
+           canchaId: cancha.id, 
+           nombre: cancha.nombre,
+           precioPorHora: precioPorHora,
+           seña: SEÑA_FIJA,
+           precioTotal: PRECIO_TOTAL_CON_SEÑA
+         });
+      
+      const preferenceData: MercadoPagoPreferenceData = {
+        predioId: place.id,
+        items: [{
+          title: `${cancha.nombre} - Seña de Reserva`,
+                     description: `Seña para reserva en ${place.nombre} - ${cancha.tipo} ${cancha.tipoSuperficie} - Resto (${precioPorHora.toFixed(2)}) a pagar en el club`,
+          picture_url: cancha.imagenUrl || place.imagenUrl,
+          quantity: 1,
+          currency_id: "ARS",
+          unit_price: SEÑA_FIJA
+        }],
+        external_reference: `reserva_seña_${Date.now()}`
+      };
+      
+      console.log("Datos de preferencia para seña:", preferenceData);
 
-          try {
-            const { data: preference } = await mercadoPagoApi.createPreference(preferenceData);
-            console.log("Respuesta de Mercado Pago:", preference);
-            
-            if (!preference?.init_point) {
-              throw new Error("Error al procesar pago con Mercado Pago");
-            }
-
-            const response = await openBrowserAsync(preference.init_point);
-            console.log("Respuesta del navegador:", response);
-            
-            if (response.type === "cancel") {
-              showMessage(
-                "¿Necesitas ayuda para completar el pago? Puedes intentar nuevamente o elegir otro método de pago.",
-                "Pago cancelado"
-              );
-              return;
-            }
-
-            await bookAppointment("Mercado Pago");
-          } catch (mpError: any) {
-            console.error("Error específico de Mercado Pago:", mpError);
-            console.error("Detalles del error:", {
-              message: mpError.message,
-              response: mpError.response?.data,
-              status: mpError.response?.status
-            });
-            
-            // Verificar si el error es porque el predio no tiene configurado Mercado Pago
-            const errorMessage = mpError.response?.data?.error || mpError.message;
-            if (errorMessage.includes("no tiene configurado Mercado Pago")) {
-              showMessage(
-                "Este predio no tiene configurado Mercado Pago. Por favor, elija otro método de pago.",
-                "Método no disponible"
-              );
-              return;
-            }
-            
-            showMessage(
-              "Hubo un problema al procesar el pago. Por favor, intente nuevamente o elija otro método de pago.",
-              "Error en el pago"
-            );
-          }
-          break;
+      try {
+        const { data: preference } = await mercadoPagoApi.createPreference(preferenceData);
+        console.log("Respuesta de Mercado Pago para seña:", preference);
+        
+        if (!preference?.init_point) {
+          throw new Error("Error al procesar el pago de la seña con Mercado Pago");
         }
-        case "efectivo": {
-          await bookAppointment("efectivo");
-          break;
+
+        const response = await openBrowserAsync(preference.init_point);
+        console.log("Respuesta del navegador para seña:", response);
+        
+        if (response.type === "cancel") {
+          showMessage(
+            "Es necesario pagar la seña con Mercado Pago para confirmar tu reserva. ¿Necesitas ayuda?",
+            "Pago de seña cancelado"
+          );
+          return;
         }
-        default:
-          throw new Error("Método de pago no válido");
+
+        // PASO 2: Una vez pagada la seña, crear la reserva confirmada pero pendiente del resto
+        await bookAppointment("Seña pagada - Resto pendiente");
+        
+      } catch (mpError: any) {
+        console.error("Error específico de Mercado Pago:", mpError);
+        console.error("Detalles del error:", {
+          message: mpError.message,
+          response: mpError.response?.data,
+          status: mpError.response?.status
+        });
+        
+        // Verificar si el error es porque el predio no tiene configurado Mercado Pago
+        const errorMessage = mpError.response?.data?.error || mpError.message;
+        if (errorMessage.includes("no tiene configurado Mercado Pago")) {
+          showMessage(
+            "Este predio no tiene configurado Mercado Pago para el pago de seña. Contacta al establecimiento.",
+            "Mercado Pago no disponible"
+          );
+          return;
+        }
+        
+        showMessage(
+          "Hubo un problema al procesar el pago de la seña. La seña debe pagarse con Mercado Pago para confirmar la reserva.",
+          "Error en el pago de seña"
+        );
       }
+      
     } catch (error: any) {
       console.error("Error en el pago:", error);
       showMessage(error.message);
@@ -512,30 +552,27 @@ Monto a transferir (Seña): $${SEÑA_FIJA}`;
         </View>
 
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionHeading}>Pago</Text>
+          <Text style={styles.sectionHeading}>Estructura de Pago</Text>
           <View style={styles.billDetailsContainer}>
             <View style={styles.billRow}>
-              <Text style={styles.billDetailText}>Costo por hora:</Text>
-              <Text style={styles.billDetailAmount}>${cancha.precioPorHora}</Text>
+              <Text style={styles.billDetailText}>Costo total cancha:</Text>
+              <Text style={styles.billDetailAmount}>${precioPorHora.toFixed(2)}</Text>
             </View>
             <View style={styles.billRow}>
-              <Text style={styles.billDetailText}>Seña requerida:</Text>
-              <Text style={styles.billDetailAmount}>${SEÑA_FIJA}</Text>
-            </View>
-            <View style={styles.billRow}>
-              <Text style={styles.billDetailText}>Resto a pagar en el predio:</Text>
-              <Text style={styles.billDetailAmount}>${cancha.precioPorHora - SEÑA_FIJA}</Text>
-            </View>
-            <View style={[styles.billRow, styles.totalRow]}>
-              <Text style={styles.totalText}>Total a pagar ahora (Seña):</Text>
-              <Text style={styles.totalAmount}>
-                ${SEÑA_FIJA}
+              <Text style={styles.billDetailText}>Seña RCF (ahora):</Text>
+              <Text style={[styles.billDetailAmount, { color: Colors.PRIMARY }]}>
+                ${SEÑA_FIJA.toFixed(2)}
               </Text>
+            </View>
+            <View style={styles.billRow}>
+              <Text style={styles.billDetailText}>Resto (en el predio):</Text>
+              <Text style={styles.billDetailAmount}>${precioPorHora.toFixed(2)}</Text>
             </View>
           </View>
         </View>
 
-        <Text style={styles.heading}>Método de Pago</Text>
+        <Text style={styles.heading}>¿Cómo pagará el resto en el predio?</Text>
+        <Text style={styles.paymentSubheading}>Restante: ${precioPorHora.toFixed(2)}</Text>
         <Animated.View style={[styles.paymentMethodContainer, paymentMethodsAnimatedStyle]} testID="payment-methods">
           <Animated.View>
             <TouchableOpacity
@@ -593,32 +630,16 @@ Monto a transferir (Seña): $${SEÑA_FIJA}`;
           </View>
         </Animated.View>
 
-        {selectedPaymentMethod === "efectivo" && (
-          <Animated.View style={[styles.voucherInfoContainer, formAnimatedStyle]}>
-            <Ionicons name="information-circle-outline" size={24} color={Colors.PRIMARY} />
-            <Text style={styles.voucherInfoText}>
-              Al pagar la seña de $1000 en efectivo, podrás obtener un voucher digital para presentar en el predio como comprobante de tu reserva. El resto (${cancha.precioPorHora - SEÑA_FIJA}) se paga en el predio.
+        {/* Información importante sobre la seña y proceso */}
+        <View style={styles.importantNoticeContainer}>
+          <Ionicons name="information-circle-outline" size={20} color="#F59E0B" />
+          <View style={styles.noticeTextContainer}>
+            <Text style={styles.noticeText}>
+              La seña de ${SEÑA_FIJA.toFixed(2)} se paga ahora con Mercado Pago a RCF para confirmar tu reserva. 
+              Recibirás un código QR por email y en la app para validar en el predio.
             </Text>
-          </Animated.View>
-        )}
-
-        {selectedPaymentMethod === "transferencia" && (
-          <Animated.View style={[styles.voucherInfoContainer, formAnimatedStyle]}>
-            <Ionicons name="information-circle-outline" size={24} color={Colors.PRIMARY} />
-            <Text style={styles.voucherInfoText}>
-              Transfiere la seña de $1000 y presenta el comprobante en el predio. El resto (${cancha.precioPorHora - SEÑA_FIJA}) se paga al llegar.
-            </Text>
-          </Animated.View>
-        )}
-
-        {selectedPaymentMethod === "Mercado Pago" && (
-          <Animated.View style={[styles.voucherInfoContainer, formAnimatedStyle]}>
-            <Ionicons name="information-circle-outline" size={24} color={Colors.PRIMARY} />
-            <Text style={styles.voucherInfoText}>
-              Paga la seña de $1000 con Mercado Pago de forma segura. El resto (${cancha.precioPorHora - SEÑA_FIJA}) se paga en el predio.
-            </Text>
-          </Animated.View>
-        )}
+          </View>
+        </View>
         
         <View style={{ height: 80 }} />
       </ScrollView>
@@ -632,7 +653,7 @@ Monto a transferir (Seña): $${SEÑA_FIJA}`;
             testID="reserve-button"
           >
             {!loading ? (
-              <Text style={styles.reserveButtonText}>Pagar Seña - ${SEÑA_FIJA}</Text>
+              <Text style={styles.reserveButtonText}>Confirmar Reserva - Pagar Seña ${SEÑA_FIJA.toFixed(2)}</Text>
             ) : (
               <ActivityIndicator color={Colors.WHITE} />
             )}
@@ -999,5 +1020,50 @@ const styles = StyleSheet.create({
     elevation: 2,
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  transferInfoHeader: {
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  transferInfoTitle: {
+    fontSize: 16,
+    fontFamily: "montserrat-medium",
+    color: Colors.BLACK,
+    marginBottom: 4,
+  },
+  transferInfoSubtitle: {
+    fontSize: 13,
+    color: Colors.GRAY,
+    fontFamily: "montserrat",
+  },
+
+  importantNoticeContainer: {
+    backgroundColor: '#FFFBEB',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  noticeTextContainer: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  noticeText: {
+    fontSize: 13,
+    color: '#92400E',
+    fontFamily: "montserrat",
+    lineHeight: 16,
+  },
+  paymentSubheading: {
+    fontSize: 14,
+    fontFamily: "montserrat",
+    color: Colors.GRAY,
+    marginBottom: 12,
+    textAlign: 'center',
   },
 });

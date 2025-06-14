@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet, Modal, ScrollView, TouchableOpacity, Linking, Alert } from "react-native";
+import { View, Text, Pressable, StyleSheet, Modal, ScrollView, TouchableOpacity, Alert } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import Colors from "../../../infrastructure/utils/Colors";
@@ -7,6 +7,7 @@ import { es } from 'date-fns/locale';
 import Icon from "react-native-vector-icons/Ionicons";
 import { getProfileInfo } from "../../../infrastructure/api/user.api";
 import { reservaApi } from "../../../infrastructure/api/reserva.api";
+import { contactarPredio } from '../../../infrastructure/utils/whatsappUtils';
 
 export default function AppointmentItem({ reserva, onUpdate }) {
   const navigation = useNavigation();
@@ -66,30 +67,17 @@ export default function AppointmentItem({ reserva, onUpdate }) {
     }
   };
 
-  const handleWhatsApp = () => {
-    const message = `Hola! Tengo una reserva en "${reserva.predio?.nombre}" para el ${fechaFormateada} a las ${hora}. Me gustaría consultar algunos detalles.`;
-    const phoneNumber = reserva.predio?.telefono?.replace(/\D/g, '') || '';
+  const handleWhatsApp = async () => {
+    console.log('OwnerAppointmentItem - Iniciando contacto por WhatsApp con predio');
+    const predioNombre = reserva.predio?.nombre || 'Predio';
+    const telefono = reserva.predio?.telefono || '';
     
-    // Aseguramos que el número tenga el formato correcto
-    const formattedNumber = phoneNumber.startsWith('54') ? phoneNumber : `54${phoneNumber}`;
-    
-    const url = `whatsapp://send?phone=${formattedNumber}&text=${encodeURIComponent(message)}`;
-    
-    Linking.canOpenURL(url)
-      .then(supported => {
-        if (!supported) {
-          Alert.alert(
-            'Error',
-            'WhatsApp no está instalado en este dispositivo'
-          );
-        } else {
-          return Linking.openURL(url);
-        }
-      })
-      .catch(err => {
-        console.error('Error al abrir WhatsApp:', err);
-        Alert.alert('Error', 'No se pudo abrir WhatsApp');
-      });
+    await contactarPredio(
+      telefono,
+      predioNombre,
+      fechaFormateada,
+      hora
+    );
   };
 
   const renderDetalleReserva = () => {

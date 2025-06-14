@@ -1,6 +1,6 @@
 import { Cancha, Predio } from './booking';
 
-export type PaymentMethod = 'efectivo' | 'transferencia' | 'tarjeta' | 'Mercado Pago';
+export type PaymentMethod = 'efectivo' | 'transferencia' | 'tarjeta' | 'Mercado Pago' | 'Seña pagada - Resto pendiente' | 'Pendiente';
 
 export interface CreditCardData {
   cardNumber: string;
@@ -39,8 +39,10 @@ export interface ReservaData {
   fechaHora: string;
   duracion: number;
   precioTotal: number;
+  seña?: number;
   metodoPago: string;
   estadoPago: string;
+  codigoQR?: string;
   notasAdicionales?: string;
 }
 

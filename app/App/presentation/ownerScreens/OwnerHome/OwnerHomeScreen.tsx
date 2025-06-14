@@ -10,6 +10,7 @@ import { Booking } from '../../../types/booking';
 import { ChartDataPoint, ReservaResponse, ContactInfo, OwnerHomeScreenState } from '../../../types/owner';
 import { ErrorBoundary } from '../../../components/ErrorBoundary';
 import { logger } from '../../../infrastructure/utils/logger';
+import { contactarSoporte } from '../../../infrastructure/utils/whatsappUtils';
 import AppointmentItem from '../OwnerAppointment/AppointmentItem';
 import Colors from '../../../infrastructure/utils/Colors';
 
@@ -268,26 +269,9 @@ const OwnerHomeContent = () => {
     }
   };
 
-  const handleContactSupport = () => {
-    const phoneNumber = '+5491156569844';
-    const message = 'Hola vengo de la app de rcf';
-    const whatsappUrl = `whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
-    
-    Linking.canOpenURL(whatsappUrl)
-      .then(supported => {
-        if (supported) {
-          return Linking.openURL(whatsappUrl);
-        } else {
-          Alert.alert(
-            'Error',
-            'No se puede abrir WhatsApp. Por favor, instala la aplicación.'
-          );
-        }
-      })
-      .catch(err => {
-        logError(err, 'handleContactSupport');
-        Alert.alert('Error', 'No se pudo abrir WhatsApp');
-      });
+  const handleContactSupport = async () => {
+    console.log('OwnerHome - Contactando soporte técnico');
+    await contactarSoporte();
   };
 
   const renderDetalleReserva = () => {
