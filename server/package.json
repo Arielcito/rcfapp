@@ -10,7 +10,8 @@
     "push": "drizzle-kit push:pg ",
     "migrate": "tsx src/db/migrate.ts",
     "seed": "tsx src/db/seed.ts",
-    "seed:mercadopago": "ts-node src/db/seedMercadoPago.ts"
+    "seed:mercadopago": "ts-node src/db/seedMercadoPago.ts",
+    "seed:horarios": "tsx src/db/seeds/index.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

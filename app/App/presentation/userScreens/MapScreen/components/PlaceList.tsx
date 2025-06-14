@@ -3,9 +3,10 @@ import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { Place } from '../../../../domain/entities/place.entity';
 import { PlaceCard } from './PlaceCard';
 import Colors from '../../../../infrastructure/utils/Colors';
+import { Predio } from '../../../../types/predio';
 
 interface PlaceListProps {
-  places: Place[];
+  places: Predio[];
   selectedPlaceId: string | null;
   onPlacePress: (placeId: string) => void;
 }

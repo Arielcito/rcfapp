@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, varchar, boolean, integer, decimal, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, varchar, boolean, integer, decimal, uniqueIndex, time } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { createId } from '../utils/ids';
 import { Role } from '../types/user';
@@ -177,6 +177,37 @@ export const courtRatings = pgTable('court_ratings', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
   uniqueUserReserva: uniqueIndex('unique_user_reserva').on(table.userId, table.reservaId),
+}));
+
+export const serviciosPredio = pgTable('servicios_predio', {
+  id: uuid('id').primaryKey().$defaultFn(createId),
+  nombre: text('nombre').notNull(),
+  descripcion: text('descripcion'),
+  predioId: uuid('predio_id').references(() => predios.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const horariosPredio = pgTable('horarios_predio', {
+  id: uuid('id').primaryKey().$defaultFn(createId),
+  predioId: uuid('predio_id').references(() => predios.id),
+  dia: text('dia').notNull(),
+  horaInicio: time('hora_inicio').notNull(),
+  horaFin: time('hora_fin').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const horariosPredioRelations = relations(horariosPredio, ({ one }) => ({
+  predio: one(predios, {
+    fields: [horariosPredio.predioId],
+    references: [predios.id],
+  }),
+}));
+
+export const serviciosPredioRelations = relations(serviciosPredio, ({ one }) => ({
+  predio: one(predios, {
+    fields: [serviciosPredio.predioId],
+    references: [predios.id],
+  }),
 }));
 
 // Configurar las relaciones

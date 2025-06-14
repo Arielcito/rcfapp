@@ -5,7 +5,7 @@ import type { Predio, PredioCreationData, PredioUpdateData } from '../types/pred
 import { predios as prediosSchema } from '../db/schema';
 import { eq as eqOp } from 'drizzle-orm';
 import { and, sql } from 'drizzle-orm';
-import { canchas, reservas, deportes } from '../db/schema';
+import { canchas, reservas, deportes, horariosPredio, serviciosPredio } from '../db/schema';
 
 export const createPredio = async (predioData: PredioCreationData): Promise<Predio> => {
   const [predio] = await db.insert(prediosSchema)
@@ -21,12 +21,49 @@ export const getPredios = async (): Promise<Predio[]> => {
   return result;
 };
 
-export const getPredioById = async (id: string): Promise<Predio | null> => {
-  const [predio] = await db.select()
-    .from(prediosSchema)
-    .where(eqOp(prediosSchema.id, id)) as Predio[];
+export const getPredioById = async (id: string): Promise<any | null> => {
+  try {
+    console.log('🔍 [predioService] Buscando predio por ID:', id);
 
-  return predio || null;
+    // Obtener el predio base
+    const [predio] = await db.select()
+      .from(prediosSchema)
+      .where(eqOp(prediosSchema.id, id)) as Predio[];
+
+    if (!predio) {
+      console.log('❌ [predioService] Predio no encontrado');
+      return null;
+    }
+
+    // Obtener los horarios del predio
+    console.log('🕒 [predioService] Obteniendo horarios del predio');
+    const horarios = await db.select()
+      .from(horariosPredio)
+      .where(eqOp(horariosPredio.predioId, id));
+
+    // Obtener los servicios del predio
+    console.log('🛍️ [predioService] Obteniendo servicios del predio');
+    const servicios = await db.select()
+      .from(serviciosPredio)
+      .where(eqOp(serviciosPredio.predioId, id));
+
+    // Combinar toda la información
+    const predioCompleto = {
+      ...predio,
+      horarios: horarios.map(horario => ({
+        ...horario,
+        horaInicio: horario.horaInicio.slice(0, 5), // Formatear hora (HH:mm)
+        horaFin: horario.horaFin.slice(0, 5), // Formatear hora (HH:mm)
+      })),
+      servicios: servicios
+    };
+
+    console.log('✅ [predioService] Predio encontrado con horarios y servicios');
+    return predioCompleto;
+  } catch (error) {
+    console.error('❌ [predioService] Error al obtener predio por ID:', error);
+    throw new Error('Error al obtener predio por ID');
+  }
 };
 
 export const getPrediosByUsuarioId = async (usuarioId: string): Promise<Predio[]> => {
@@ -171,6 +208,17 @@ export const getPrediosWithAvailableCourts = async (fecha: string, hora: string,
 
     const prediosWithCourts = Array.from(prediosMap.values());
     console.log('🏟️ [predioService] Predios con canchas disponibles:', prediosWithCourts.length);
+    
+    // Obtener horarios para cada predio
+    console.log('🕐 [predioService] Obteniendo horarios de predios...');
+    for (const predio of prediosWithCourts) {
+      const horarios = await db.select()
+        .from(horariosPredio)
+        .where(eqOp(horariosPredio.predioId, predio.id));
+      
+      predio.horarios = horarios;
+      console.log(`📅 [predioService] Horarios para predio ${predio.nombre}:`, horarios.length);
+    }
     
     return prediosWithCourts;
   } catch (error) {

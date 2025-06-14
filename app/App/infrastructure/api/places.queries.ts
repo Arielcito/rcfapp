@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { getPredios, fetchOwnerPlace, getPrediosWithAvailableCourts, getAvailableCourts } from './places.api';
 import type { Place } from '../../domain/entities/place.entity';
-import type { Cancha } from '../../types/predio';
+import type { Cancha, Predio } from '../../types/predio';
 
 export const usePredios = () => {
-  return useQuery<Place[]>({
+  return useQuery<Predio[]>({
     queryKey: ['predios'],
     queryFn: getPredios,
     staleTime: 5 * 60 * 1000, // 5 minutes

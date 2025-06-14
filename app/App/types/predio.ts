@@ -1,3 +1,16 @@
+export interface Horario {
+  id: string;
+  dia: string;
+  horaInicio: string;
+  horaFin: string;
+}
+
+export interface Servicio {
+  id: string;
+  nombre: string;
+  descripcion: string;
+}
+
 export interface Predio {
   id: string;
   usuarioId: string;
@@ -23,14 +36,16 @@ export interface Predio {
   diasOperacion?: string;
   imagenUrl?: string;
   fechaRegistro?: Date;
+  horarios?: Horario[];
+  servicios?: Servicio[];
 }
 
 export interface Cancha {
   id: string;
   nombre: string;
-  tipo: string | null;
-  tipoSuperficie: string | null;
-  imagenUrl: string | null;
+  tipo: string;
+  tipoSuperficie: string;
+  imagenUrl?: string | null;
   ancho: number | null;
   longitud: number | null;
   capacidadJugadores: number | null;
@@ -42,8 +57,8 @@ export interface Cancha {
   predioId: string;
   requiereSeña: boolean;
   tieneIluminacion: boolean;
-  ultimoMantenimiento: string | null;
-  createdAt: string;
+  ultimoMantenimiento?: string | null;
+  createdAt?: string;
   deporteId?: string;
 }
 
@@ -67,9 +82,9 @@ export interface CanchaFormData {
 export interface Cancha extends CanchaFormData {
   id: string;
   predioId: string;
-  imagenUrl?: string;
-  ultimoMantenimiento?: Date;
-  createdAt?: Date;
+  imagenUrl?: string | null;
+  ultimoMantenimiento?: string | null;
+  createdAt?: string | null;
   predio?: {
     id: string;
     nombre: string;

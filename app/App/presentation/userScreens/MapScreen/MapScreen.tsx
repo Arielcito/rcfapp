@@ -18,6 +18,7 @@ import { PlaceList } from "./components/PlaceList";
 import { DrawerHandle } from "./components/DrawerHandle";
 import { useLocation } from "./hook/useLocation";
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Predio } from "../../../types/predio";
 
 // Add navigation type
 type RootStackParamList = {
@@ -61,7 +62,7 @@ const MapScreen = ({ navigation }: MapScreenProps) => {
   const [selectedPlace, setSelectedPlace] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [drawerState, setDrawerState] = useState<DrawerState>(INITIAL_DRAWER_STATE);
-  const [filteredPlaces, setFilteredPlaces] = useState<Place[]>([]);
+  const [filteredPlaces, setFilteredPlaces] = useState<Predio[]>([]);
 
   // Hooks
   const { location, errorMsg, isLoading: isLoadingLocation } = useLocation();
@@ -95,7 +96,7 @@ const MapScreen = ({ navigation }: MapScreenProps) => {
   const handleSearch = (text: string) => {
     setSearchQuery(text);
     if (!text.trim()) {
-      setFilteredPlaces(places);
+      setFilteredPlaces(places as Predio[]);
       return;
     }
 
@@ -104,11 +105,11 @@ const MapScreen = ({ navigation }: MapScreenProps) => {
       const searchString = `${place.nombre} ${place.direccion}`.toLowerCase();
       return searchTerms.every(term => searchString.includes(term));
     });
-    setFilteredPlaces(filtered);
+    setFilteredPlaces(filtered as Predio[]);
   };
 
   useEffect(() => {
-    setFilteredPlaces(places);
+    setFilteredPlaces(places as Predio[]);
   }, [places]);
 
   const handlePlacePress = (placeId: string) => {
@@ -116,7 +117,7 @@ const MapScreen = ({ navigation }: MapScreenProps) => {
     if (place) {
       setSelectedPlace(placeId);
       setDrawerState({ ...drawerState, height: 300, isExpanded: false });
-      navigation.navigate('booking', { place });
+      navigation.navigate('booking', { place: place as Place });
     }
   };
 
