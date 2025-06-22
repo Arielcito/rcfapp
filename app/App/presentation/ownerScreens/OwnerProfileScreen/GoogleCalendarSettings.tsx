@@ -1,7 +1,9 @@
-import { View, Text, TouchableOpacity, Alert, Linking, StyleSheet } from "react-native";
-import { useState } from "react";
+import { View, Text, TouchableOpacity, Alert, StyleSheet } from "react-native";
+import { useState, useEffect } from "react";
 import { api } from "../../../infrastructure/api/api";
 import Colors from "../../../infrastructure/utils/Colors";
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 
 interface GoogleCalendarSettingsProps {
   user: any;
@@ -11,25 +13,64 @@ interface GoogleCalendarSettingsProps {
 export function GoogleCalendarSettings({ user, onToggleCalendar }: GoogleCalendarSettingsProps) {
   const [isConnecting, setIsConnecting] = useState(false);
 
+  useEffect(() => {
+    // Configurar el listener para la redirección
+    const subscription = Linking.addEventListener('url', handleRedirect);
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  const handleRedirect = async (event: { url: string }) => {
+    console.log('🔄 [GoogleCalendarSettings] URL de redirección recibida:', event.url);
+    
+    try {
+      const parsedUrl = Linking.parse(event.url);
+      
+      // Verificar si la redirección fue exitosa
+      if (parsedUrl.path === 'checkout/congrats' && parsedUrl.queryParams?.status === 'success') {
+        // Verificar el estado de la conexión
+        const statusResponse = await api.get('/google-calendar/connection-status');
+        if (statusResponse.data.isConnected) {
+          onToggleCalendar(true);
+          Alert.alert('¡Éxito!', 'Google Calendar conectado exitosamente');
+        }
+      } else if (parsedUrl.queryParams?.status === 'error') {
+        Alert.alert('Error', 'No se pudo completar la conexión con Google Calendar');
+      }
+    } catch (error) {
+      console.error('❌ [GoogleCalendarSettings] Error procesando redirección:', error);
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
   const handleConnectCalendar = async () => {
     setIsConnecting(true);
     try {
-      // Obtener URL de autorización
+      // La URL de redirección será manejada por el backend
       const response = await api.get('/google-calendar/auth-url');
       
-      // Abrir browser para autorización
-      await Linking.openURL(response.data.authUrl);
+      console.log('🔗 [GoogleCalendarSettings] Iniciando proceso de autorización');
       
-      // Mostrar instrucciones al usuario
-      Alert.alert(
-        'Vinculación con Google Calendar',
-        'Se abrirá tu navegador para autorizar el acceso. Una vez completado, vuelve a la app.',
-        [{ text: 'Entendido' }]
+      const result = await WebBrowser.openAuthSessionAsync(
+        response.data.authUrl,
+        'RFCApp://checkout/congrats',
+        {
+          showInRecents: true,
+          preferEphemeralSession: true
+        }
       );
+
+      if (result.type !== 'success') {
+        setIsConnecting(false);
+        console.log('❌ [GoogleCalendarSettings] Autorización cancelada por el usuario');
+        Alert.alert('Info', 'La autorización fue cancelada');
+      }
     } catch (error) {
-      Alert.alert('Error', 'No se pudo iniciar la vinculación con Google Calendar');
-    } finally {
+      console.error('❌ [GoogleCalendarSettings] Error iniciando autorización:', error);
       setIsConnecting(false);
+      Alert.alert('Error', 'No se pudo iniciar la conexión con Google Calendar');
     }
   };
 
@@ -39,6 +80,7 @@ export function GoogleCalendarSettings({ user, onToggleCalendar }: GoogleCalenda
       onToggleCalendar(false);
       Alert.alert('Éxito', 'Google Calendar desvinculado exitosamente');
     } catch (error) {
+      console.error('❌ [GoogleCalendarSettings] Error al desvincular:', error);
       Alert.alert('Error', 'No se pudo desvincular Google Calendar');
     }
   };
