@@ -7,12 +7,13 @@ import { GoogleCalendarTokens, GoogleCalendarEvent, ReservationEventData } from 
 
 export class GoogleCalendarService {
   private oauth2Client: OAuth2Client;
+  private REDIRECT_URI = 'https://backoffice.xerato.io/rcf/api/auth/callback';
 
   constructor() {
     this.oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI
+      this.REDIRECT_URI
     );
   }
 
@@ -20,16 +21,19 @@ export class GoogleCalendarService {
   async generateAuthUrl(userId: string): Promise<string> {
     console.log(`[GoogleCalendarService] Generando URL de autorización para usuario: ${userId}`);
     
+    const state = Buffer.from(JSON.stringify({ userId })).toString('base64');
+    
     const authUrl = this.oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: [
         'https://www.googleapis.com/auth/calendar',
         'https://www.googleapis.com/auth/calendar.events'
       ],
+      state,
       prompt: 'consent' // Fuerza mostrar pantalla de consentimiento para obtener refresh token
     });
     
-    console.log(`[GoogleCalendarService] URL de autorización generada exitosamente`);
+    console.log(`[GoogleCalendarService] URL de autorización generada exitosamente`, authUrl);
     return authUrl;
   }
   
@@ -297,6 +301,48 @@ export class GoogleCalendarService {
     } catch (error) {
       console.error(`[GoogleCalendarService] Error creando evento de reserva:`, error);
       return false;
+    }
+  }
+
+  async refreshTokenIfNeeded(userId: string): Promise<void> {
+    console.log('[GoogleCalendarService] Verificando si se necesita refrescar el token');
+    
+    try {
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+        columns: {
+          googleRefreshToken: true,
+          googleTokenExpiry: true
+        }
+      });
+
+      if (!user?.googleRefreshToken || !user?.googleTokenExpiry) {
+        throw new Error('No hay tokens disponibles para refrescar');
+      }
+
+      // Si el token expira en menos de 5 minutos, refrescarlo
+      const expiryDate = new Date(user.googleTokenExpiry);
+      const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000);
+
+      if (expiryDate <= fiveMinutesFromNow) {
+        this.oauth2Client.setCredentials({
+          refresh_token: user.googleRefreshToken
+        });
+
+        const { credentials } = await this.oauth2Client.refreshAccessToken();
+        
+        await db.update(users)
+          .set({
+            googleAccessToken: credentials.access_token,
+            googleTokenExpiry: credentials.expiry_date ? new Date(credentials.expiry_date) : null,
+          })
+          .where(eq(users.id, userId));
+          
+        console.log('[GoogleCalendarService] Token refrescado exitosamente');
+      }
+    } catch (error) {
+      console.error('[GoogleCalendarService] Error refrescando token:', error);
+      throw error;
     }
   }
 }

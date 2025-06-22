@@ -14,7 +14,7 @@ import ownerRegistrationRoutes from './routes/ownerRegistrationRoutes';
 import courtRatingRoutes from './routes/courtRatingRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import deporteRoutes from './routes/deporteRoutes';
-import { googleCalendarRoutes } from './routes/googleCalendarRoutes';
+import googleCalendarRoutes from './routes/googleCalendarRoutes';
 
 dotenv.config();
 

@@ -45,13 +45,8 @@ export const useOwnerPlace = (userId: string, isOwner: boolean) => {
     queryKey: ['owner-place', userId],
     queryFn: async () => {
       try {
-        console.log('🏟️ [useOwnerPlace] Iniciando consulta para owner:', userId);
         const result = await fetchOwnerPlace(userId);
-        console.log('🏟️ [useOwnerPlace] Resultado de la consulta:', {
-          success: !!result,
-          predioData: result ? 'Predio encontrado' : 'No se encontró predio',
-          details: result
-        });
+
         return result;
       } catch (error) {
         console.error('❌ [useOwnerPlace] Error al obtener el predio:', error);

@@ -64,11 +64,7 @@ const handleApiError = (error: AxiosError<ErrorResponse>): ApiError => {
 export const FinanceService = {
   async getMovimientos(predioId: string): Promise<FinanceEntry[]> {
     try {
-      console.log(`[FinanceService] Fetching movements for predio: ${predioId}`);
-      const fullUrl = `${api.defaults.baseURL}/movimientos/${predioId}`;
-      console.log(`[FinanceService] Full request URL: ${fullUrl}`);
       const {data: response} = await api.get(`/movimientos/${predioId}`);
-      console.log(`[FinanceService] Successfully fetched movements for predio: ${JSON.stringify(response)}`);
       return response;
     } catch (error) {
       const apiError = handleApiError(error as AxiosError<ErrorResponse>);
