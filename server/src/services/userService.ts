@@ -75,7 +75,7 @@ export const getUserById = async (id: string): Promise<User | null> => {
     if (!user) {
       return null;
     }
-    
+    console.log('user', user);
     const userResponse: User = {
       id: user.id,
       name: user.name ?? null,
@@ -83,7 +83,8 @@ export const getUserById = async (id: string): Promise<User | null> => {
       role: user.role as Role,
       telefono: user.telefono ?? null,
       emailVerified: user.emailVerified ? new Date() : null,
-      image: user.image ?? null
+      image: user.image ?? null,
+      predioTrabajo: user.predioTrabajo ?? null
     };
 
     return userResponse;
