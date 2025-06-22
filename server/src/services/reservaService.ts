@@ -63,7 +63,7 @@ export class ReservaService {
       // Obtener datos del predio
       const [predio] = await db.select()
         .from(predios)
-        .where(eq(predios.id, cancha.predioId));
+        .where(eq(predios.id, cancha.predioId || ''));
 
       // Crear movimiento de caja
       if (data.precioTotal) {

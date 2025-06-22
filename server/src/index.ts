@@ -14,6 +14,7 @@ import ownerRegistrationRoutes from './routes/ownerRegistrationRoutes';
 import courtRatingRoutes from './routes/courtRatingRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import deporteRoutes from './routes/deporteRoutes';
+import { googleCalendarRoutes } from './routes/googleCalendarRoutes';
 
 dotenv.config();
 
@@ -68,6 +69,8 @@ app.use(`${BASE_PATH}/owner-registration`, ownerRegistrationRoutes);
 app.use(`${BASE_PATH}/court-ratings`, courtRatingRoutes);
 
 app.use(`${BASE_PATH}/deportes`, deporteRoutes);
+
+app.use(`${BASE_PATH}/google-calendar`, googleCalendarRoutes);
 
 // Health check endpoint
 app.get(`${BASE_PATH}/health`, (req, res) => {

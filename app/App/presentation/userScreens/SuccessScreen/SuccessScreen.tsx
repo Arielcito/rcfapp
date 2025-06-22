@@ -130,7 +130,7 @@ const SuccessScreen = () => {
 
   const generarVoucher = async () => {
     try {
-      const mensaje = `VOUCHER DE RESERVA - RCF App
+      const mensaje = `VOUCHER DE RESERVA - RCC App
 ---------------------------------------
 Predio: ${reserva.predio.nombre || 'N/A'}
 Cancha: ${reserva.cancha.nombre}
@@ -144,12 +144,12 @@ Monto a pagar: $${Number(reserva.precioTotal).toLocaleString()}
 Estado de pago: ${reserva.estadoPago}
 ---------------------------------------
 ID Reserva: ${appointmentData.data?.id || 'No disponible'}
-Reserva realizada a través de RCF App
+Reserva realizada a través de RCC App
 `;
 
       await Share.share({
         message: mensaje,
-        title: "Voucher de Reserva - RCF App",
+        title: "Voucher de Reserva - RCC App",
       });
     } catch (error) {
       console.error("Error al compartir voucher:", error);

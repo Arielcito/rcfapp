@@ -1,6 +1,6 @@
 # Mercado Pago Integration
 
-This document describes how to use the Mercado Pago integration in the RCF App.
+This document describes how to use the Mercado Pago integration in the RCC App.
 
 ## Configuration
 

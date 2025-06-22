@@ -168,7 +168,7 @@ export default function PaymentScreen() {
       }
 
       // Generar código QR único para la reserva
-      const codigoQR = `RCF-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      const codigoQR = `RCC-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
       
       console.log('Creando reserva con seña pagada - Generando código QR:', codigoQR);
 
@@ -177,14 +177,14 @@ export default function PaymentScreen() {
         userId: currentUser.id,
         fechaHora: fechaHora,
         duracion: 60,
-        precioTotal: precioPorHora, // Solo el precio base, la seña ya fue pagada a RCF
-        seña: SEÑA_FIJA, // Seña pagada a RCF
+        precioTotal: precioPorHora, // Solo el precio base, la seña ya fue pagada a RCC
+        seña: SEÑA_FIJA, // Seña pagada a RCC
         metodoPago: "Pendiente", // El resto se paga en el predio
         estadoPago: 'PENDIENTE', // Reserva confirmada pero pago pendiente del resto
         codigoQR: codigoQR,
         notasAdicionales: notes ? 
-          `${notes}\n\nSeña pagada: $${SEÑA_FIJA.toFixed(2)} (RCF). Resto a pagar en el predio: $${precioPorHora.toFixed(2)} con ${selectedPaymentMethod}. Código QR: ${codigoQR}` :
-          `Reserva confirmada - Seña pagada: $${SEÑA_FIJA.toFixed(2)} (RCF). Resto a pagar en el predio: $${precioPorHora.toFixed(2)} con ${selectedPaymentMethod}. Código QR: ${codigoQR}`
+          `${notes}\n\nSeña pagada: $${SEÑA_FIJA.toFixed(2)} (RCC). Resto a pagar en el predio: $${precioPorHora.toFixed(2)} con ${selectedPaymentMethod}. Código QR: ${codigoQR}` :
+          `Reserva confirmada - Seña pagada: $${SEÑA_FIJA.toFixed(2)} (RCC). Resto a pagar en el predio: $${precioPorHora.toFixed(2)} con ${selectedPaymentMethod}. Código QR: ${codigoQR}`
       };
 
       const { data: createdReserva } = await api.post('/reservas', reservaData);
@@ -559,7 +559,7 @@ Monto: $${precioPorHora.toFixed(2)}`;
               <Text style={styles.billDetailAmount}>${precioPorHora.toFixed(2)}</Text>
             </View>
             <View style={styles.billRow}>
-              <Text style={styles.billDetailText}>Seña RCF (ahora):</Text>
+              <Text style={styles.billDetailText}>Seña RCC (ahora):</Text>
               <Text style={[styles.billDetailAmount, { color: Colors.PRIMARY }]}>
                 ${SEÑA_FIJA.toFixed(2)}
               </Text>
@@ -635,7 +635,7 @@ Monto: $${precioPorHora.toFixed(2)}`;
           <Ionicons name="information-circle-outline" size={20} color="#F59E0B" />
           <View style={styles.noticeTextContainer}>
             <Text style={styles.noticeText}>
-              La seña de ${SEÑA_FIJA.toFixed(2)} se paga ahora con Mercado Pago a RCF para confirmar tu reserva. 
+              La seña de ${SEÑA_FIJA.toFixed(2)} se paga ahora con Mercado Pago a RCC para confirmar tu reserva. 
               Recibirás un código QR por email y en la app para validar en el predio.
             </Text>
           </View>
