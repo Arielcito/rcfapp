@@ -7,7 +7,7 @@ import { GoogleCalendarTokens, GoogleCalendarEvent, ReservationEventData } from 
 
 export class GoogleCalendarService {
   private oauth2Client: OAuth2Client;
-  private REDIRECT_URI = 'https://backoffice.xerato.io/rcf/api/auth/callback';
+  private REDIRECT_URI = 'https://backoffice.xerato.io/rcf/api/google-calendar/auth/callback';
 
   constructor() {
     this.oauth2Client = new google.auth.OAuth2(

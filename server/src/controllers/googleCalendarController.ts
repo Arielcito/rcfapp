@@ -33,11 +33,12 @@ export class GoogleCalendarController {
     }
   }
 
-  async handleCallback(req: Request<{}, {}, GoogleCalendarCallbackRequest>, res: Response) {
+  async handleCallback(req: Request, res: Response) {
     console.log('[GoogleCalendarController] Procesando callback de Google Calendar');
     
     try {
-      const { code } = req.body;
+      // En el callback de OAuth, el código viene en query parameters, no en el body
+      const code = req.query.code as string || req.body.code;
       const userId = req.user?.id;
       
       if (!userId) {
@@ -50,6 +51,7 @@ export class GoogleCalendarController {
         return res.status(400).json({ error: 'Código de autorización requerido' });
       }
       
+      console.log(`[GoogleCalendarController] Intercambiando código por tokens para usuario: ${userId}`);
       const tokens = await this.googleCalendarService.exchangeCode(code);
       
       // Guardar tokens en la base de datos
@@ -63,10 +65,12 @@ export class GoogleCalendarController {
         .where(eq(users.id, userId));
 
       console.log(`[GoogleCalendarController] Google Calendar vinculado exitosamente para usuario: ${userId}`);
-      res.json({ success: true, message: 'Google Calendar vinculado exitosamente' });
+      
+      // No enviamos JSON response aquí porque la ruta maneja la redirección
+      return { success: true, message: 'Google Calendar vinculado exitosamente' };
     } catch (error) {
       console.error('[GoogleCalendarController] Error vinculando Google Calendar:', error);
-      res.status(500).json({ error: 'Error vinculando Google Calendar' });
+      throw error; // Lanzamos el error para que la ruta lo maneje
     }
   }
 
