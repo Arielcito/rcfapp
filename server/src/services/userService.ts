@@ -4,11 +4,12 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { eq, sql } from 'drizzle-orm';
 import type { User, UserCreationData, UserUpdateData } from '../types/user';
+import { Role } from '../types/user';
 import { logger } from '../utils/logger';
 import { createId } from '../utils/ids';
 
 export const createUser = async (userData: UserCreationData): Promise<User> => {
-  const { name, email, password, role = 'USER' } = userData;
+  const { name, email, password, role = Role.USER } = userData;
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const [user] = await db.insert(users)
@@ -16,25 +17,52 @@ export const createUser = async (userData: UserCreationData): Promise<User> => {
       name,
       email,
       password: hashedPassword,
-      role
+      role: role.toString() as 'USER' | 'ADMIN' | 'OWNER',
+      googleCalendarEnabled: false,
+      googleAccessToken: null,
+      googleRefreshToken: null,
+      googleTokenExpiry: null,
+      googleCalendarId: null,
+      createdAt: new Date(),
+      updatedAt: new Date()
     })
     .returning({
       id: users.id,
       name: users.name,
       email: users.email,
-      role: users.role
+      role: users.role,
+      googleCalendarEnabled: users.googleCalendarEnabled,
+      googleAccessToken: users.googleAccessToken,
+      googleRefreshToken: users.googleRefreshToken,
+      googleTokenExpiry: users.googleTokenExpiry,
+      googleCalendarId: users.googleCalendarId
     });
 
-  return user;
+  // Convert the database role string to Role enum
+  return {
+    ...user,
+    role: user.role as Role
+  };
 };
 
 export const getUsers = async (): Promise<User[]> => {
-  return await db.select({
+  const usersFromDb = await db.select({
     id: users.id,
     name: users.name,
     email: users.email,
-    role: users.role
+    role: users.role,
+    googleCalendarEnabled: users.googleCalendarEnabled,
+    googleAccessToken: users.googleAccessToken,
+    googleRefreshToken: users.googleRefreshToken,
+    googleTokenExpiry: users.googleTokenExpiry,
+    googleCalendarId: users.googleCalendarId
   }).from(users);
+
+  // Convert database role strings to Role enum
+  return usersFromDb.map(user => ({
+    ...user,
+    role: user.role as Role
+  }));
 };
 
 export const getUserById = async (id: string): Promise<User | null> => {
@@ -48,16 +76,14 @@ export const getUserById = async (id: string): Promise<User | null> => {
       return null;
     }
     
-    const userResponse = {
+    const userResponse: User = {
       id: user.id,
       name: user.name ?? null,
       email: user.email,
-      role: user.role,
+      role: user.role as Role,
       telefono: user.telefono ?? null,
-      direccion: user.direccion ?? null,
-      predioTrabajo: user.predioTrabajo ?? null,
-      createdAt: user.createdAt ?? null,
-      updatedAt: user.updatedAt ?? null
+      emailVerified: user.emailVerified ? new Date() : null,
+      image: user.image ?? null
     };
 
     return userResponse;
@@ -67,9 +93,18 @@ export const getUserById = async (id: string): Promise<User | null> => {
 };
 
 export const updateUser = async (id: string, userData: UserUpdateData): Promise<User | null> => {
-  const { name, email, role , telefono, image } = userData;
-  const updateData: Partial<User> = { name, email, role, telefono, image };
-  console.log("updateData", updateData);
+  const { name, email, role, telefono, image } = userData;
+  
+  // Create update data with proper types for database
+  const updateData: any = {};
+  if (name !== undefined) updateData.name = name;
+  if (email !== undefined) updateData.email = email;
+  if (role !== undefined) updateData.role = role.toString() as 'USER' | 'ADMIN' | 'OWNER';
+  if (telefono !== undefined) updateData.telefono = telefono;
+  if (image !== undefined) updateData.image = image;
+  
+  console.log("Logging updateData being sent to database:", updateData);
+  
   const [updatedUser] = await db.update(users)
     .set(updateData)
     .where(eq(users.id, id))
@@ -79,10 +114,26 @@ export const updateUser = async (id: string, userData: UserUpdateData): Promise<
       email: users.email,
       role: users.role,
       telefono: users.telefono,
-      image: users.image
+      image: users.image,
+      emailVerified: users.emailVerified
     });
-  console.log("updatedUser", updatedUser);
-  return updatedUser || null;
+  
+  if (!updatedUser) return null;
+  
+  console.log("Logging updated user returned from database:", updatedUser);
+  
+  // Convert to User type with proper role conversion
+  const result: User = {
+    id: updatedUser.id,
+    name: updatedUser.name,
+    email: updatedUser.email,
+    role: updatedUser.role as Role,
+    telefono: updatedUser.telefono,
+    image: updatedUser.image,
+    emailVerified: updatedUser.emailVerified ? new Date() : null
+  };
+  
+  return result;
 };
 
 export const deleteUser = async (id: string): Promise<void> => {
@@ -99,7 +150,12 @@ export const loginUser = async (email: string, password: string) => {
     emailVerified: users.emailVerified,
     image: users.image,
     predioTrabajo: users.predioTrabajo,
-    createdAt: users.createdAt
+    createdAt: users.createdAt,
+    googleCalendarEnabled: users.googleCalendarEnabled,
+    googleAccessToken: users.googleAccessToken,
+    googleRefreshToken: users.googleRefreshToken,
+    googleTokenExpiry: users.googleTokenExpiry,
+    googleCalendarId: users.googleCalendarId
   })
   .from(users)
   .where(eq(users.email, email));
@@ -158,7 +214,12 @@ export const registerUser = async (userData: UserCreationData) => {
         email: users.email,
         role: users.role,
         telefono: users.telefono,
-        createdAt: users.createdAt
+        createdAt: users.createdAt,
+        googleCalendarEnabled: users.googleCalendarEnabled,
+        googleAccessToken: users.googleAccessToken,
+        googleRefreshToken: users.googleRefreshToken,
+        googleTokenExpiry: users.googleTokenExpiry,
+        googleCalendarId: users.googleCalendarId
       });
 
     if (!newUser) {

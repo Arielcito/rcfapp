@@ -126,7 +126,7 @@ export const contactarPredio = async (
 ): Promise<boolean> => {
   console.log('WhatsApp Utils - Contactando predio:', { phoneNumber, predioName, fecha, hora });
   
-  let message = `¡Hola! Vi tu predio "${predioName}" en RCF App y me gustaría obtener más información.`;
+  let message = `¡Hola! Vi tu predio "${predioName}" en RCC App y me gustaría obtener más información.`;
   
   if (fecha && hora) {
     message += ` Tengo una reserva para el ${fecha} a las ${hora}. Me gustaría consultar algunos detalles.`;
@@ -147,6 +147,6 @@ export const contactarSoporte = async (): Promise<boolean> => {
   
   return await openWhatsApp({
     phoneNumber: '+5491156569844',
-    message: 'Hola, vengo de la app de RCF y necesito ayuda.'
+    message: 'Hola, vengo de la app de RCC y necesito ayuda.'
   });
 }; 

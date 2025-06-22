@@ -1,14 +1,8 @@
 import { pgTable, text, timestamp, uuid, varchar, boolean, integer, decimal, uniqueIndex, time } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { createId } from '../utils/ids';
-import { Role } from '../types/user';
 
-// Definir los tipos para las tablas
-type UsersTable = ReturnType<typeof pgTable>;
-type PrediosTable = ReturnType<typeof pgTable>;
-
-// Crear las tablas con funciones separadas para evitar referencias circulares
-const createUsersTable = (): UsersTable => pgTable('users', {
+export const users = pgTable('users', {
   id: uuid('id').primaryKey().$defaultFn(createId),
   name: text('name'),
   email: text('email').notNull().unique(),
@@ -16,16 +10,21 @@ const createUsersTable = (): UsersTable => pgTable('users', {
   role: text('role', { enum: ['USER', 'ADMIN', 'OWNER'] }).notNull().default('USER'),
   telefono: text('telefono'),
   direccion: text('direccion'),
-  predioTrabajo: uuid('predio_trabajo').references(() => predios.id),
+  predioTrabajo: uuid('predio_trabajo'),
   emailVerified: boolean('email_verified').default(false),
   image: text('image'),
+  googleCalendarEnabled: boolean('google_calendar_enabled').default(false),
+  googleAccessToken: text('google_access_token'),
+  googleRefreshToken: text('google_refresh_token'),
+  googleTokenExpiry: timestamp('google_token_expiry'),
+  googleCalendarId: text('google_calendar_id'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
 
-const createPrediosTable = (): PrediosTable => pgTable('predios', {
+export const predios = pgTable('predios', {
   id: uuid('id').primaryKey().$defaultFn(createId),
-  usuarioId: uuid('usuario_id').references(() => users.id),
+  usuarioId: uuid('usuario_id'),
   nombre: text('nombre').notNull(),
   direccion: text('direccion').notNull(),
   ciudad: text('ciudad').notNull(),
@@ -49,10 +48,6 @@ const createPrediosTable = (): PrediosTable => pgTable('predios', {
   imagenUrl: text('imagen_url'),
   fechaRegistro: timestamp('fecha_registro').defaultNow()
 });
-
-// Crear las instancias de las tablas
-export const users = createUsersTable();
-export const predios = createPrediosTable();
 
 export const deportes = pgTable('deportes', {
   id: uuid('id').primaryKey().$defaultFn(createId),
@@ -81,6 +76,7 @@ export const canchas = pgTable('canchas', {
   ultimoMantenimiento: timestamp('ultimo_mantenimiento'),
   equipamientoIncluido: text('equipamiento_incluido'),
   imagenUrl: text('imagen_url'),
+  precio: decimal('precio', { precision: 10, scale: 2 }),
   createdAt: timestamp('created_at').defaultNow(),
   requiereSeña: boolean('requiere_seña').notNull().default(false),
   montoSeña: integer('monto_seña').notNull().default(0),
@@ -211,8 +207,12 @@ export const serviciosPredioRelations = relations(serviciosPredio, ({ one }) => 
 }));
 
 // Configurar las relaciones
-export const usersRelations = relations(users, ({ many }) => ({
-  prediosOwned: many(predios)
+export const usersRelations = relations(users, ({ one, many }) => ({
+  prediosOwned: many(predios),
+  predioTrabajo: one(predios, {
+    fields: [users.predioTrabajo],
+    references: [predios.id],
+  }),
 }));
 
 export const prediosRelations = relations(predios, ({ one, many }) => ({
@@ -220,7 +220,9 @@ export const prediosRelations = relations(predios, ({ one, many }) => ({
     fields: [predios.usuarioId],
     references: [users.id]
   }),
-  canchas: many(canchas)
+  canchas: many(canchas),
+  horarios: many(horariosPredio),
+  servicios: many(serviciosPredio),
 }));
 
 export const canchasRelations = relations(canchas, ({ one }) => ({
@@ -264,7 +266,7 @@ export const courtRatingsRelations = relations(courtRatings, ({ one }) => ({
   }),
 }));
 
-export const reservasRelations = relations(reservas, ({ one, many }) => ({
+export const reservasRelations = relations(reservas, ({ one }) => ({
   cancha: one(canchas, {
     fields: [reservas.canchaId],
     references: [canchas.id],

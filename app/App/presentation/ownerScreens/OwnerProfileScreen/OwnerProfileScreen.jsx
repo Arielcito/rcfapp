@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import { useCurrentUser } from '../../../application/context/CurrentUserContext'
 import { useCurrentPlace } from '../../../application/context/CurrentPlaceContext'
+import GoogleCalendarSettings from './GoogleCalendarSettings'
 
 export default function OwnerProfileScreen() {
   const navigation = useNavigation()
@@ -193,6 +194,8 @@ export default function OwnerProfileScreen() {
                   </Text>
                 </View>
               </View>
+
+              <GoogleCalendarSettings />
             </>
           ) : (
             <Text style={styles.noPredioText}>No hay predio asociado</Text>
