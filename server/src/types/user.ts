@@ -1,3 +1,5 @@
+import { Predio } from "./predio";
+
 export enum Role {
   USER = 'USER',
   ADMIN = 'ADMIN',
@@ -15,6 +17,7 @@ export interface User {
   passwordResetToken?: string | null;
   passwordResetTokenExp?: Date | null;
   telefono?: string | null;
+  predioTrabajo?: string | null;
 }
 
 export interface UserCreationData {

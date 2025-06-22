@@ -1,16 +1,20 @@
 import { View, Text, ActivityIndicator, Image, FlatList, Pressable, Alert, ScrollView, StyleSheet, Linking } from 'react-native'
-import React from 'react'
+import React, { useCallback } from 'react'
 import Colors from '../../../infrastructure/utils/Colors'
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import { useCurrentUser } from '../../../application/context/CurrentUserContext'
-import { useCurrentPlace } from '../../../application/context/CurrentPlaceContext'
-import GoogleCalendarSettings from './GoogleCalendarSettings'
+import { useOwnerPlace } from '../../../application/hooks/useProfile'
+import { GoogleCalendarSettings } from './GoogleCalendarSettings'
 
 export default function OwnerProfileScreen() {
   const navigation = useNavigation()
   const { currentUser, logout } = useCurrentUser()
-  const { currentPlace, isLoading: isLoadingPlace } = useCurrentPlace()
+  const { 
+    data: currentPlace, 
+    isLoading: isLoadingPlace,
+    error: placeError 
+  } = useOwnerPlace(currentUser?.id || '', currentUser?.role === 'OWNER')
 
   const menu = [
     {
@@ -82,6 +86,12 @@ export default function OwnerProfileScreen() {
       });
   };
 
+  const handleToggleCalendar = useCallback((enabled) => {
+    // Por ahora solo recargamos la página
+    // TODO: Implementar la actualización del estado del usuario
+    console.log('🗓️ [OwnerProfileScreen] Calendario toggle:', enabled);
+  }, []);
+
   const renderUserInfo = () => {
     if (!currentUser) return null;
 
@@ -139,6 +149,8 @@ export default function OwnerProfileScreen() {
           
           {isLoadingPlace ? (
             <ActivityIndicator size="small" color={Colors.PRIMARY} />
+          ) : placeError ? (
+            <Text style={styles.errorText}>Error al cargar la información del predio</Text>
           ) : currentPlace ? (
             <>
               <View style={styles.infoItem}>
@@ -195,7 +207,12 @@ export default function OwnerProfileScreen() {
                 </View>
               </View>
 
-              <GoogleCalendarSettings />
+              {currentUser && (
+                <GoogleCalendarSettings 
+                  user={currentUser}
+                  onToggleCalendar={handleToggleCalendar}
+                />
+              )}
             </>
           ) : (
             <Text style={styles.noPredioText}>No hay predio asociado</Text>
@@ -329,6 +346,13 @@ const styles = StyleSheet.create({
     fontFamily: 'montserrat',
     fontSize: 16,
     color: Colors.GRAY,
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  errorText: {
+    fontFamily: 'montserrat',
+    fontSize: 16,
+    color: 'red',
     textAlign: 'center',
     marginTop: 10,
   },
