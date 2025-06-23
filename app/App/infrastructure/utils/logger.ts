@@ -1,4 +1,5 @@
 import axios from 'axios';
+import Constants from 'expo-constants';
 
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 

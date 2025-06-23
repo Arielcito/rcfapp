@@ -1,0 +1,37 @@
+version: '3.8'
+
+networks:
+  rcf_network:
+    name: rcf_network
+
+services:
+  server:
+    container_name: rcf_backend
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "3501:8080"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres.hpzmwbctmctagutqgjpf:Casa43515134@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+      - DIRECT_URL=postgresql://postgres.hpzmwbctmctagutqgjpf:Casa43515134@aws-0-us-east-1.pooler.supabase.com:5432/postgres
+      - JWT_SECRET=${JWT_SECRET}
+      - CLIENT_URL=https://rcfapp.com.ar
+      - BASE_PATH=/rcf/api
+      - MERCADO_PAGO_PUBLIC_KEY=TEST-9a7e1962-ad0c-4606-aeb1-015c0e59d70d
+      - MERCADO_PAGO_ACCESS_TOKEN=TEST-5294995935306734-082313-97c4286e2cbbe8124db0c1afd5976eda-225978862
+      - MERCADO_PAGO_CLIENT_ID=5294995935306734
+      - MERCADO_PAGO_CLIENT_SECRET=kdaJDvg1XtahS65YIgfZFnMNqSJURPP1
+      - MP_SUCCESS_URL=https://backoffice.xerato.io/rcf/api/webhook
+      - MP_FAILURE_URL=https://backoffice.xerato.io/rcf/api/webhook
+      - MP_PENDING_URL=https://backoffice.xerato.io/rcf/api/webhook
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    networks:
+      - rcf_network
+    labels:
+      - "project=rcf"
+      - "environment=production"
+    restart: unless-stopped 
