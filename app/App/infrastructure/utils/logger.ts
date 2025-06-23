@@ -1,6 +1,4 @@
-import { Platform } from 'react-native';
 import axios from 'axios';
-import Constants from 'expo-constants';
 
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 
@@ -16,7 +14,7 @@ class Logger {
   private static instance: Logger;
   private logs: LogEntry[] = [];
   private readonly MAX_LOGS = 1000;
-  private readonly API_URL = Constants.expoConfig?.extra?.apiUrl || 'https://rcfapp.com.ar/api';
+  private readonly API_URL = 'https://rcfapp.com.ar/api';
   private readonly LOG_BATCH_SIZE = 10;
   private readonly LOG_BATCH_INTERVAL = 5000; // 5 segundos
   private batchTimeout: NodeJS.Timeout | null = null;
