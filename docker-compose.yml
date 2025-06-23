@@ -26,6 +26,9 @@ services:
       - MP_SUCCESS_URL=https://backoffice.xerato.io/rcf/api/webhook
       - MP_FAILURE_URL=https://backoffice.xerato.io/rcf/api/webhook
       - MP_PENDING_URL=https://backoffice.xerato.io/rcf/api/webhook
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
     volumes:
       - ./server:/app
       - /app/node_modules
